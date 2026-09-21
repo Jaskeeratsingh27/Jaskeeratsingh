@@ -10,11 +10,11 @@ This registry prevents accidental reconstruction or duplication when later Claud
 | Youtube Insights Extractor | Four knowledge/skill files | Migrated now as `youtube-insights-extractor` |
 | Garden AI multi-agent system | Empty project shell | Record only; wait for a later source package |
 | GitHub Manage | Empty project shell | Record only; existing GitHub skills are handled separately |
-| Github To Claude Backend | Empty project shell | Record only; do not reconstruct from name alone |
+| Github To Claude Backend | Project metadata plus one project-scoped GitHub-link triage/Darpan design chat (confirmed by Batch 2 folder mapping); no standalone final package | Preserve as historical context; do not reconstruct a final agent until an authoritative artifact is found |
 | Obsidian Claude Android connection | Empty project shell | Record only |
 | Token usage optimization dashboard | Empty project shell | Record only; current ChatGPT dashboard work is separate |
 | Youtuber Agent | Empty project shell | Record only |
-| Darpan | Detailed chat design, no standalone final package in this archive | Do not promote yet; migrate when authoritative artifact is found |
+| Darpan | Detailed GitHub-link triage design chat; Batch 2 confirms it belongs to the `Github To Claude Backend` project; no standalone final package | Do not promote yet; migrate when authoritative artifact is found |
 | Smriti | Referenced/tested in chats, final source package absent | Do not reconstruct from transcript |
 | Sutradhaar | Detailed chat specification, final source package absent | Do not reconstruct from transcript |
 | Anveshak | Referenced as an existing agent, source package absent | Await authoritative source |
