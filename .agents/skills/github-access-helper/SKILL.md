@@ -7,21 +7,39 @@ description: Help the user connect ChatGPT/Codex to GitHub, authorize repository
 
 Use this workflow whenever the user wants ChatGPT or Codex to access, maintain, edit, or commit to GitHub repositories.
 
+## Quick links for this account
+
+The ChatGPT Codex Connector is already linked to the user's GitHub account. When repository authorization needs to be changed, give this link immediately:
+
+**Manage / authorize repositories for the existing connector**
+https://github.com/settings/installations/163378918
+
+Use this generic fallback if the account-specific installation link stops working:
+https://github.com/settings/installations
+
+If the ChatGPT Codex Connector is ever not installed at all, use:
+https://github.com/apps/chatgpt-codex-connector/installations/new
+
 ## Goal
 
 Get the user from "GitHub is connected but the repo is not available" to verified repository access with the fewest possible steps.
 
 ## Workflow
 
-1. **Verify access first**
+1. **If the user asks for the GitHub authorization link**
+   - Give the account-specific management link immediately:
+     https://github.com/settings/installations/163378918
+   - Tell them to open the ChatGPT Codex Connector, choose **All repositories** or add the specific repository, save the change, and then say **check now**.
+   - Do not make them navigate through multiple settings screens when the direct link is available.
+
+2. **Verify access**
    - Check the authenticated GitHub profile.
    - Check GitHub App installations.
    - List accessible repositories.
    - Do not claim write access until the target repository is visible and its permissions show push/write access.
 
-2. **If the ChatGPT Codex Connector is not installed**
+3. **If the ChatGPT Codex Connector is not installed**
    Give the user this direct installation link:
-
    https://github.com/apps/chatgpt-codex-connector/installations/new
 
    Tell them to:
@@ -30,18 +48,20 @@ Get the user from "GitHub is connected but the repo is not available" to verifie
    - complete the installation,
    - then return and say **check now**.
 
-3. **If the connector is installed but the target repo is missing**
-   - Prefer the installation's own `html_url` returned by the GitHub tool when available.
-   - Otherwise give:
-     https://github.com/settings/installations
+4. **If the connector is installed but the target repo is missing**
+   - Give the account-specific management link first:
+     https://github.com/settings/installations/163378918
    - Tell the user to open the ChatGPT Codex Connector configuration and add the repository, or switch to **All repositories**.
+   - If that installation link no longer resolves, use the current installation's `html_url` returned by the GitHub tool.
+   - Final fallback:
+     https://github.com/settings/installations
 
-4. **If repository_selection is `all`**
+5. **If repository_selection is `all`**
    - Explain that newly created repositories should normally be included automatically.
    - Re-check the repository list before asking the user to change settings.
-   - If the new repo still does not appear, give the installation management link and ask them to verify the app is still set to **All repositories**.
+   - If the new repo still does not appear, give the account-specific management link and ask them to verify the app is still set to **All repositories**.
 
-5. **When the user says "done", "check", "try now", or similar**
+6. **When the user says "done", "check", "try now", or similar**
    - Re-run the installation and repository checks immediately.
    - Report whether the repo is visible and whether push/write permission is available.
    - If it is writable, say it is ready for file creation, edits, commits, branches, issues, and pull requests.
@@ -56,8 +76,8 @@ Get the user from "GitHub is connected but the repo is not available" to verifie
 
 ## Preferred response style
 
-Be brief and action-oriented. Example:
+Be brief and action-oriented. When the connector is already installed but repository access needs attention, use:
 
-> I checked. The GitHub App is authorized, but this repo is not visible yet. Open the connector settings here: [Manage GitHub App](https://github.com/settings/installations), add the repo, then tell me **check now**.
+> Open your existing ChatGPT Codex Connector here: [Manage GitHub repository access](https://github.com/settings/installations/163378918). Add the repo or choose **All repositories**, save it, then tell me **check now**.
 
 If no installation exists, use the direct install link instead.
