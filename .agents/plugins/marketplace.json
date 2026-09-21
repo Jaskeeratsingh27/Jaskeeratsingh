@@ -1,0 +1,20 @@
+{
+  "name": "jaskeeratsingh-tools",
+  "interface": {
+    "displayName": "Jaskeeratsingh Tools"
+  },
+  "plugins": [
+    {
+      "name": "project-sync",
+      "source": {
+        "source": "local",
+        "path": "./plugins/project-sync"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
