@@ -84,7 +84,7 @@ function securityHeaders(contentType = "application/json; charset=utf-8") {
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
   };
 }
 
@@ -674,13 +674,13 @@ function serveStatic(req, res) {
 }
 
 const server = http.createServer(async (req, res) => {
-  if (!authOkay(req)) {
+  const url = new URL(req.url, "http://" + (req.headers.host || "localhost"));
+
+  if (url.pathname !== "/health" && !authOkay(req)) {
     return text(res, 401, "Authentication required", "text/plain; charset=utf-8", {
       "WWW-Authenticate": 'Basic realm="TokenTrack"'
     });
   }
-
-  const url = new URL(req.url, "http://" + (req.headers.host || "localhost"));
 
   if (url.pathname.startsWith("/api/") && !rateLimitOkay(req)) {
     return json(res, 429, { error: "Too many requests. Try again shortly." });
