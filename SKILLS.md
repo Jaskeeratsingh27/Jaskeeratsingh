@@ -20,6 +20,16 @@ Use for GitHub connection, repository authorization, access verification, connec
 - Canonical source: `.agents/skills/github-access-helper/SKILL.md`
 - Claude project mirror: `.claude/skills/github-access-helper/SKILL.md`
 
+
+### github-project-sync
+
+Use when starting, building, or approving a durable project, agent, application, dashboard, workflow, or reusable skill that needs verified GitHub-backed records and milestones.
+
+- Codex: `$github-project-sync`
+- Claude Code: `/github-project-sync`
+- Canonical source: `.agents/skills/github-project-sync/SKILL.md`
+- Claude project mirror: `.claude/skills/github-project-sync/SKILL.md`
+
 ## Architecture
 
 Each skill is a directory containing a required `SKILL.md` file:
