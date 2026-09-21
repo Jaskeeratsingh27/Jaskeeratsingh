@@ -30,6 +30,42 @@ Use when starting, building, or approving a durable project, agent, application,
 - Canonical source: `.agents/skills/github-project-sync/SKILL.md`
 - Claude project mirror: `.claude/skills/github-project-sync/SKILL.md`
 
+### kaizen-orchestrator
+
+Use for full Lean Six Sigma DMAIC / continuous-improvement pipelines, blueprint hardening, data-gated root-cause analysis, FMEA, traceability, and control planning.
+
+- Codex: `$kaizen-orchestrator`
+- Claude Code: `/kaizen-orchestrator`
+- Canonical source: `.agents/skills/kaizen-orchestrator/SKILL.md`
+- Claude mirror: `.claude/skills/kaizen-orchestrator/SKILL.md`
+
+### hermes-agent-creator
+
+Use to design, review, and improve autonomous agents for Hermes/OmniRoute/local-model/OpenAI workflows with explicit contracts, tool allowlists, validation, failure paths, evaluation, FMEA, and control plans.
+
+- Codex: `$hermes-agent-creator`
+- Claude Code: `/hermes-agent-creator`
+- Canonical source: `.agents/skills/hermes-agent-creator/SKILL.md`
+- Claude mirror: `.claude/skills/hermes-agent-creator/SKILL.md`
+
+### secondbrain-curator
+
+Use to convert rough material into atomic, linked, PARA-routed Obsidian notes while reusing real vault tags/links and avoiding fabricated note relationships.
+
+- Codex: `$secondbrain-curator`
+- Claude Code: `/secondbrain-curator`
+- Canonical source: `.agents/skills/secondbrain-curator/SKILL.md`
+- Claude mirror: `.claude/skills/secondbrain-curator/SKILL.md`
+
+### youtube-insights-extractor
+
+Use to extract YouTube transcripts and transform them into summaries, insights, action items, or Obsidian-ready atomic notes with source traceability.
+
+- Codex: `$youtube-insights-extractor`
+- Claude Code: `/youtube-insights-extractor`
+- Canonical source: `.agents/skills/youtube-insights-extractor/SKILL.md`
+- Claude mirror: `.claude/skills/youtube-insights-extractor/SKILL.md`
+
 ## Architecture
 
 Each skill is a directory containing a required `SKILL.md` file:
