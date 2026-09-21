@@ -1,0 +1,33 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "project-sync",
+  "version": "1.0.0",
+  "description": "Keep durable projects, agents, apps, dashboards, workflows, and reusable skills synchronized to GitHub as the verified canonical record.",
+  "repository": "https://github.com/Jaskeeratsingh27/Jaskeeratsingh",
+  "keywords": [
+    "github",
+    "project-sync",
+    "workflow",
+    "agents",
+    "version-control"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Project Sync",
+        "shortDescription": "Keep this project synchronized to GitHub.",
+        "longDescription": "Use the GitHub Project Sync workflow to detect durable work, create or reuse the correct repository, preserve project records and artifacts, verify milestones, and keep GitHub as the canonical source of truth.",
+        "developerName": "Jaskeeratsingh27",
+        "category": "Productivity",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "defaultPrompt": [
+          "Use Project Sync for this work. Treat GitHub as the canonical source of truth, create or reuse the correct repository, preserve all durable project artifacts, verify each milestone, and report the verified commit.",
+          "Resume this project using Project Sync. Read the canonical GitHub project records first, then continue from the latest verified state."
+        ]
+      }
+    }
+  }
+}
