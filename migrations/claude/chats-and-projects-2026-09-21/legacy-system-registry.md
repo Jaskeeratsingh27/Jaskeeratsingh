@@ -22,6 +22,9 @@ This registry prevents accidental reconstruction or duplication when later Claud
 | GitHub Manage | Original Claude project shell only | Existing GitHub skills handled separately; do not fabricate from shell |
 | Obsidian Claude Android connection | Original project shell only | Record only |
 | Token usage optimization dashboard | Original project shell; later ChatGPT dashboard work exists separately | Record only; do not merge unrelated implementations automatically |
-| Karkhana | Final package referenced in chats but source bundle absent | Await authoritative source |
-| Parikshak | Final package referenced in chats but source bundle absent | Await authoritative source |
-| Sthapati | Final package referenced in chats but source bundle absent | Await authoritative source |
+| Karkhana | Batch 4 verbatim memory says a completed Claude Project ZIP existed; purpose was to build agents for the user's own stack and emit Hermes `SKILL.md` artifacts; source ZIP absent | Recovery spec only; await authoritative ZIP before claiming parity |
+| Parikshak | Batch 4 verbatim memory says a completed Claude Project ZIP existed for DMAIC-style agentic-system audits grounded in MAST + OWASP agentic-app risks; source ZIP absent | Recovery spec only; re-verify current frameworks before rebuild |
+| Sthapati | Batch 4 verbatim memory says a completed Claude Project ZIP existed for building Claude Projects and included a 16-test pack; source ZIP absent | Recovery spec only; await authoritative ZIP before claiming parity |
+| Vishwakarma (Vish) | Batch 4 verbatim memory describes a shipped Antigravity-oriented multi-agent forge and scaffold; original scaffold/artifact absent | Recovery spec only; preserve model-routing/forge architecture without claiming original code |
+| Idea-to-Deploy Loop | Batch 4 project memory contains a detailed six-stage blueprint with human gates/stop conditions; blueprint file itself absent | Recovery spec only; prefer extension of Hermes where overlap remains material |
+| Token Ledger / session-token-audit | Batch 4 memory describes a dashboard + on-demand audit skill; original artifacts absent | Recovery spec only; adapt to the active platform's actually available usage telemetry |

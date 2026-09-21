@@ -23,11 +23,13 @@ Treat this as historical known vocabulary, not proof of the current vault state.
 
 ## Generated-content rule
 
-Auto-generated hub/MOC notes must not be hand-edited when they are marked as generated. Regenerate them through the local `secondbrain` tool or current equivalent.
+Auto-generated hub/MOC notes must not be hand-edited when they are marked as generated. Regenerate them through the local `secondbrain` tool or current equivalent. Historical project memory names these generated hubs/MOCs explicitly: `Second Brain System`, `AI Agents`, `Graphify`, `secondbrain`, `meta Hub`, `ai Hub`, and `second-brain Hub`. Treat those names as historical evidence, not proof they still exist in the live vault.
+
+Historical entry/reference notes called out by the project memory were `Start Here.md`, `Graphify.md`, `AI Agents.md`, and `secondbrain.md`. Verify the live vault/index before linking to them.
 
 ## Integration rule
 
-The historical local tool regenerates graph data, hubs, the agent index, and a health/validation report after notes are integrated. The actual parser/index files were not included in this export, so verify the active local toolchain before execution.
+The historical local tool regenerates graph data, hubs, the agent index, and a health/validation report after notes are integrated. Project memory says the old Claude Project also used a device-bound periodic vault refresh to regenerate and stage an updated `agent_index.json`. Treat that schedule as historical only; re-confirm cadence/timezone before recreating it. The actual parser/index files were not included in this export, so verify the active local toolchain before execution.
 
 ## Resume-oriented note quality
 

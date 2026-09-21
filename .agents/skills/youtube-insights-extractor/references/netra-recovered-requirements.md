@@ -16,6 +16,7 @@ Given a YouTube URL, create a coverage-first derivative that can replace watchin
 - Degrade cleanly to transcript-only mode when visual tooling is unavailable.
 - For long material, split work across bounded stages/agents rather than one unconstrained prompt.
 - Run a coverage audit before calling a condensed artifact complete.
+- When packaging a reusable implementation, deliver a self-contained package plus stepwise setup instructions that can be followed directly or handed to another chat/agent.
 
 ## Coverage audit
 
