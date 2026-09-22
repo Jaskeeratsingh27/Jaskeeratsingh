@@ -1,7 +1,7 @@
 ---
 name: hermes-agent-architecture
 description: Design production Hermes agents and multi-agent systems
-version: 1.1.0
+version: 1.2.0
 metadata:
   hermes:
     tags: [hermes, agents, multi-agent, architecture, orchestration]
@@ -12,7 +12,7 @@ metadata:
 
 ## When to Use
 
-Load this skill whenever the task involves Hermes Agent architecture, profile/Bot design, subagents, Kanban orchestration, SOUL.md, AGENTS.md, skills, model/tool routing, MCP, memory, cron, agent-to-agent contracts, production hardening, observability, or creating instructions/files for Hermes agents.
+Load this skill whenever the task involves Hermes Agent architecture, profile/Bot design, subagents, Kanban orchestration, SOUL.md, AGENTS.md, skills, model/tool routing, MCP, memory, cron, agent-to-agent contracts, production hardening, observability, release compatibility, or creating instructions/files for Hermes agents.
 
 ## Knowledge Baseline
 
@@ -50,9 +50,15 @@ Load this skill whenever the task involves Hermes Agent architecture, profile/Bo
 
 - `compatibility/hermes-compatibility.json` records the skill version, pinned stable Hermes baseline, verified capability status, source IDs, and revalidation flags.
 - `compatibility/primitive-routing.json` is the machine-readable canonical decision table for choosing core Hermes primitives.
-- `tests/architecture-cases.json` contains regression fixtures that protect those routing decisions.
-- Run both `python tests/validate_skill.py` and `python tests/test_architecture_regressions.py` before promoting a knowledge-base update.
+- `compatibility/impact-map.json` maps Hermes source/capability changes to affected knowledge files, routing rules, and targeted regression cases.
+- `compatibility/upgrade-matrix.json` records the verified Hermes baseline and future upgrade transitions.
+- `maintenance/change-event.schema.json` defines the machine-readable input contract for detected Hermes changes.
+- `maintenance/impact_engine.py` classifies severity and computes blast radius before edits are made.
+- `tests/architecture-cases.json` protects stable primitive-selection decisions.
+- `tests/release-impact-cases.json` protects release-impact classification and targeted test selection.
+- Run `python tests/validate_skill.py`, `python tests/test_architecture_regressions.py`, and `python tests/test_release_impact.py` before promoting a knowledge-base update.
 - Do not clear `needs_revalidation` entries until the affected capability has been checked against official primary sources for the intended Hermes version.
+- Any stable Hermes release transition must go through a reviewed branch/PR.
 
 ## Architecture Defaults
 
@@ -97,6 +103,7 @@ When producing Hermes agent architecture or instruction files, include when rele
 - `references/11-production-checklist.md` — production-readiness checklist
 - `references/12-versioning-known-caveats.md` — release pinning and compatibility caveats
 - `references/13-source-index.md` — primary-source links
+- `references/14-release-impact-engine.md` — release/change classification and blast-radius workflow
 
 ## Templates
 
@@ -120,9 +127,11 @@ Use the templates under `templates/` rather than inventing incompatible handoff 
 - Do not track Hermes `main` blindly in production.
 - Do not overconstrain `output_schema`; schema failure should not make useful work unusable.
 - Do not mark a task complete without verification evidence when verification is part of the contract.
+- Do not update every reference file when the impact engine identifies a narrower affected set.
+- Do not auto-promote an unknown source, ambiguous change, security change, breaking change, or stable-version transition.
 
 ## Verification
 
 A Hermes architecture is ready to implement only when every agent has a persistent/ephemeral classification, every handoff has a contract, workflow state has an authoritative owner, permissions are explicit, failure paths terminate safely, artifacts are durable, and the design names the pinned Hermes version it targets.
 
-For skill maintenance, promotion is allowed only when structural validation and architecture regression validation both pass and compatibility status is consistent with the pinned Hermes baseline.
+For skill maintenance, promotion is allowed only when structural validation, architecture regression validation, and release-impact regression validation pass; compatibility/upgrade state must also be consistent with the pinned Hermes baseline.

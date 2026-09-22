@@ -1,0 +1,126 @@
+{
+  "schema_version": "1.0.0",
+  "cases": [
+    {
+      "id": "profiles-doc-clarification",
+      "event": {
+        "change_id": "case-profiles-doc",
+        "observed_on": "2026-09-21",
+        "source_ids": ["profiles"],
+        "change_types": ["documentation"],
+        "stable_release_changed": false,
+        "from_release": "v0.21.3",
+        "to_release": "v0.21.3",
+        "evidence_status": "verified",
+        "summary": "A verified wording clarification to Profiles."
+      },
+      "expected": {
+        "severity": "patch",
+        "review_required": false,
+        "affected_capabilities": ["bot_mode", "profiles"],
+        "must_include_regression_case_ids": ["persistent-researcher"]
+      }
+    },
+    {
+      "id": "delegation-behavior-change",
+      "event": {
+        "change_id": "case-delegation-behavior",
+        "observed_on": "2026-09-21",
+        "source_ids": ["releases", "delegation"],
+        "change_types": ["behavior"],
+        "stable_release_changed": true,
+        "from_release": "v0.21.3",
+        "to_release": "v0.22.0",
+        "evidence_status": "verified",
+        "summary": "Delegation semantics changed in a new stable release."
+      },
+      "expected": {
+        "severity": "minor",
+        "review_required": true,
+        "affected_capabilities": ["delegation", "structured_output"],
+        "must_include_regression_case_ids": ["parallel-source-checks"],
+        "unknown_source_ids": []
+      }
+    },
+    {
+      "id": "kanban-breaking-change",
+      "event": {
+        "change_id": "case-kanban-breaking",
+        "observed_on": "2026-09-21",
+        "source_ids": ["kanban"],
+        "change_types": ["breaking"],
+        "stable_release_changed": true,
+        "from_release": "v0.21.3",
+        "to_release": "v0.22.0",
+        "evidence_status": "verified",
+        "summary": "A stable release changes Kanban lifecycle semantics."
+      },
+      "expected": {
+        "severity": "major",
+        "review_required": true,
+        "affected_capabilities": ["kanban"],
+        "must_include_regression_case_ids": ["restart-human-approval"]
+      }
+    },
+    {
+      "id": "security-change",
+      "event": {
+        "change_id": "case-security",
+        "observed_on": "2026-09-21",
+        "source_ids": ["security"],
+        "change_types": ["security"],
+        "stable_release_changed": false,
+        "from_release": "v0.21.3",
+        "to_release": "v0.21.3",
+        "evidence_status": "verified",
+        "summary": "Sandbox security behavior materially changed."
+      },
+      "expected": {
+        "severity": "critical",
+        "review_required": true,
+        "affected_capabilities": ["security"],
+        "must_include_regression_case_ids": ["untrusted-code"]
+      }
+    },
+    {
+      "id": "ambiguous-model-routing",
+      "event": {
+        "change_id": "case-routing-ambiguous",
+        "observed_on": "2026-09-21",
+        "source_ids": ["provider-routing"],
+        "change_types": ["documentation"],
+        "stable_release_changed": false,
+        "from_release": "v0.21.3",
+        "to_release": "v0.21.3",
+        "evidence_status": "ambiguous",
+        "summary": "Docs appear to change provider routing but stable-tag behavior is unclear."
+      },
+      "expected": {
+        "severity": "major",
+        "review_required": true,
+        "affected_capabilities": ["model_routing"],
+        "needs_revalidation": ["model_routing"]
+      }
+    },
+    {
+      "id": "unknown-source",
+      "event": {
+        "change_id": "case-unknown-source",
+        "observed_on": "2026-09-21",
+        "source_ids": ["future-new-subsystem"],
+        "change_types": ["architecture"],
+        "stable_release_changed": true,
+        "from_release": "v0.21.3",
+        "to_release": "v0.22.0",
+        "evidence_status": "verified",
+        "summary": "A new Hermes subsystem is not yet represented in the source manifest or impact map."
+      },
+      "expected": {
+        "severity": "major",
+        "review_required": true,
+        "affected_capabilities": [],
+        "unknown_source_ids": ["future-new-subsystem"]
+      }
+    }
+  ]
+}

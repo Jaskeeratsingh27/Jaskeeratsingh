@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "skill_version": "1.2.0",
+  "current_baseline": {
+    "hermes_release": "v0.21.3",
+    "hermes_tag": "v2026.9.14",
+    "verified_on": "2026-09-21",
+    "status": "baseline_verified"
+  },
+  "history": [
+    {
+      "from_release": null,
+      "to_release": "v0.21.3",
+      "skill_version": "1.0.0",
+      "classification": "baseline",
+      "affected_capabilities": ["profiles","bot_mode","delegation","structured_output","kanban","skills_context_soul","memory","tools_mcp","execute_code","model_routing","cron","security","observability"],
+      "review_required": false,
+      "validation": "passed"
+    }
+  ],
+  "next_upgrade": {
+    "candidate_release": null,
+    "status": "none_detected",
+    "affected_capabilities": [],
+    "severity": "info",
+    "review_required": false,
+    "recommended_regression_case_ids": []
+  }
+}

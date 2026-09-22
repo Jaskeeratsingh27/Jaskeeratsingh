@@ -38,7 +38,12 @@ def main() -> None:
     json_files = (
         list((ROOT / "templates").glob("*.json"))
         + list((ROOT / "compatibility").glob("*.json"))
-        + [ROOT / "maintenance" / "source-manifest.json", ROOT / "tests" / "architecture-cases.json"]
+        + [
+            ROOT / "maintenance" / "source-manifest.json",
+            ROOT / "maintenance" / "change-event.schema.json",
+            ROOT / "tests" / "architecture-cases.json",
+            ROOT / "tests" / "release-impact-cases.json",
+        ]
     )
     parsed = {path: load_json(path) for path in json_files}
 
@@ -65,16 +70,60 @@ def main() -> None:
     if compatibility.get("hermes", {}).get("source_id") not in source_ids:
         fail("compatibility Hermes release source_id is missing from source manifest")
 
+    capability_ids = {item.get("id") for item in compatibility.get("capabilities", [])}
+    if None in capability_ids:
+        fail("compatibility capability missing ID")
+
     for capability in compatibility.get("capabilities", []):
         unknown = set(capability.get("source_ids", [])) - source_ids
         if unknown:
             fail(f"compatibility capability {capability.get('id')} uses unknown sources: {sorted(unknown)}")
 
     routing = parsed[ROOT / "compatibility" / "primitive-routing.json"]
+    routing_rule_ids = {rule.get("id") for rule in routing.get("rules", [])}
     for rule in routing.get("rules", []):
         reference = ROOT / rule.get("reference", "")
         if not reference.exists():
             fail(f"routing rule {rule.get('id')} points to missing reference")
+
+    architecture_cases = parsed[ROOT / "tests" / "architecture-cases.json"].get("cases", [])
+    architecture_case_ids = {case.get("id") for case in architecture_cases}
+
+    impact = parsed[ROOT / "compatibility" / "impact-map.json"]
+    impact_ids = [item.get("id") for item in impact.get("capabilities", [])]
+    if len(impact_ids) != len(set(impact_ids)):
+        fail("impact map contains duplicate capability IDs")
+    if set(impact_ids) != capability_ids:
+        fail("impact map capability IDs do not exactly match compatibility capability IDs")
+
+    for item in impact.get("capabilities", []):
+        unknown_sources = set(item.get("source_ids", [])) - source_ids
+        if unknown_sources:
+            fail(f"impact capability {item.get('id')} uses unknown sources: {sorted(unknown_sources)}")
+        unknown_routes = set(item.get("routing_rule_ids", [])) - routing_rule_ids
+        if unknown_routes:
+            fail(f"impact capability {item.get('id')} uses unknown routing rules: {sorted(unknown_routes)}")
+        unknown_cases = set(item.get("regression_case_ids", [])) - architecture_case_ids
+        if unknown_cases:
+            fail(f"impact capability {item.get('id')} uses unknown architecture cases: {sorted(unknown_cases)}")
+        for rel in item.get("knowledge_files", []):
+            if not (ROOT / rel).exists():
+                fail(f"impact capability {item.get('id')} points to missing knowledge file {rel}")
+
+    upgrade = parsed[ROOT / "compatibility" / "upgrade-matrix.json"]
+    if upgrade.get("skill_version") != version:
+        fail("compatibility/upgrade-matrix.json skill_version does not match VERSION")
+    if upgrade.get("current_baseline", {}).get("hermes_release") != compatibility.get("hermes", {}).get("stable_release"):
+        fail("upgrade matrix Hermes release does not match compatibility baseline")
+
+    release_cases = parsed[ROOT / "tests" / "release-impact-cases.json"].get("cases", [])
+    if not release_cases:
+        fail("release-impact regression fixtures are missing")
+    for case in release_cases:
+        explicit = set(case.get("event", {}).get("explicit_capability_ids", []))
+        unknown_explicit = explicit - capability_ids
+        if unknown_explicit:
+            fail(f"release-impact case {case.get('id')} uses unknown explicit capabilities: {sorted(unknown_explicit)}")
 
     candidates = re.findall(
         r"`((?:references|templates|maintenance|research|tests|compatibility)/[^`]+|VERSION|CHANGELOG\.md|README\.md)`",
@@ -91,11 +140,17 @@ def main() -> None:
         "maintenance/weekly-refresh-spec.md",
         "maintenance/weekly-refresh-prompt.md",
         "maintenance/source-manifest.json",
+        "maintenance/change-event.schema.json",
+        "maintenance/impact_engine.py",
         "research/HERMES_AGENT_RESEARCH_DOSSIER.md",
         "compatibility/hermes-compatibility.json",
         "compatibility/primitive-routing.json",
+        "compatibility/impact-map.json",
+        "compatibility/upgrade-matrix.json",
         "tests/architecture-cases.json",
         "tests/test_architecture_regressions.py",
+        "tests/release-impact-cases.json",
+        "tests/test_release_impact.py",
     ]
     for rel in required:
         if not (ROOT / rel).exists():
@@ -104,7 +159,8 @@ def main() -> None:
     print(f"PASS: hermes-agent-architecture v{version}")
     print(f"PASS: {len(sources)} primary-source entries")
     print(f"PASS: {len(json_files)} JSON files parsed")
-    print("PASS: compatibility/source/reference cross-checks")
+    print(f"PASS: {len(capability_ids)} compatibility/impact capabilities cross-checked")
+    print(f"PASS: {len(release_cases)} release-impact fixtures structurally valid")
 
 
 if __name__ == "__main__":
