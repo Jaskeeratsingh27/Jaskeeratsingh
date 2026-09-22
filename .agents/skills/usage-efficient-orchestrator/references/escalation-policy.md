@@ -2,41 +2,50 @@
 
 ## Ladder
 
-0. Luna low
-1. Terra low
-2. Terra medium
-3. Terra high for bounded review/debugging
-4. Sol medium
-5. Primary Astra/Sol higher reasoning only after user approval when the turn is already expensive
+0. direct cheap action
+1. cheap_reader
+2. standard_engineer
+3. reviewer for independent verification
+4. senior_specialist
+5. architect higher reasoning only after explicit budget/risk justification
 
-Start at the lowest level appropriate to the task. Do not force every task through every level.
+Start at the lowest capable level. Do not force every task through every level.
 
-## Escalation requires evidence
+## Escalation requires a classified failure
 
-Escalate only when at least one is true:
-- the lower-cost worker reports a concrete capability/ambiguity blocker;
-- two materially different low-cost implementation attempts failed;
-- architecture spans multiple systems and cannot be safely decided locally;
-- correctness/security risk justifies stronger reasoning;
-- the user explicitly requests the higher tier.
+Use `failure-taxonomy.md`.
 
-Pass the failure summary and relevant evidence upward. Do not make the stronger model repeat discovery from zero.
+Senior escalation is appropriate primarily for:
+- implementation failure after the profile allows a retry;
+- architecture/integration complexity identified with evidence;
+- high-risk correctness ambiguity requiring stronger reasoning.
+
+Senior escalation is not appropriate for:
+- missing information;
+- permissions;
+- user approval;
+- network/runtime outages;
+- stale/flaky fixtures before validation.
 
 ## Mandatory user checkpoint
 
 Return to the user before:
-- a second major architecture attempt;
-- Astra high/extra-high work;
+- any step that would exceed the selected profile target;
+- economy-profile senior escalation;
+- architect high/extra-high reasoning;
+- CRITICAL-risk execution;
 - a broad migration after discovery;
-- a second full-suite verification cycle;
-- any continuation likely to push the turn beyond the 5% target;
-- any plan expected to approach the 10% absolute ceiling.
+- another full-suite run beyond the profile limit;
+- architecture/scope change outside the Task Envelope.
 
 ## Stop report
 
 Use:
 - Completed:
 - Remaining:
+- Failure class:
+- Risk:
 - Why stopped:
 - Cheapest next action:
-- Expected tier:
+- Expected role:
+- Validation status:
