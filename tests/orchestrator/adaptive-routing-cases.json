@@ -1,0 +1,62 @@
+[
+  {
+    "id": "A01",
+    "name": "cheaper route clears quality and efficiency floors",
+    "expected_decision": "candidate_lower_burn"
+  },
+  {
+    "id": "A02",
+    "name": "lower-burn route with poor completion quality is rejected",
+    "expected_decision": "quality_floor"
+  },
+  {
+    "id": "A03",
+    "name": "HIGH-risk cheaper route without reviewer is rejected",
+    "expected_decision": "risk_floor"
+  },
+  {
+    "id": "A04",
+    "name": "CRITICAL work remains plan-only/risk-floor",
+    "expected_decision": "risk_floor"
+  },
+  {
+    "id": "A05",
+    "name": "insufficient evidence returns no adaptive candidate",
+    "expected_decision": "insufficient_data"
+  },
+  {
+    "id": "A06",
+    "name": "historical burn drift suppresses adaptation",
+    "expected_decision": "drift_suppressed"
+  },
+  {
+    "id": "A07",
+    "name": "shadow mode never marks candidate active",
+    "expected_active": false
+  },
+  {
+    "id": "A08",
+    "name": "known route mapping is deterministic",
+    "expected_deterministic": true
+  },
+  {
+    "id": "A09",
+    "name": "unrecognized/legacy route does not become candidate",
+    "expected_safe": true
+  },
+  {
+    "id": "A10",
+    "name": "shadow report evaluates multiple classes",
+    "expected_shadow": true
+  },
+  {
+    "id": "A11",
+    "name": "aggregate export omits task and project identifiers",
+    "expected_private": true
+  },
+  {
+    "id": "A12",
+    "name": "free-text adaptive routing arguments are rejected",
+    "expected_reject": true
+  }
+]
