@@ -1,0 +1,46 @@
+{
+  "change_id": "hermes-v0.21.4-stable-2026-09-22",
+  "severity": "minor",
+  "review_required": true,
+  "stable_release_changed": true,
+  "from_release": "v0.21.3",
+  "to_release": "v0.21.4",
+  "affected_capabilities": [
+    "bot_mode",
+    "memory",
+    "profiles",
+    "security",
+    "skills_context_soul",
+    "tools_mcp"
+  ],
+  "affected_files": [
+    "references/00-architecture-map.md",
+    "references/01-profiles-bots.md",
+    "references/04-skills-context-soul.md",
+    "references/05-memory-sessions.md",
+    "references/06-tools-code-mcp.md",
+    "references/09-security.md",
+    "references/11-production-checklist.md",
+    "templates/AGENTS.template.md",
+    "templates/SOUL.template.md"
+  ],
+  "routing_rule_ids": [
+    "execution-isolation",
+    "external-capability",
+    "persistent-identity",
+    "persistent-specialist",
+    "project-rules",
+    "reusable-procedure"
+  ],
+  "recommended_regression_case_ids": [
+    "agent-persona",
+    "coding-sop",
+    "github-integration",
+    "persistent-researcher",
+    "repo-conventions",
+    "untrusted-code"
+  ],
+  "needs_revalidation": [],
+  "unknown_source_ids": [],
+  "unknown_capability_ids": []
+}

@@ -4,7 +4,7 @@
     {
       "id": "clean-no-change",
       "event": null,
-      "as_of": "2026-09-21",
+      "as_of": "2026-09-22",
       "mutations": {},
       "consumer_drift": false,
       "validation_failures": [],
@@ -111,7 +111,7 @@
     {
       "id": "missed-audits-health-critical",
       "event": null,
-      "as_of": "2026-10-06",
+      "as_of": "2026-10-07",
       "mutations": {},
       "consumer_drift": false,
       "validation_failures": [],
@@ -154,7 +154,7 @@
       "mutations": {
         "audit_date": "2026-09-22",
         "verified_on": "2026-09-22",
-        "observed_release": "v0.21.3",
+        "observed_release": "v0.21.4",
         "candidate_release": null,
         "needs_revalidation": []
       },

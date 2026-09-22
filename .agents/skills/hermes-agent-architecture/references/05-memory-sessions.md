@@ -17,3 +17,9 @@ Hermes supports memory providers such as Honcho for deeper server-side user mode
 ## Session search
 
 Historical session retrieval is a separate concern from curated memory. Use session search for retrieving prior discussions/evidence; use memory for compact persistent facts; use Git/artifacts/KB files for durable engineering truth.
+
+Stable v0.21.4 adds discovery time bounds to `session_search` through `after` and `before`, alongside an OR-relaxed recall retry when strict full-text retrieval misses. Use those bounds to constrain historical lookup instead of loading broad session history.
+
+## State database persistence
+
+v0.21.4 adds `hermes sessions set-journal-mode` for explicit state-database journal-mode management. Treat journal-mode changes as an operator/persistence concern: coordinate writers and follow Hermes' safety checks rather than changing a live profile database underneath active processes.

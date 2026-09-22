@@ -1,6 +1,6 @@
 # Primary Source Index
 
-Research accessed 2026-09-21.
+Research accessed 2026-09-22.
 
 - Releases: https://github.com/NousResearch/hermes-agent/releases
 - Feature overview: https://hermes-agent.nousresearch.com/docs/user-guide/features/overview

@@ -1,6 +1,6 @@
 {
   "manifest_version": "1.0.0",
-  "research_baseline_date": "2026-09-21",
+  "research_baseline_date": "2026-09-22",
   "repository": "https://github.com/NousResearch/hermes-agent",
   "sources": [
     {"id":"releases","url":"https://github.com/NousResearch/hermes-agent/releases","topics":["versions","breaking-changes","release-notes"],"priority":"critical"},

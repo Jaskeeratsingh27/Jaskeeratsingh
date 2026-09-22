@@ -1,0 +1,30 @@
+{
+  "change_id": "hermes-v0.21.4-stable-2026-09-22",
+  "observed_on": "2026-09-22",
+  "source_ids": [
+    "releases",
+    "profiles",
+    "bot-mode",
+    "skills",
+    "memory",
+    "tools-reference",
+    "mcp",
+    "security"
+  ],
+  "change_types": [
+    "behavior"
+  ],
+  "stable_release_changed": true,
+  "from_release": "v0.21.3",
+  "to_release": "v0.21.4",
+  "evidence_status": "verified",
+  "explicit_capability_ids": [
+    "profiles",
+    "bot_mode",
+    "skills_context_soul",
+    "memory",
+    "tools_mcp",
+    "security"
+  ],
+  "summary": "Hermes v0.21.4 is the new stable patch release. Verified material operational deltas cover host-wide gateway/Desktop backend ownership, skills.auto_load, session-search and state.db operations, MCP discovery concurrency, CLI stream-json output, and unauthorized-DM decline behavior; core primitive semantics remain compatible."
+}

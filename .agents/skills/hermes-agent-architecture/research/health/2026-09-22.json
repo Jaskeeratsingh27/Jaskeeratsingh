@@ -1,0 +1,156 @@
+{
+  "schema_version": "1.0.0",
+  "as_of": "2026-09-22",
+  "skill_version": "1.7.0",
+  "hermes_baseline": "v0.21.4",
+  "overall_score": 100,
+  "health_state": "healthy",
+  "capability_score": 100,
+  "audit": {
+    "latest_audit_date": "2026-09-22",
+    "age_days": 0,
+    "freshness": "fresh",
+    "score": 100
+  },
+  "capabilities": [
+    {
+      "id": "profiles",
+      "status": "verified",
+      "priority": "critical",
+      "last_verified_on": "2026-09-22",
+      "age_days": 0,
+      "max_age_days": 14,
+      "freshness": "fresh",
+      "score": 100
+    },
+    {
+      "id": "bot_mode",
+      "status": "verified",
+      "priority": "critical",
+      "last_verified_on": "2026-09-22",
+      "age_days": 0,
+      "max_age_days": 14,
+      "freshness": "fresh",
+      "score": 100
+    },
+    {
+      "id": "delegation",
+      "status": "verified",
+      "priority": "critical",
+      "last_verified_on": "2026-09-22",
+      "age_days": 0,
+      "max_age_days": 14,
+      "freshness": "fresh",
+      "score": 100
+    },
+    {
+      "id": "structured_output",
+      "status": "verified",
+      "priority": "critical",
+      "last_verified_on": "2026-09-22",
+      "age_days": 0,
+      "max_age_days": 14,
+      "freshness": "fresh",
+      "score": 100
+    },
+    {
+      "id": "kanban",
+      "status": "verified",
+      "priority": "critical",
+      "last_verified_on": "2026-09-22",
+      "age_days": 0,
+      "max_age_days": 14,
+      "freshness": "fresh",
+      "score": 100
+    },
+    {
+      "id": "skills_context_soul",
+      "status": "verified",
+      "priority": "critical",
+      "last_verified_on": "2026-09-22",
+      "age_days": 0,
+      "max_age_days": 14,
+      "freshness": "fresh",
+      "score": 100
+    },
+    {
+      "id": "memory",
+      "status": "verified",
+      "priority": "high",
+      "last_verified_on": "2026-09-22",
+      "age_days": 0,
+      "max_age_days": 28,
+      "freshness": "fresh",
+      "score": 100
+    },
+    {
+      "id": "tools_mcp",
+      "status": "verified",
+      "priority": "critical",
+      "last_verified_on": "2026-09-22",
+      "age_days": 0,
+      "max_age_days": 14,
+      "freshness": "fresh",
+      "score": 100
+    },
+    {
+      "id": "execute_code",
+      "status": "verified",
+      "priority": "high",
+      "last_verified_on": "2026-09-22",
+      "age_days": 0,
+      "max_age_days": 28,
+      "freshness": "fresh",
+      "score": 100
+    },
+    {
+      "id": "model_routing",
+      "status": "verified",
+      "priority": "critical",
+      "last_verified_on": "2026-09-22",
+      "age_days": 0,
+      "max_age_days": 14,
+      "freshness": "fresh",
+      "score": 100
+    },
+    {
+      "id": "cron",
+      "status": "verified",
+      "priority": "critical",
+      "last_verified_on": "2026-09-22",
+      "age_days": 0,
+      "max_age_days": 14,
+      "freshness": "fresh",
+      "score": 100
+    },
+    {
+      "id": "security",
+      "status": "verified",
+      "priority": "critical",
+      "last_verified_on": "2026-09-22",
+      "age_days": 0,
+      "max_age_days": 14,
+      "freshness": "fresh",
+      "score": 100
+    },
+    {
+      "id": "observability",
+      "status": "verified",
+      "priority": "critical",
+      "last_verified_on": "2026-09-22",
+      "age_days": 0,
+      "max_age_days": 14,
+      "freshness": "fresh",
+      "score": 100
+    }
+  ],
+  "drift_signals": [],
+  "summary": {
+    "fresh": 13,
+    "due_soon": 0,
+    "stale": 0,
+    "unknown": 0,
+    "needs_revalidation": 0,
+    "drift_signal_count": 0
+  }
+}

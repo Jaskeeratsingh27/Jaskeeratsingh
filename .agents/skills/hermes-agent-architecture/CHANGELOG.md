@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.7.0 — 2026-09-22
+
+- Promoted the verified stable Hermes baseline from v0.21.3 (`v2026.9.14`) to v0.21.4 (`v2026.9.21`).
+- Recorded v0.21.4 gateway/Profile/Bot deployment ownership: host-wide gateway singleton/rendezvous behavior and Desktop attachment to the running host backend.
+- Documented profile-scoped `skills.auto_load`, bounded MCP discovery concurrency, session-search time bounds, state-database journal-mode operations, CLI `--format stream-json`, and gateway unauthorized-DM `decline`.
+- Reverified the canonical Profile, Bot, delegation, structured-output, Kanban, skills/context/SOUL, memory, tools/MCP, execute_code, model-routing, Cron, security/checkpoint, plugin/hook, observability, persistence, and deployment guidance against official primary sources.
+- Preserved release-vs-current-doc distinctions because v0.21.4 is a patch roll-up and upstream defers full curated notes for the release window to v0.22.0.
+- Added the 2026-09-22 audit, change-event, consumer-impact, consumer-drift, and health evidence for the stable-release promotion.
+- Updated date-sensitive health/hardening regression fixtures to the new verified baseline date.
+
 ## 1.6.0 — 2026-09-21
 
 - Added a deterministic promotion gate that separates canonical knowledge-promotion status from downstream ecosystem-compatibility status.

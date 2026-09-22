@@ -1,7 +1,7 @@
 ---
 name: hermes-agent-architecture
 description: Design production Hermes agents and multi-agent systems
-version: 1.6.0
+version: 1.7.0
 metadata:
   hermes:
     tags: [hermes, agents, multi-agent, architecture, orchestration]
@@ -16,8 +16,8 @@ Load this skill whenever the task involves Hermes Agent architecture, profile/Bo
 
 ## Knowledge Baseline
 
-- Research date: 2026-09-21.
-- Stable release verified during research: Hermes Agent v0.21.3 (`v2026.9.14`).
+- Research date: 2026-09-22.
+- Stable release verified during research: Hermes Agent v0.21.4 (`v2026.9.21`).
 - Hermes documentation can describe behavior ahead of the latest stable tag. Treat docs/current-main behavior and pinned-release behavior as separate claims.
 - For production work, pin a Hermes release/commit and validate generated config against that target.
 - Before making version-sensitive claims, consult `compatibility/hermes-compatibility.json`.

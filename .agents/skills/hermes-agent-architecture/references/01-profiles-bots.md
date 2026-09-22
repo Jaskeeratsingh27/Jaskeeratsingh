@@ -12,6 +12,12 @@ A Bot Mode bot is a profile presented in the desktop roster. It is not a differe
 
 Use Bots for persistent named collaborators; use subagents for temporary workers.
 
+## v0.21.4 gateway and Desktop ownership
+
+Stable v0.21.4 adds a host-wide gateway singleton lock with a rendezvous record. Hermes Desktop attaches to the running host backend instead of starting a second backend for the same host. Treat this as process/deployment ownership, not as a relaxation of profile isolation: each Profile still has its own Hermes home and durable state.
+
+For multi-profile deployments, keep one writer per profile home and design gateway supervision explicitly so a Desktop or service process connects to the intended running backend.
+
 ## Profiles are not sandboxes
 
 A profile scopes Hermes state through `HERMES_HOME`, but on a local terminal backend the process still has the OS user's normal filesystem access. Use terminal backends (Docker/Modal/Daytona/Vercel Sandbox, etc.), `terminal.cwd`, filesystem controls, and tool exposure for actual isolation.

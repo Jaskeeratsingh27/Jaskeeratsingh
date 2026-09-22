@@ -10,8 +10,21 @@ When installed in Hermes, invoke with:
 
 ## Baseline
 
-Research date: 2026-09-21.  
-Latest stable release verified: Hermes Agent v0.21.3 (`v2026.9.14`).
+Research date: 2026-09-22.  
+Latest stable release verified: Hermes Agent v0.21.4 (`v2026.9.21`).
+
+## v1.7 Hermes v0.21.4 stable promotion
+
+v1.7 is the first evidence-driven post-hardening knowledge update. It promotes Hermes Agent v0.21.4 (`v2026.9.21`) as the verified stable baseline and records targeted operational changes without altering the core primitive-selection model:
+
+- host-wide gateway singleton/rendezvous behavior and Desktop attachment to the running host backend
+- profile-scoped skill auto-loading for every new session
+- bounded MCP discovery concurrency
+- session-search time bounds and state-database journal-mode operations
+- CLI `--format stream-json` programmatic JSONL output
+- gateway unauthorized-DM `decline` behavior
+
+The core guidance for Profiles, delegation, Kanban, model/provider routing, Cron, sandboxing, hooks/plugins, and observability remains structurally compatible after primary-source reverification.
 
 ## v1.6 final hardening and promotion-control layer
 
