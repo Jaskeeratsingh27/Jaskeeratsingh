@@ -20,7 +20,9 @@ const state={
   alertsEnabled:localStorage.getItem("tt-alerts-enabled-v1")!=="false",
   browserNotifications:localStorage.getItem("tt-browser-notifications-v1")==="true",
   alertEvents:loadAlertEvents(),
-  activeAlerts:[]
+  activeAlerts:[],
+  serverMonitor:null,
+  deferredInstallPrompt:null
 };
 
 const num=v=>Number.isFinite(Number(v))?Number(v):0;
@@ -108,6 +110,16 @@ function renderAlertCenter(){
   const perm=typeof Notification==="undefined"?"unsupported":Notification.permission;
   $("notificationState").textContent=state.browserNotifications&&perm==="granted"?"On":"Off";
   $("notificationDetail").textContent=perm==="granted"?"Permission granted":perm==="denied"?"Permission blocked":perm==="unsupported"?"Not supported":"Permission not requested";
+  const sm=state.serverMonitor;
+  if(sm?.error){
+    $("serverMonitorState").textContent="Error";$("serverMonitorDetail").textContent=sm.error;
+  }else if(sm){
+    $("serverMonitorState").textContent=sm.rules?.enabled===false?"Paused":"Running";
+    $("serverMonitorDetail").textContent=sm.last_success_at?"Last success "+timeLabel(sm.last_success_at)+" · "+count((sm.active||[]).length)+" active":"Waiting for first background run";
+    mergeServerMonitorEvents();
+  }else{
+    $("serverMonitorState").textContent="Loading";$("serverMonitorDetail").textContent="Fetching server monitor state";
+  }
   $("activeAlerts").className="alert-list"+(active.length?"":" empty");
   $("activeAlerts").innerHTML=active.length?active.map(a=>'<div class="alert-item '+esc(a.severity)+'"><span class="sev">'+esc(a.severity.toUpperCase())+'</span><div><strong>'+esc(a.title)+'</strong><small>'+esc(a.source)+' · '+esc(a.message)+'</small></div><time>Now</time></div>').join(""):"No active alerts.";
   $("alertEvents").className="alert-list"+(state.alertEvents.length?"":" empty");
@@ -126,7 +138,7 @@ function updateAlertRulesFromUi(){
     apiCostGrowthPct:Math.max(1,num($("ruleApiCostGrowth").value)||50)
   };
   if(state.alertRules.chatCritical<state.alertRules.chatWarn)state.alertRules.chatCritical=state.alertRules.chatWarn;
-  saveAlertRules();evaluateAlerts();
+  saveAlertRules();evaluateAlerts();void syncServerMonitorRules();
 }
 async function requestBrowserNotificationPermission(){
   if(typeof Notification==="undefined"){toast("Browser notifications are not supported here");return}
@@ -137,6 +149,135 @@ async function requestBrowserNotificationPermission(){
     renderAlertCenter();
     toast(result==="granted"?"Browser notifications enabled":"Notification permission not granted");
   }catch(e){toast("Notification permission failed")}
+}
+
+
+async function loadServerMonitor(){
+  try{
+    const response=await fetch("/api/server-monitor",{cache:"no-store"});
+    const data=await response.json().catch(()=>({error:"Invalid monitor response"}));
+    if(!response.ok)throw new Error(data.error||("HTTP "+response.status));
+    state.serverMonitor=data;
+    renderAlertCenter();
+  }catch(error){
+    state.serverMonitor={error:error.message};
+    renderAlertCenter();
+  }
+}
+async function syncServerMonitorRules(){
+  try{
+    const response=await fetch("/api/server-monitor",{
+      method:"PUT",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({rules:{
+        enabled:state.alertsEnabled,
+        forecast_usd:state.alertRules.apiForecastUsd,
+        token_growth_pct:state.alertRules.apiTokenGrowthPct,
+        cost_growth_pct:state.alertRules.apiCostGrowthPct,
+        anomaly_count:1
+      }})
+    });
+    const data=await response.json().catch(()=>({error:"Invalid monitor response"}));
+    if(!response.ok)throw new Error(data.error||("HTTP "+response.status));
+    await loadServerMonitor();
+  }catch(error){toast("Background monitor update failed: "+error.message)}
+}
+function mergeServerMonitorEvents(){
+  const remote=state.serverMonitor?.events||[];
+  if(!remote.length)return;
+  const existing=new Set(state.alertEvents.map(e=>e.id||[e.at,e.kind,e.key].join("|")));
+  for(const e of remote){
+    const key=e.id||[e.at,e.kind,e.key].join("|");
+    if(existing.has(key))continue;
+    state.alertEvents.push({...e,id:key});
+    existing.add(key);
+  }
+  state.alertEvents.sort((a,b)=>new Date(b.at)-new Date(a.at));
+  saveAlertEvents();
+}
+function fullRecoveryPayload(){
+  return{
+    schema_version:1,
+    source:"tokentrack-recovery-kit",
+    exported_at:new Date().toISOString(),
+    excludes:["OPENAI_ADMIN_KEY","chat_sync_encryption_key"],
+    chat_snapshots:state.chatSnapshots,
+    alert_rules:state.alertRules,
+    alert_events:state.alertEvents,
+    preferences:{
+      days:state.days,
+      refresh_seconds:state.refreshSeconds,
+      auto_refresh:state.autoRefresh,
+      local_budget:state.localBudget,
+      theme:state.theme,
+      alerts_enabled:state.alertsEnabled,
+      browser_notifications:state.browserNotifications,
+      chat_auto_sync:state.chatAutoSync
+    }
+  };
+}
+function downloadJson(filename,payload){
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function exportRecoveryKit(){
+  downloadJson("tokentrack-recovery-kit.json",fullRecoveryPayload());
+}
+function restoreRecoveryKit(payload){
+  if(!payload||payload.source!=="tokentrack-recovery-kit")throw new Error("Not a TokenTrack recovery kit.");
+  if(Array.isArray(payload.chat_snapshots)){
+    state.chatSnapshots=mergeSnapshotSets(state.chatSnapshots,payload.chat_snapshots);
+    saveChatSnapshots();
+  }
+  if(payload.alert_rules&&typeof payload.alert_rules==="object"){
+    state.alertRules={...state.alertRules,...payload.alert_rules};saveAlertRules();
+  }
+  if(Array.isArray(payload.alert_events)){
+    const by=new Map(state.alertEvents.map(e=>[e.id||[e.at,e.kind,e.key].join("|"),e]));
+    for(const e of payload.alert_events||[])by.set(e.id||[e.at,e.kind,e.key].join("|"),e);
+    state.alertEvents=[...by.values()].sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,200);saveAlertEvents();
+  }
+  const p=payload.preferences||{};
+  if(Number.isFinite(Number(p.days))){state.days=Number(p.days);localStorage.setItem("tt-days",state.days)}
+  if(Number.isFinite(Number(p.refresh_seconds))){state.refreshSeconds=Number(p.refresh_seconds);localStorage.setItem("tt-refresh",state.refreshSeconds)}
+  if(typeof p.auto_refresh==="boolean"){state.autoRefresh=p.auto_refresh;localStorage.setItem("tt-auto",String(p.auto_refresh))}
+  if(Number.isFinite(Number(p.local_budget))){state.localBudget=Math.max(0,Number(p.local_budget));localStorage.setItem("tt-budget",state.localBudget)}
+  if(["dark","light"].includes(p.theme)){state.theme=p.theme;localStorage.setItem("tt-theme",state.theme)}
+  if(typeof p.alerts_enabled==="boolean"){state.alertsEnabled=p.alerts_enabled;localStorage.setItem("tt-alerts-enabled-v1",String(p.alerts_enabled))}
+  if(typeof p.browser_notifications==="boolean"){state.browserNotifications=p.browser_notifications;localStorage.setItem("tt-browser-notifications-v1",String(p.browser_notifications))}
+  if(typeof p.chat_auto_sync==="boolean"){state.chatAutoSync=p.chat_auto_sync;localStorage.setItem("tt-chat-auto-sync-v1",String(p.chat_auto_sync))}
+  document.documentElement.dataset.theme=state.theme;
+  $("days").value=String(state.days);$("refreshInterval").value=String(state.refreshSeconds);$("autoRefresh").checked=state.autoRefresh;$("localBudget").value=state.localBudget||"";$("theme").value=state.theme;
+  renderChatGPT();renderAlertCenter();evaluateAlerts();
+  if(state.chatSyncKey&&state.chatAutoSync)queueChatAutoSync();
+}
+function pwaInstalled(){
+  return matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true;
+}
+function renderPwaState(){
+  const installed=pwaInstalled();
+  $("pwaState").textContent=installed?"Installed app mode":"Browser mode";
+  $("installAppSettings").disabled=installed;
+  $("installAppSettings").textContent=installed?"TokenTrack installed":"Install TokenTrack";
+  $("installApp").classList.toggle("hidden",installed||!state.deferredInstallPrompt);
+}
+async function installPwa(){
+  if(pwaInstalled()){toast("TokenTrack is already installed");return}
+  if(!state.deferredInstallPrompt){toast("Use your browser menu and choose Add to Home screen / Install app");return}
+  state.deferredInstallPrompt.prompt();
+  try{await state.deferredInstallPrompt.userChoice}catch{}
+  state.deferredInstallPrompt=null;renderPwaState();
+}
+function registerPwa(){
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(()=>{});
+  }
+  addEventListener("beforeinstallprompt",event=>{
+    event.preventDefault();state.deferredInstallPrompt=event;renderPwaState();
+  });
+  addEventListener("appinstalled",()=>{state.deferredInstallPrompt=null;renderPwaState();toast("TokenTrack installed")});
+  renderPwaState();
 }
 
 function toast(msg){const e=$("toast");e.textContent=msg;e.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove("show"),2200)}
@@ -748,11 +889,25 @@ function countdown(){
 
 qsa(".nav").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 $("attentionOpen").onclick=()=>setTab("alerts");
+$("installApp").onclick=()=>installPwa();
+$("installAppSettings").onclick=()=>installPwa();
+$("exportRecoveryKit").onclick=()=>exportRecoveryKit();
+$("importRecoveryKit").onchange=async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  try{restoreRecoveryKit(JSON.parse(await file.text()));toast("Recovery kit restored")}
+  catch(error){toast("Recovery restore failed: "+error.message)}
+  e.target.value="";
+};
+
 ["ruleChatWarn","ruleChatCritical","ruleChatStale","ruleApiForecast","ruleApiTokenGrowth","ruleApiCostGrowth"].forEach(id=>$(id).onchange=updateAlertRulesFromUi);
-$("alertsEnabled").onchange=e=>{state.alertsEnabled=e.target.checked;localStorage.setItem("tt-alerts-enabled-v1",String(state.alertsEnabled));evaluateAlerts()};
+$("alertsEnabled").onchange=e=>{state.alertsEnabled=e.target.checked;localStorage.setItem("tt-alerts-enabled-v1",String(state.alertsEnabled));evaluateAlerts();void syncServerMonitorRules()};
 $("browserNotifications").onchange=e=>{state.browserNotifications=e.target.checked;localStorage.setItem("tt-browser-notifications-v1",String(state.browserNotifications));renderAlertCenter()};
 $("requestNotificationPermission").onclick=()=>requestBrowserNotificationPermission();
-$("clearAlertEvents").onclick=()=>{state.alertEvents=[];saveAlertEvents();renderAlertCenter();toast("Alert event timeline cleared")};
+$("clearAlertEvents").onclick=async()=>{
+  state.alertEvents=[];saveAlertEvents();renderAlertCenter();
+  try{await fetch("/api/server-monitor",{method:"DELETE"});await loadServerMonitor()}catch{}
+  toast("Alert event timeline cleared");
+};
 
 $("chatSyncCreate").onclick=()=>createChatSync().catch(e=>toast("Could not enable sync: "+e.message));
 $("chatSyncCopy").onclick=()=>copyChatSyncCode();
@@ -830,5 +985,8 @@ renderChatSync();
 renderChatGPT();
 renderAlertCenter();
 evaluateAlerts();
+registerPwa();
+void loadServerMonitor();
 if(state.chatSyncKey&&state.chatAutoSync)setTimeout(()=>syncPullMerge(),700);
 load(false);
+setInterval(()=>loadServerMonitor(),60000);
