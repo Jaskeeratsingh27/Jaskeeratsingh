@@ -7,21 +7,47 @@ import re
 import sys
 from pathlib import Path
 
-REQUIRED_HEADINGS = [
-    "How to Use",
-    "Fresh-Chat",
-    "Executive Overview",
-    "Architecture",
-    "Capabilities",
-    "Version",
-    "Validation",
-    "Known Limitations",
-    "Future",
-    "Continuation Protocol",
-]
+REQUIRED_CONCEPTS = {
+    "how_to_use": ["how to use"],
+    "bootstrap": [
+        "new-chat bootstrap",
+        "fresh-chat",
+        "fresh chat",
+        "new-agent bootstrap",
+        "fresh chat or agent",
+        "new chat or agent",
+    ],
+    "executive_overview": ["executive overview"],
+    "architecture": ["architecture", "mental model"],
+    "capabilities": [
+        "capabilities",
+        "capability deep dive",
+        "feature inventory",
+        "what the skill can now do",
+        "what the project can now do",
+    ],
+    "version_history": [
+        "version history",
+        "version timeline",
+        "version and milestone history",
+        "milestone history",
+    ],
+    "validation": ["validation", "quality gate", "deterministic ci", "tests, ci"],
+    "limitations": ["known limitations", "limitations", "caveats"],
+    "future": ["future iteration", "future development", "roadmap"],
+    "continuation": [
+        "continuation protocol",
+        "future development handoff protocol",
+        "future development handoff",
+        "new-chat continuation",
+        "new chat continuation",
+    ],
+}
+
 
 def fail(message: str) -> None:
     raise SystemExit(f"FAIL: {message}")
+
 
 def main() -> None:
     if len(sys.argv) < 2:
@@ -37,14 +63,23 @@ def main() -> None:
 
     headings = re.findall(r"^#{1,6}\s+(.+)$", text, flags=re.MULTILINE)
     heading_text = "\n".join(headings).lower()
-    missing = [h for h in REQUIRED_HEADINGS if h.lower() not in heading_text]
+
+    missing = []
+    for concept, alternatives in REQUIRED_CONCEPTS.items():
+        if not any(phrase in heading_text for phrase in alternatives):
+            missing.append(concept)
     if missing:
         fail("missing required conceptual sections: " + ", ".join(missing))
 
-    if "source-of-truth" not in text.lower() and "source of truth" not in text.lower():
+    body_lower = text.lower()
+    if "source-of-truth" not in body_lower and "source of truth" not in body_lower:
         fail("guide must state a source-of-truth hierarchy")
 
-    if "new-agent" not in text.lower() and "new agent" not in text.lower() and "fresh chat" not in text.lower():
+    bootstrap_terms = [
+        "new-agent", "new agent", "fresh chat", "new chat",
+        "future ai", "future chat",
+    ]
+    if not any(term in body_lower for term in bootstrap_terms):
         fail("guide must contain future-chat/new-agent bootstrap guidance")
 
     if len(sys.argv) >= 3:
@@ -65,17 +100,28 @@ def main() -> None:
         if missing_keys:
             fail("manifest missing required keys: " + ", ".join(missing_keys))
 
-        canonical = manifest["canonical_guide"]
-        if Path(canonical).name != guide.name and canonical != guide.as_posix():
-            # Allow repo-relative invocation from a different working directory, but flag obvious mismatch.
+        canonical = Path(manifest["canonical_guide"])
+        if canonical.name != guide.name and canonical.as_posix() != guide.as_posix():
             if guide.name != "MASTER_GUIDE.md":
                 fail("manifest canonical_guide does not appear to identify the validated guide")
+        if canonical.as_posix() != guide.as_posix() and canonical.exists() and canonical.resolve() != guide.resolve():
+            fail("manifest canonical_guide points to a different existing guide")
+
+        snapshot = manifest.get("latest_snapshot")
+        if snapshot and not Path(snapshot).exists():
+            fail(f"manifest latest_snapshot missing from repository: {snapshot}")
+
+        for export in manifest.get("exports", []):
+            if not Path(export).exists():
+                fail(f"manifest export missing from repository: {export}")
 
         if manifest["guide_revision"] < 1:
             fail("manifest guide_revision must be >= 1")
 
     print(f"PASS: master guide continuity structure ({guide})")
     print(f"PASS: {len(headings)} Markdown heading(s) detected")
+    print(f"PASS: {len(REQUIRED_CONCEPTS)} continuity concept(s) covered")
+
 
 if __name__ == "__main__":
     main()
