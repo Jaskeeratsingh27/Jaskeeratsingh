@@ -233,7 +233,11 @@ function recommend(query,tasks){
   const approved=hasApproval(query,selected.basis,best.route);
   const calibrationOk=calibration.status==="acceptable";
   const qualityCritical=query.profile==="quality-critical";
-  const activeEligible=CONFIG.mode==="active" && calibrationOk && approved &&
+  const validationEvidenceRequired=["implementation","mixed"].includes(query.task_kind) || ["MEDIUM","HIGH"].includes(query.risk);
+  const minValidation=CONFIG.quality_floor.minimum_validation_observations_for_active || 0;
+  const qualityEvidenceComplete=!validationEvidenceRequired ||
+    (baseline.validation_observations>=minValidation && best.stats.validation_observations>=minValidation);
+  const activeEligible=CONFIG.mode==="active" && calibrationOk && approved && qualityEvidenceComplete &&
     !(qualityCritical && CONFIG.safety.quality_critical_active_change_requires_user_approval && !approved);
 
   let decision="candidate_lower_burn";
@@ -256,6 +260,7 @@ function recommend(query,tasks){
     decision,
     active_eligible:activeEligible,
     canonical_approval:approved,
+    quality_evidence_complete:qualityEvidenceComplete,
     calibration,
     evidence_samples:Math.min(baseline.measured_tasks,best.stats.measured_tasks),
     rejections,
