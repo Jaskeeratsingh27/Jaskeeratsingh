@@ -61,7 +61,7 @@ check("aggregate export schema",exported.schema_version==="1.0" && exported.summ
 
 const ledger=path.join(env.ORCHESTRATOR_DATA_DIR,"events.jsonl");
 const lines=fs.readFileSync(ledger,"utf8").trim().split("\n").map(JSON.parse);
-check("project id hashed",lines.every(e=>/^[a-f0-9]{20}$/.test(e.project_id)));
+check("project id hashed",lines.every(e=>/^[a-f0-9]{20}$/.test(e.project_id)));\ncheck("orchestrator version stamped",lines.every(e=>e.orchestrator_version==="1.4.0"));
 check("ledger contains no cwd",!fs.readFileSync(ledger,"utf8").includes(ROOT));
 check("ledger contains no prompt/source fields",lines.every(e=>!("prompt" in e)&&!("source_code" in e)&&!("file_contents" in e)&&!("raw_tool_output" in e)));
 
