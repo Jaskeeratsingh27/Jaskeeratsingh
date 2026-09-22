@@ -62,7 +62,7 @@ const m=config.match(/max_concurrent_threads_per_session\s*=\s*(\d+)/);
 if(m && Number(m[1])<=3) pass("max concurrency safety",m[1]); else fail("max concurrency safety",m?.[1]??"missing");
 
 const skill=fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/SKILL.md"),"utf8");
-for(const gate of ["Reliability control plane","Security gate","Drift gate","CI gate","Privacy-preserving observability","Usage intelligence gate","Adaptive routing gate","Final hardening and readiness"]){
+for(const gate of ["Reliability control plane","Security gate","Drift gate","CI gate","Privacy-preserving observability","Usage intelligence gate","Adaptive routing gate","Final hardening and readiness","Closed-loop runtime"]){
   (skill.includes(gate)?pass:fail)(`skill gate: ${gate}`);
 }
 
@@ -126,6 +126,23 @@ const releaseOk=/^[a-f0-9]{40}$/.test(releaseState.last_known_good?.commit||"") 
 
 const readinessScript=fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/scripts/readiness.mjs"),"utf8");
 (!readinessScript.includes("prompt_text") && !readinessScript.includes("source_code") && !readinessScript.includes("file_contents") ? pass : fail)("readiness privacy boundary");
+
+const closedLoop=JSON.parse(fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/config/closed-loop.json"),"utf8"));
+const closedLoopOk=closedLoop.mode==="shadow_closed_loop" &&
+  closedLoop.execution?.adaptive_candidate_can_replace_baseline===false &&
+  closedLoop.execution?.single_writer_shared_tree===true &&
+  closedLoop.safety?.active_adaptive_routing===false &&
+  closedLoop.safety?.canary_routing===false &&
+  closedLoop.safety?.candidate_route_is_advisory===true &&
+  closedLoop.safety?.no_automatic_destructive_rollback===true;
+(closedLoopOk?pass:fail)("closed-loop config");
+
+const closedLoopScript=fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/scripts/closed-loop.mjs"),"utf8");
+(!closedLoopScript.includes("prompt_text") && !closedLoopScript.includes("source_code") && !closedLoopScript.includes("file_contents") && !closedLoopScript.includes("raw_tool_output") ? pass : fail)("closed-loop privacy boundary");
+
+const telemetrySchema=JSON.parse(fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/schemas/telemetry-event.schema.json"),"utf8"));
+(telemetrySchema.properties?.event_type?.enum?.includes("preflight_decision") && telemetrySchema.properties?.event_type?.enum?.includes("post_task_evaluation") ? pass : fail)("closed-loop telemetry event schema");
+(telemetrySchema.additionalProperties===false ? pass : fail)("telemetry schema closed properties");
 
 const failed=results.filter(r=>!r.ok);
 for(const r of results) console.log(`${r.ok?"PASS":"FAIL"} | ${r.name}${r.detail?" | "+r.detail:""}`);
