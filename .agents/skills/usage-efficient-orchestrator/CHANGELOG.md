@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.5.0 - 2026-09-21
+
+Adaptive Routing release candidate.
+
+- Added explicit task-kind classification to the Task Envelope and telemetry.
+- Added canonical route templates and baseline routing rules.
+- Added shadow-mode adaptive routing with no silent route replacement.
+- Added route-level minimum sample and measured-usage gates.
+- Added success-rate and validation-pass quality floors.
+- Added p90 absolute and relative improvement requirements before recommending a cheaper route.
+- Added HIGH-risk reviewer retention, CRITICAL/LARGE plan-only protection, and escalation-only senior routes.
+- Added drift/calibration suppression for active adaptation.
+- Added canonical approval registry for future active route changes; default registry is empty.
+- Added structured adaptive-routing recommendation telemetry.
+- Added deterministic route comparison, shadow analysis, and privacy-preserving aggregate export.
+- Added 12 adaptive-routing scenarios and runtime QA coverage.
+- Preserved the non-causal interpretation of observational route history.
+- Added safe rebased-release branch compatibility after concurrent repository changes.
+
 ## 1.4.0 - 2026-09-21
 
 Usage Intelligence release candidate.
