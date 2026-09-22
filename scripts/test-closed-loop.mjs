@@ -102,7 +102,10 @@ check("C11 critical plan-only",critical.control_action==="plan_only"&&critical.e
 const large=jsonRun(loop,["preflight","--task-id","loop_large","--task-kind","mixed","--complexity","LARGE","--risk","LOW","--profile","balanced","--json"]);
 check("C12 large plan-only",large.control_action==="plan_only"&&large.execution_route==="architect_review",JSON.stringify(large));
 
-const noHist=jsonRun(loop,["preflight","--task-id","loop_review","--task-kind","review","--complexity","SMALL","--risk","LOW","--profile","balanced","--json"]);
+const emptyEnv={...process.env,ORCHESTRATOR_DATA_DIR:path.join(tmp,"empty-telemetry")};
+const noHistRun=spawnSync(process.execPath,[loop,"preflight","--task-id","loop_review","--task-kind","review","--complexity","SMALL","--risk","LOW","--profile","balanced","--json"],{cwd:ROOT,env:emptyEnv,encoding:"utf8"});
+check("exit isolated no-history preflight",noHistRun.status===0,"status="+noHistRun.status+" stderr="+noHistRun.stderr.trim());
+const noHist=JSON.parse(noHistRun.stdout);
 check("C13 no-history no fabricated usage",noHist.usage.status==="insufficient_data"&&noHist.usage.estimate===null&&noHist.control_action==="execute_with_proxy_guards",JSON.stringify(noHist.usage));
 
 const bad=run(loop,["preflight","--task-kind","implementation","--complexity","SMALL","--risk","LOW","--profile","balanced","--goal","secret prompt"],2);
