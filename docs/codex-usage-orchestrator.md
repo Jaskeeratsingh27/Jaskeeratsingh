@@ -1,6 +1,6 @@
 # Usage-Efficient Codex Orchestrator
 
-Version: 1.5.0
+Version: 1.9.0
 
 GitHub is the canonical source for the orchestration policy.
 
@@ -11,14 +11,14 @@ Primary supervisor
 -> usage-intelligence budget gate
 -> adaptive-routing shadow evaluation
 -> privacy-preserving telemetry start
--> cheap read-only discovery where needed
--> one standard writer
+-> bounded delegation
+-> one shared-tree writer maximum
 -> independent review when risk requires it
--> senior escalation only with evidence
 -> targeted validation
 -> measured checkpoint when available
 -> telemetry finish
--> calibration/routing history for future tasks
+-> calibration/routing history
+-> readiness evaluation
 
 ## Usage profiles
 
@@ -39,8 +39,6 @@ The estimator uses measured tasks only, chooses the narrowest sufficiently popul
 
 ## Adaptive Routing
 
-v1.5 adds a second decision layer after the usage budget gate.
-
 ```bash
 node ~/.agents/skills/usage-efficient-orchestrator/scripts/adaptive-routing.mjs recommend \
   --task-kind implementation \
@@ -50,55 +48,102 @@ node ~/.agents/skills/usage-efficient-orchestrator/scripts/adaptive-routing.mjs 
   --json
 ```
 
-Default mode is `shadow`.
+Default mode remains `shadow`.
 
-The router:
-- selects the canonical baseline route;
-- compares known route templates inside the narrowest adequately sampled historical cohort;
-- requires minimum task and measured-burn samples;
-- requires success/validation quality floors;
-- requires both absolute and relative p90 burn improvement;
-- preserves HIGH-risk reviewer coverage;
-- preserves CRITICAL/LARGE plan-only behavior;
-- never proposes senior-specialist routes as cheaper initial routes;
-- suppresses active adaptation on drift/weak calibration;
-- requires explicit canonical approval before any active route replacement.
+A lower-burn historical route is only a candidate when it clears sample, quality, validation, risk, and p90-improvement floors.
 
-Example decisions:
-- `candidate_lower_burn`
-- `quality_floor`
-- `risk_floor`
-- `insufficient_data`
-- `drift_suppressed`
-- `manual_approval_required`
+The adaptive router never treats observational history as causal proof.
 
-Historical route evidence is observational. A lower historical burn does not prove causal superiority.
+## Final Hardening: v1.6-v1.9 Consolidated
 
-## Shadow analysis
+The final pre-v2 run hardens the full control plane rather than adding another optimization layer.
+
+It adds:
+
+- policy-invariant evaluation across 288 task-kind/complexity/risk/profile combinations;
+- exact budget-threshold sweeps around economy 3/5 and balanced/quality-critical 5/10 gates;
+- malformed-ledger and foreign-schema fault injection;
+- usage-reset/cycle-mismatch recovery checks;
+- v1.3-v1.5 telemetry compatibility tests;
+- immutable last-known-good rollback metadata;
+- disabled-by-default controlled-canary policy;
+- explicit separation of software readiness from active-adaptation evidence readiness.
+
+## Elevated-risk baseline protection
+
+The final route registry guarantees:
+
+- CRITICAL work -> reviewed plan-only route;
+- LARGE work -> reviewed plan-only route;
+- HIGH-risk implementation -> reviewer retained;
+- HIGH-risk discovery -> cheap reader + reviewer;
+- HIGH-risk architecture -> architect + reviewer, plan-only;
+- senior-specialist routes remain escalation-only.
+
+Efficiency cannot override these floors.
+
+## Fault tolerance
+
+Malformed telemetry is isolated rather than allowed to corrupt the whole ledger.
+
+Foreign telemetry schema versions are ignored with warnings.
+
+Reset or cycle-mismatch measurements stay unmeasured and never produce negative burn.
+
+Incomplete tasks and legacy tasks without task-kind metadata cannot authorize active route adaptation.
+
+## Compatibility
+
+Supported historical generations:
+
+- v1.3.x: usage telemetry readable; task kind defaults to unknown.
+- v1.4.x: usage intelligence telemetry readable; task kind defaults to unknown.
+- v1.5.x: adaptive metadata optional; fully readable.
+- v1.9.x: current hardening generation.
+
+Migration is non-destructive read compatibility. The system does not rewrite old telemetry to make it appear newer.
+
+## Readiness
 
 ```bash
-node ~/.agents/skills/usage-efficient-orchestrator/scripts/adaptive-routing.mjs shadow --days 56 --json
-node ~/.agents/skills/usage-efficient-orchestrator/scripts/adaptive-routing.mjs analyze --days 56 --json
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/readiness.mjs --json
 ```
 
-Shadow mode collects evidence without silently changing execution policy.
+Readiness has two independent states:
 
-## Observability
+1. **software/control-plane ready** — code, policies, privacy, compatibility, rollback, routing invariants, and QA are valid.
+2. **active-adaptation evidence ready** — enough real measured outcomes and approved controlled-canary evidence exist for route switching.
 
-Local ledger:
+A green CI result can establish the first state.
 
-`~/.codex/orchestrator/telemetry/events.jsonl`
+It cannot manufacture the second.
 
-New v1.5 metadata includes:
-- task_kind;
-- baseline route;
-- candidate route;
-- decision mode;
-- controlled routing decision;
-- evidence sample count;
-- estimated p90 savings.
+## Canary policy
 
-Prompts, source code, file contents, secrets, raw tool output, and full paths remain excluded.
+Canary routing remains disabled in v1.9.
+
+Future activation requires:
+
+- LOW risk only;
+- MICRO/SMALL scope only;
+- acceptable usage calibration;
+- no detected drift;
+- sufficient baseline/candidate measured samples;
+- sufficient validation evidence;
+- canonical route approval;
+- explicit user approval;
+- one active canary maximum;
+- immediate rollback on validation/security/failure/burn-regression signals.
+
+## Rollback
+
+The immutable last-known-good release for this candidate is approved v1.5.0:
+
+`001dce0b9cd30231bf334101bc792b862e0f4ce7`
+
+Rollback is never an automatic destructive `git reset --hard`.
+
+Concurrent main changes must be preserved.
 
 ## Reliability
 
@@ -109,7 +154,7 @@ node scripts/orchestrator-sync.mjs --dry-run
 node scripts/orchestrator-sync.mjs
 ```
 
-## Roadmap
+## Pre-v2 state
 
 - v1.0 foundation
 - v1.1 control plane
@@ -117,5 +162,7 @@ node scripts/orchestrator-sync.mjs
 - v1.3 observability
 - v1.4 usage intelligence
 - v1.5 adaptive routing
-- v1.6-v1.9 final hardening/evaluations
+- v1.9 final hardening/evaluation (consolidated v1.6-v1.9 track)
 - v2.0 closed-loop orchestrator
+
+v2.0 may operate as a software-ready closed loop in shadow/recommendation mode before active adaptation has enough operational evidence.
