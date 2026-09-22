@@ -3,7 +3,7 @@ name: usage-efficient-orchestrator
 description: Conserve Work/Codex weekly allowance by planning once, estimating burn from measured history, evaluating cheaper capability routes conservatively, preserving quality/risk floors, routing bounded work to the cheapest proven-capable roles, enforcing single-writer execution, proxy usage counters, failure-aware escalation, privacy-preserving telemetry, reliability gates, and user checkpoints before expensive continuation. Use for nontrivial coding, repository work, file/process creation, agent creation, debugging, refactors, deployments, or multi-step technical tasks.
 ---
 
-# Usage-Efficient Orchestrator v1.5.0
+# Usage-Efficient Orchestrator v1.9.0
 
 ## Mission
 
@@ -297,7 +297,45 @@ Match test breadth to risk and change breadth.
 
 Never rerun an unchanged passing suite for reassurance.
 
-## 15. Reliability control plane
+## 15. Final hardening and readiness
+
+Read:
+- `references/hardening-policy.md`;
+- `references/rollback-policy.md`;
+- `config/hardening.json`;
+- `config/compatibility.json`;
+- `config/canary-policy.json`;
+- `config/release-state.json`.
+
+Hardening requirements:
+- malformed telemetry must not poison the whole ledger;
+- foreign telemetry schemas are ignored and warned, never coerced;
+- reset/cycle mismatches stay unmeasured;
+- all task-kind × complexity × risk × profile baseline combinations must preserve safety invariants;
+- budget thresholds must hold at and around exact target/ceiling boundaries;
+- v1.3/v1.4/v1.5 telemetry remains non-destructively readable;
+- rollback targets an immutable last-known-good commit;
+- active adaptive routing remains disabled before v2 evidence gates are met.
+
+Readiness command:
+
+```bash
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/readiness.mjs --json
+```
+
+Interpret readiness in two layers:
+- software/control-plane readiness;
+- active-adaptation evidence readiness.
+
+Passing software QA must never be described as proof that active routing has enough real-world evidence.
+
+### Canary boundary
+
+The canary policy is disabled by default.
+
+Future canary activation requires explicit user approval, canonical route approval, acceptable calibration, no drift, LOW risk, bounded exposure, and immediate rollback triggers.
+
+## 16. Reliability control plane
 
 GitHub repository content is canonical. Global Codex copies are runtime mirrors.
 
@@ -340,7 +378,7 @@ node scripts/orchestrator-sync.mjs --dry-run
 node scripts/orchestrator-sync.mjs
 ```
 
-## 16. Stop-loss gates
+## 17. Stop-loss gates
 
 Stop and return control to the user when:
 - profile retry limit is reached;
@@ -354,7 +392,7 @@ Stop and return control to the user when:
 - CRITICAL risk would move from planning to execution;
 - QA/security/drift status is unsafe for requested promotion or sync.
 
-## 17. Version-control and release policy
+## 18. Version-control and release policy
 
 1. Inspect current Git state/history before edits.
 2. Preserve unrelated user changes.
@@ -368,25 +406,27 @@ Stop and return control to the user when:
 10. Do not merge an orchestrator release candidate until QA is green and the user approves.
 11. Concurrent main changes must be preserved by rebasing/reconciling before promotion.
 
-## 18. Validation accuracy
+## 19. Validation accuracy
 
-v1.5 can validate:
+v1.9 can validate:
 - exact burn arithmetic from measured checkpoints;
-- usage cohort selection;
-- adaptive route cohort selection;
-- route template matching;
-- quality/risk floor enforcement;
-- candidate p90 savings calculation;
+- usage and adaptive cohort selection;
+- route-template and baseline-route invariants across the full query matrix;
+- budget behavior at/around target and ceiling boundaries;
+- quality/risk floor dominance over efficiency;
 - deterministic shadow decisions;
-- drift suppression;
-- privacy boundaries;
-- CI behavior.
+- malformed/foreign telemetry recovery;
+- v1.3-v1.5 read compatibility;
+- immutable rollback metadata;
+- canary disablement and bounded future exposure;
+- privacy/security invariants;
+- software/control-plane readiness.
 
-v1.5 cannot prove that a candidate route will causally reduce future usage.
+v1.9 still cannot prove that a candidate route will causally reduce future usage.
 
-Synthetic fixtures validate control logic, not real-world causal effect.
+Synthetic/adversarial fixtures validate implementation and policy behavior, not real-world causal effect.
 
-Real confidence improves only after enough actual tasks have measured outcomes, and controlled exploration belongs to the final hardening/evaluation phase before v2.0.
+Real active-adaptation confidence requires enough actual measured outcomes and separately approved controlled canary evidence.
 
 ## Default bounded-phase response
 
@@ -418,3 +458,9 @@ Read supporting files only when needed:
 - `config/adaptive-routing.json`
 - `config/route-templates.json`
 - `config/adaptive-routing-approvals.json`
+- `references/hardening-policy.md`
+- `references/rollback-policy.md`
+- `config/hardening.json`
+- `config/compatibility.json`
+- `config/canary-policy.json`
+- `config/release-state.json`

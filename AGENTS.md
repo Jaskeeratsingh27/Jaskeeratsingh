@@ -1,6 +1,6 @@
 # Usage-Efficient Codex Policy
 
-Version: 1.5.0
+Version: 1.9.0
 
 For every nontrivial engineering, agent-building, process-building, repository, or file-generation task in this repository, apply the `usage-efficient-orchestrator` skill before substantial work.
 
@@ -40,6 +40,10 @@ For every nontrivial engineering, agent-building, process-building, repository, 
 27. Before orchestrator promotion or global sync, run `node scripts/orchestrator-qa.mjs`. A failed check blocks promotion.
 28. GitHub is canonical. Global Codex copies are runtime mirrors; detect drift before relying on them.
 29. Medium/large orchestrator revisions remain on a version branch until validation is green and the user explicitly approves promotion.
+30. **Final-hardening gate:** malformed telemetry, foreign schemas, historical-version mixtures, routing edge cases, and budget-threshold boundaries must fail closed rather than weakening budget/risk/quality controls.
+31. Active adaptive routing and canary execution remain disabled in the pre-v2 release. A future activation requires real operational evidence, canonical approval, explicit user approval, bounded exposure, and rollback triggers.
+32. Maintain an immutable last-known-good release commit and never perform destructive automatic repository rollback.
+33. Distinguish **software/control-plane readiness** from **active-adaptation evidence readiness**. Passing CI can make v2 shadow closed-loop software-ready; it cannot manufacture real-world evidence for autonomous route switching.
 
 Detailed control-plane rules live in:
 `.agents/skills/usage-efficient-orchestrator/SKILL.md`.

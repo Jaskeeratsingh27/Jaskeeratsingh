@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "enabled": false,
+  "purpose": "Controlled evidence collection for future active adaptive routing.",
+  "eligibility": {
+    "risk": [
+      "LOW"
+    ],
+    "complexity": [
+      "MICRO",
+      "SMALL"
+    ],
+    "task_kind": [
+      "implementation",
+      "discovery",
+      "review"
+    ],
+    "profiles": [
+      "economy",
+      "balanced"
+    ],
+    "require_canonical_approval": true,
+    "require_user_approval": true,
+    "require_usage_calibration": "acceptable",
+    "require_no_drift": true,
+    "minimum_baseline_measured_tasks": 10,
+    "minimum_candidate_measured_tasks": 10,
+    "minimum_validation_observations": 5,
+    "minimum_success_rate": 0.95,
+    "minimum_validation_pass_rate": 0.95,
+    "minimum_p90_savings_points": 0.5
+  },
+  "exposure": {
+    "maximum_active_tasks_per_window": 1,
+    "window_tasks": 10,
+    "simultaneous_canaries": 1
+  },
+  "rollback_triggers": {
+    "any_security_or_permission_failure": true,
+    "any_validation_failure": true,
+    "candidate_failure": true,
+    "candidate_burn_exceeds_baseline_p90": true,
+    "new_drift_detected": true,
+    "user_stop": true
+  }
+}

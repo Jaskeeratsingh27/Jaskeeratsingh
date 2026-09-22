@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.9.0 - 2026-09-21
+
+Final Hardening & Evaluation release candidate, consolidating the planned v1.6-v1.9 hardening track.
+
+- Added final hardening policy, compatibility policy, canary policy, and immutable last-known-good release state.
+- Added full baseline-routing property checks across 288 task-kind/complexity/risk/profile combinations.
+- Closed elevated-risk baseline gaps with reviewed plan-only routes for CRITICAL/LARGE work and reviewer-preserving HIGH-risk routes.
+- Added deterministic budget-governor boundary sweeps around economy 3/5 and balanced/quality-critical 5/10 thresholds.
+- Added malformed-ledger, foreign-schema, reset, cycle-mismatch, incomplete-task, and free-text fault injection.
+- Added non-destructive compatibility checks for v1.3, v1.4, and v1.5 telemetry generations.
+- Added readiness reporting that separates software/control-plane readiness from active-adaptation evidence readiness.
+- Added disabled-by-default canary criteria with bounded exposure and explicit rollback triggers.
+- Added immutable rollback metadata for approved v1.5.0.
+- Preserved shadow-only adaptive routing and an empty canonical approval registry.
+- Added final pre-v2 QA gates and CI coverage.
+
 ## 1.5.0 - 2026-09-21
 
 Adaptive Routing release candidate.

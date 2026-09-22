@@ -10,6 +10,11 @@ const checks=[
   "test-observability.mjs",
   "test-usage-intelligence.mjs",
   "test-adaptive-routing.mjs",
+  "test-policy-invariants.mjs",
+  "test-budget-governor.mjs",
+  "test-fault-injection.mjs",
+  "test-version-compatibility.mjs",
+  "test-readiness.mjs",
   "release-check-orchestrator.mjs"
 ];
 

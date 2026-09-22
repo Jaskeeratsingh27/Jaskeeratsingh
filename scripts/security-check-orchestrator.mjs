@@ -62,7 +62,7 @@ const m=config.match(/max_concurrent_threads_per_session\s*=\s*(\d+)/);
 if(m && Number(m[1])<=3) pass("max concurrency safety",m[1]); else fail("max concurrency safety",m?.[1]??"missing");
 
 const skill=fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/SKILL.md"),"utf8");
-for(const gate of ["Reliability control plane","Security gate","Drift gate","CI gate","Privacy-preserving observability","Usage intelligence gate","Adaptive routing gate"]){
+for(const gate of ["Reliability control plane","Security gate","Drift gate","CI gate","Privacy-preserving observability","Usage intelligence gate","Adaptive routing gate","Final hardening and readiness"]){
   (skill.includes(gate)?pass:fail)(`skill gate: ${gate}`);
 }
 
@@ -98,6 +98,34 @@ const seniorRoute=routes.routes?.senior_review;
 (seniorRoute?.initial_candidate===false && seniorRoute?.escalation_only===true ? pass : fail)("senior route escalation-only");
 const adaptiveScript=fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/scripts/adaptive-routing.mjs"),"utf8");
 (!adaptiveScript.includes("prompt_text") && !adaptiveScript.includes("source_code") && !adaptiveScript.includes("file_contents") ? pass : fail)("adaptive routing privacy boundary");
+
+const hardening=JSON.parse(fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/config/hardening.json"),"utf8"));
+const canary=JSON.parse(fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/config/canary-policy.json"),"utf8"));
+const releaseState=JSON.parse(fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/config/release-state.json"),"utf8"));
+const compatibility=JSON.parse(fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/config/compatibility.json"),"utf8"));
+
+const hardeningOk=hardening.invariants?.adaptive_default_mode==="shadow" &&
+  hardening.invariants?.single_writer_shared_tree===true &&
+  hardening.invariants?.high_risk_requires_reviewer===true &&
+  hardening.invariants?.critical_plan_only===true &&
+  hardening.invariants?.large_plan_only===true &&
+  hardening.readiness?.allow_v2_active_adaptation_without_operational_evidence===false;
+(hardeningOk?pass:fail)("hardening config");
+
+(canary.enabled===false ? pass : fail)("canary disabled by default");
+(canary.eligibility?.require_user_approval===true && canary.eligibility?.require_canonical_approval===true ? pass : fail)("canary approval gates");
+(canary.exposure?.maximum_active_tasks_per_window===1 && canary.exposure?.simultaneous_canaries===1 ? pass : fail)("canary exposure bounded");
+
+const releaseOk=/^[a-f0-9]{40}$/.test(releaseState.last_known_good?.commit||"") &&
+  releaseState.rollback?.automatic_destructive_git_reset===false &&
+  releaseState.rollback?.require_explicit_user_approval_for_repository_rollback===true;
+(releaseOk?pass:fail)("rollback release state");
+
+(compatibility.migration_policy==="non_destructive_read_compatibility" ? pass : fail)("non-destructive compatibility policy");
+(compatibility.incompatible_event_policy==="ignore_foreign_schema_and_warn" ? pass : fail)("foreign schema fail-closed policy");
+
+const readinessScript=fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/scripts/readiness.mjs"),"utf8");
+(!readinessScript.includes("prompt_text") && !readinessScript.includes("source_code") && !readinessScript.includes("file_contents") ? pass : fail)("readiness privacy boundary");
 
 const failed=results.filter(r=>!r.ok);
 for(const r of results) console.log(`${r.ok?"PASS":"FAIL"} | ${r.name}${r.detail?" | "+r.detail:""}`);
