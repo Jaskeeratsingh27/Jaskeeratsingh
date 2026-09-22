@@ -1,74 +1,114 @@
-# TokenTrack
+# TokenTrack v4
 
-GitHub is the canonical source of truth for this dashboard.
+GitHub is the canonical source of truth for TokenTrack.
 
-## Cloudflare runtime
+## Production architecture
 
-TokenTrack has been migrated from an always-running Railway Node server to a Cloudflare Worker with static assets.
+**Production runtime:** Railway  
+**Repository:** `Jaskeeratsingh27/Jaskeeratsingh`  
+**Project root:** `/tokentrack`  
+**Public domain:** `https://tokentrack-production.up.railway.app/`  
+**Persistent volume:** `/data`  
+**Health check:** `GET /health`
 
-- **Repository:** `Jaskeeratsingh27/Jaskeeratsingh`
-- **Cloudflare project root:** `tokentrack`
-- **Frontend:** `public/`
-- **Worker:** `worker.js`
-- **Configuration:** `wrangler.jsonc`
-- **Health:** `GET /health`
-- **Analytics:** `GET /api/analytics?days=30`
-- **Usage:** `GET /api/usage?days=30`
-- **CSV export:** `GET /api/export`
-- **Background monitor:** `GET /api/server-monitor`
+Railway runs `server.js` continuously with the OpenAI Admin API key stored only as a Railway secret.
 
-The old `server.js` remains as Railway/reference code. Cloudflare does not run it.
+The repository also contains `worker.js` and `wrangler.jsonc` from an experimental Cloudflare migration path. They are **not the current production runtime** and should not be treated as the source of live deployment behavior.
 
-## Required secret
+## What TokenTrack tracks
 
-In Cloudflare, add this under **Variables and Secrets** as a secret:
+TokenTrack has two explicitly separated sources:
+
+1. **ChatGPT subscription usage**
+   - OpenAI does not expose personal ChatGPT Plus usage through the organization Usage API.
+   - TokenTrack records user-entered checkpoints from the ChatGPT usage screen.
+   - Checkpoints are local by default.
+   - Optional cross-device sync encrypts checkpoint data in the browser with AES-GCM before storing ciphertext on the Railway volume.
+
+2. **OpenAI API organization usage**
+   - Uses the OpenAI organization Usage and Costs APIs.
+   - Tracks tokens, requests, caching, models, projects, API keys/users where available, service tier, batch mode, resources, cost, forecasts, anomalies and FinOps signals.
+
+These sources must not be interpreted as interchangeable.
+
+## Runtime services
+
+- `GET /api/analytics?days=30` — aggregated API analytics
+- `GET /api/usage?days=30` — compatibility usage endpoint
+- `GET /api/export` — CSV exports
+- `GET /api/server-monitor` — persistent background-monitor state
+- `PUT /api/server-monitor` — monitor rule changes; locked unless dashboard authentication is enabled
+- `GET|PUT|DELETE /api/chatgpt-sync` — encrypted checkpoint blob sync
+- background API monitor — every 5 minutes by default
+- PWA service worker — caches only the static app shell, never `/api/*` or `/health`
+
+## Required Railway secret
 
 ```
 OPENAI_ADMIN_KEY=sk-admin-...
 ```
 
-Do not commit the key to GitHub.
+Never commit the Admin key to GitHub or place it in frontend code.
 
-Optional variables:
+## Optional security setting
 
-```
-DASHBOARD_PASSWORD=<password>
-CACHE_TTL_MS=30000
-```
-
-## Optional persistent KV
-
-TokenTrack v4 previously stored encrypted checkpoint sync and background-monitor state on Railway's persistent filesystem.
-
-Cloudflare Workers do not provide that filesystem, so the Worker now supports one Cloudflare KV binding named:
+The production URL is public unless this Railway variable is configured:
 
 ```
-TOKENTRACK_KV
+DASHBOARD_PASSWORD=<a strong password>
 ```
 
-If you add that KV binding:
-- encrypted ChatGPT checkpoint sync is persistent
-- background monitor rules/events are persistent
+When configured, Basic Auth protects the dashboard and API routes. `/health` remains unauthenticated so Railway can perform health checks.
 
-Without the binding:
-- the OpenAI usage dashboard still works
-- the background monitor can run but its state is ephemeral
-- encrypted cross-device checkpoint sync returns a setup message instead of writing to disk
+When the password is not configured:
+- read-only dashboard/API telemetry remains reachable by anyone with the URL
+- encrypted ChatGPT sync still requires its independent sync authorization secret
+- server-side background-monitor configuration mutations are locked
 
-## Automatic monitoring
+## Persistence and recovery
 
-`wrangler.jsonc` configures a Cloudflare Cron Trigger every 5 minutes. This replaces Railway's always-running interval loop.
+Railway volume `/data` stores:
+- encrypted ChatGPT sync blobs under `/data/chatgpt-sync`
+- background API monitor state in `/data/api-monitor.json`
 
-## Cloudflare deployment
+The dashboard also provides:
+- encrypted device sync
+- ChatGPT checkpoint JSON export/import
+- full local recovery-kit export/import
 
-For Git deployment, use:
+The recovery kit deliberately excludes the OpenAI Admin key and encrypted-sync key.
+
+## Release QA
+
+Every production deployment should run:
 
 ```
-Root directory: tokentrack
+npm test
 ```
 
-The Worker serves the files in `public/` through Cloudflare's static-assets binding and executes API routes serverlessly.
+The QA gate validates:
+- browser JavaScript syntax
+- service-worker syntax
+- PWA manifest JSON
+- DOM references used by the frontend
+- required production files
+- obvious OpenAI secret leakage into public files
+- server hardening markers
 
-## Scope
+Railway is configured to run this test as a pre-deploy command.
 
-TokenTrack tracks **OpenAI API organization usage** exposed by OpenAI's Usage/Costs APIs. It does not expose private ChatGPT Plus internal token accounting.
+## Deployment settings
+
+- root directory: `/tokentrack`
+- start command: `npm start`
+- pre-deploy command: `npm test`
+- health check: `/health`
+- health timeout: 120 seconds
+- sleeping: disabled
+- restart policy: ALWAYS
+- watch path: `/tokentrack/**`
+- persistent volume: `/data`
+
+## Version
+
+TokenTrack v4.0.0 is the completed v4 release. New feature work should be planned as a separate v5 roadmap rather than continuing the v4 phase sequence.
