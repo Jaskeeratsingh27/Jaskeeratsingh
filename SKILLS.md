@@ -22,12 +22,22 @@ Use for GitHub connection, repository authorization, access verification, connec
 
 ### github-project-sync
 
-Use when starting, building, or approving a durable project, agent, application, dashboard, workflow, or reusable skill that needs verified GitHub-backed records and milestones.
+Use when starting, building, or approving a durable project, agent, application, dashboard, workflow, or reusable skill that needs verified GitHub-backed records and milestones. At meaningful closeout/release, it routes into `project-knowledge-handoff`.
 
 - Codex: `$github-project-sync`
 - Claude Code: `/github-project-sync`
 - Canonical source: `.agents/skills/github-project-sync/SKILL.md`
 - Claude project mirror: `.claude/skills/github-project-sync/SKILL.md`
+
+### project-knowledge-handoff
+
+Use to create and maintain a self-contained, version-controlled master reference guide for any durable project, skill, agent, application, workflow, or architecture. Trigger at meaningful completion, release, handoff, migration, or major milestone, and whenever the user asks for a knowledge base, NotebookLM source, future-chat handoff, onboarding guide, version history, or comprehensive project reference.
+
+- Codex: `$project-knowledge-handoff`
+- Claude Code: `/project-knowledge-handoff`
+- Normal ChatGPT: ask to `use project-knowledge-handoff`
+- Canonical source: `.agents/skills/project-knowledge-handoff/SKILL.md`
+- Claude project mirror: `.claude/skills/project-knowledge-handoff/SKILL.md`
 
 ### kaizen-orchestrator
 
@@ -125,3 +135,5 @@ This links the canonical `.agents/skills/` directories into both `~/.codex/skill
 ## ChatGPT note
 
 This repository gives native discovery/invocation to Codex and Claude Code when installed/configured accordingly. A normal ChatGPT conversation does not automatically scan arbitrary GitHub repositories as a personal skill directory. In normal ChatGPT, the GitHub-connected workflow can fetch a named skill from this repository when requested, but that is not the same as a natively installed ChatGPT Skill.
+
+For project closeout in normal ChatGPT, the stable explicit phrase is: **use project-knowledge-handoff**. When a GitHub-backed project is being closed through `github-project-sync`, the closeout workflow should also suggest or invoke the handoff skill when a durable reference package would be useful.

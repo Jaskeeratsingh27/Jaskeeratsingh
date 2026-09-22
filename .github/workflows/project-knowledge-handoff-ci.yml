@@ -1,0 +1,45 @@
+name: Project Knowledge Handoff CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'project-knowledge-handoff-v*'
+    paths:
+      - '.agents/skills/project-knowledge-handoff/**'
+      - '.claude/skills/project-knowledge-handoff/**'
+      - '.agents/skills/github-project-sync/SKILL.md'
+      - '.claude/skills/github-project-sync/SKILL.md'
+      - 'SKILLS.md'
+      - 'docs/hermes-agent-architecture/**'
+      - '.github/workflows/project-knowledge-handoff-ci.yml'
+  pull_request:
+    paths:
+      - '.agents/skills/project-knowledge-handoff/**'
+      - '.claude/skills/project-knowledge-handoff/**'
+      - '.agents/skills/github-project-sync/SKILL.md'
+      - '.claude/skills/github-project-sync/SKILL.md'
+      - 'SKILLS.md'
+      - 'docs/hermes-agent-architecture/**'
+      - '.github/workflows/project-knowledge-handoff-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate project knowledge handoff skill
+        run: python .agents/skills/project-knowledge-handoff/tests/validate_skill.py
+      - name: Validate Hermes master guide adoption
+        run: |
+          python .agents/skills/project-knowledge-handoff/scripts/validate_master_guide.py \
+            docs/hermes-agent-architecture/MASTER_GUIDE.md \
+            docs/hermes-agent-architecture/manifest.json
