@@ -1,229 +1,151 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="color-scheme" content="dark light">
-  <meta name="description" content="TokenTrack — live OpenAI API usage intelligence dashboard">
-  <title>TokenTrack · Usage Intelligence</title>
-  <link rel="stylesheet" href="/styles.css">
-  <script src="/app.js" defer></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>TokenTrack · AI FinOps & Observability</title>
+<link rel="stylesheet" href="/styles.css">
+<script src="/app.js" defer></script>
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">T</div>
-        <div><strong>TokenTrack</strong><span>Usage Intelligence</span></div>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">T</div><div><strong>TokenTrack</strong><span>AI FinOps & Observability</span></div></div>
+    <nav>
+      <button class="nav active" data-tab="overview">Overview</button>
+      <button class="nav" data-tab="finops">FinOps</button>
+      <button class="nav" data-tab="attribution">Attribution</button>
+      <button class="nav" data-tab="tools">Tools & Resources</button>
+      <button class="nav" data-tab="explorer">Explorer</button>
+      <button class="nav" data-tab="settings">Settings</button>
+    </nav>
+    <div class="sidefoot"><div><i id="sideDot" class="dot"></i><span id="sideStatus">Connecting</span></div><small id="version">TokenTrack</small></div>
+  </aside>
+
+  <main>
+    <header class="top">
+      <div><div class="eyebrow">OPENAI ORGANIZATION TELEMETRY</div><h1>Usage command center</h1><p>Live cost, token, cache, attribution, tools and anomaly intelligence.</p></div>
+      <div class="actions">
+        <select id="days" class="control"><option value="1">24h</option><option value="7">7d</option><option value="30" selected>30d</option><option value="90">90d</option><option value="180">180d</option></select>
+        <button id="refresh" class="button primary">Refresh</button>
+      </div>
+    </header>
+
+    <div id="errorBanner" class="banner danger hidden"></div>
+    <div id="warningBanner" class="banner warning hidden"></div>
+
+    <section id="overview" class="page active">
+      <div class="livebar panel">
+        <div class="livecopy"><i id="liveDot" class="pulse"></i><div><strong id="liveState">Connecting…</strong><small id="freshness">Loading telemetry</small></div></div>
+        <div class="livefacts">
+          <span>Refresh <b id="countdown">—</b></span>
+          <span>Requests <b id="requests">—</b></span>
+          <span>Updated <b id="updated">—</b></span>
+        </div>
       </div>
 
-      <nav class="nav" aria-label="Dashboard sections">
-        <button class="nav-item active" data-tab="overview"><span>◫</span> Overview</button>
-        <button class="nav-item" data-tab="models"><span>◇</span> Models</button>
-        <button class="nav-item" data-tab="projects"><span>▦</span> Projects & Cost</button>
-        <button class="nav-item" data-tab="activity"><span>⌁</span> Activity</button>
-        <button class="nav-item" data-tab="settings"><span>⚙</span> Settings</button>
-      </nav>
-
-      <div class="sidebar-foot">
-        <div class="service-pill"><span id="serviceDot" class="status-dot"></span><span id="serviceText">Connecting</span></div>
-        <small id="versionLabel">TokenTrack</small>
+      <div class="kpis">
+        <article class="card"><span>Total tokens</span><strong id="totalTokens">—</strong><small id="tokenDelta">—</small></article>
+        <article class="card"><span>Actual cost</span><strong id="totalCost">—</strong><small id="costDelta">—</small></article>
+        <article class="card"><span>Cache efficiency</span><strong id="cacheRate">—</strong><small id="cacheDetail">—</small></article>
+        <article class="card"><span>Avg tokens/request</span><strong id="avgTokens">—</strong><small id="avgDetail">—</small></article>
+        <article class="card"><span>Cost / request</span><strong id="costPerRequest">—</strong><small id="costPerM">— / 1M tokens</small></article>
+        <article class="card"><span>30-day forecast</span><strong id="forecastCost">—</strong><small id="forecastTokens">— tokens</small></article>
+        <article class="card"><span>P95 daily tokens</span><strong id="p95">—</strong><small id="peak">—</small></article>
+        <article class="card"><span>Anomalies</span><strong id="anomalyKpi">—</strong><small>statistical usage spikes</small></article>
       </div>
-    </aside>
 
-    <main class="main">
-      <header class="topbar">
-        <div>
-          <div class="eyebrow">OPENAI API TELEMETRY</div>
-          <h1>Usage command center</h1>
-          <p class="subtle">Live token, cost, efficiency, trend, and anomaly intelligence.</p>
-        </div>
-        <div class="top-actions">
-          <select id="daysSelect" class="control" aria-label="Date range">
-            <option value="1">24 hours</option>
-            <option value="7">7 days</option>
-            <option value="30" selected>30 days</option>
-            <option value="90">90 days</option>
-            <option value="180">180 days</option>
-          </select>
-          <button id="refreshButton" class="button primary">Refresh now</button>
-        </div>
-      </header>
-
-      <div id="setupBanner" class="banner danger hidden">
-        <strong>Live source not connected.</strong>
-        <span id="setupMessage">Add OPENAI_ADMIN_KEY to Railway to enable live organization telemetry.</span>
+      <div class="charts">
+        <article class="panel chart"><div class="head"><div><h2>Token velocity</h2><p>Input and output consumption over time.</p></div><div class="legend"><span><i class="in"></i>Input</span><span><i class="out"></i>Output</span></div></div><canvas id="tokenChart"></canvas></article>
+        <article class="panel chart"><div class="head"><div><h2>Spend velocity</h2><p>Actual organization cost.</p></div></div><canvas id="costChart"></canvas></article>
       </div>
-      <div id="staleBanner" class="banner warning hidden"></div>
-      <div id="warningBanner" class="banner warning hidden"></div>
 
-      <section id="tab-overview" class="tab-panel active">
-        <div class="live-strip panel">
-          <div class="live-state">
-            <span id="liveDot" class="pulse-dot"></span>
-            <div><strong id="liveLabel">Connecting…</strong><small id="freshnessLabel">Waiting for telemetry</small></div>
-          </div>
-          <div class="live-facts">
-            <div><span>Auto refresh</span><strong id="refreshCountdown">—</strong></div>
-            <div><span>API requests</span><strong id="requestCount">—</strong></div>
-            <div><span>Last update</span><strong id="updatedAt">—</strong></div>
-          </div>
-        </div>
+      <div class="grid2">
+        <article class="panel padded"><div class="head"><div><h2>Operational insights</h2><p>Rule-based findings from current telemetry.</p></div></div><div id="insights" class="list empty">Waiting for data…</div></article>
+        <article class="panel padded"><div class="head"><div><h2>Anomaly radar</h2><p>Unusual usage against recent baseline.</p></div><span id="anomalyBadge" class="badge">0</span></div><div id="anomalies" class="list empty">Waiting for data…</div></article>
+      </div>
 
-        <div class="kpi-grid">
-          <article class="kpi"><span>Total tokens</span><strong id="kpiTokens">—</strong><small id="deltaTokens">—</small></article>
-          <article class="kpi"><span>Actual cost</span><strong id="kpiCost">—</strong><small id="deltaCost">—</small></article>
-          <article class="kpi"><span>Requests</span><strong id="kpiRequests">—</strong><small id="deltaRequests">—</small></article>
-          <article class="kpi"><span>Cache efficiency</span><strong id="kpiCache">—</strong><small id="cacheTokens">— cached</small></article>
-          <article class="kpi"><span>Avg tokens / request</span><strong id="kpiAvgRequest">—</strong><small id="avgRequestDetail">—</small></article>
-          <article class="kpi"><span>Cost / 1M tokens</span><strong id="kpiCostPerM">—</strong><small>Blended actual spend</small></article>
-          <article class="kpi"><span>30-day run rate</span><strong id="kpiRunRate">—</strong><small id="runRateTokens">— tokens</small></article>
-          <article class="kpi"><span>P95 daily usage</span><strong id="kpiP95">—</strong><small id="peakDay">—</small></article>
-        </div>
+      <div class="grid2">
+        <article class="panel padded"><div class="head"><div><h2>Biggest model movers</h2><p>Absolute token change versus prior period.</p></div></div><div id="modelMovers" class="rank"></div></article>
+        <article class="panel padded"><div class="head"><div><h2>Biggest project movers</h2><p>Where token consumption changed most.</p></div></div><div id="projectMovers" class="rank"></div></article>
+      </div>
+    </section>
 
-        <div id="budgetPanel" class="panel budget-panel hidden">
-          <div>
-            <div class="section-title">Monthly budget run-rate</div>
-            <div class="subtle">Projected 30-day API spend compared with your local budget target.</div>
-          </div>
-          <div class="budget-meter">
-            <div class="budget-copy"><strong id="budgetProjection">—</strong><span id="budgetTarget">—</span></div>
-            <div class="progress"><i id="budgetBar"></i></div>
-          </div>
-        </div>
+    <section id="finops" class="page">
+      <div class="sectiontitle"><div><h2>FinOps control plane</h2><p>Actual spend, forecast, OpenAI limits and alert thresholds.</p></div></div>
+      <div class="kpis finops-kpis">
+        <article class="card"><span>Selected-period spend</span><strong id="finSpend">—</strong><small id="finSpendDelta">—</small></article>
+        <article class="card"><span>Projected 30-day spend</span><strong id="finForecast">—</strong><small>run-rate projection</small></article>
+        <article class="card"><span>OpenAI hard limit</span><strong id="hardLimit">—</strong><small id="hardLimitState">—</small></article>
+        <article class="card"><span>Forecast / hard limit</span><strong id="limitUtil">—</strong><small id="limitHeadroom">—</small></article>
+      </div>
+      <article id="limitPanel" class="panel padded">
+        <div class="head"><div><h2>Spend guardrail</h2><p>Projected 30-day cost compared with OpenAI’s organization hard spend limit.</p></div></div>
+        <div class="meter"><div class="metacopy"><span id="meterForecast">—</span><b id="meterLimit">—</b></div><div class="progress xl"><i id="limitBar"></i></div></div>
+      </article>
+      <div class="grid2">
+        <article class="panel padded"><div class="head"><div><h2>Configured OpenAI spend alerts</h2><p>Native organization alert thresholds.</p></div></div><div id="spendAlerts" class="rank"></div></article>
+        <article class="panel padded"><div class="head"><div><h2>Cost line items</h2><p>Billing categories returned by OpenAI.</p></div></div><div id="costLines" class="rank"></div></article>
+      </div>
+      <article class="panel tablepanel"><div class="head padded-head"><div><h2>Cost by project</h2><p>Actual spend attribution.</p></div><button class="button export" data-export="projects">Export CSV</button></div>
+        <div class="scroll"><table><thead><tr><th>Project</th><th>Tokens</th><th>Requests</th><th>Cost</th><th>Cost/request</th><th>Cache</th></tr></thead><tbody id="projectCostTable"></tbody></table></div>
+      </article>
+      <article class="panel tablepanel"><div class="head padded-head"><div><h2>Cost by API key</h2><p>Key-level usage and spend attribution.</p></div></div>
+        <div class="scroll"><table><thead><tr><th>API key ID</th><th>Tokens</th><th>Requests</th><th>Cost</th><th>Share</th><th>Cache</th></tr></thead><tbody id="apiKeyCostTable"></tbody></table></div>
+      </article>
+    </section>
 
-        <div class="chart-grid">
-          <article class="panel chart-panel">
-            <div class="panel-head">
-              <div><h2>Token velocity</h2><p>Input, output and total usage by day.</p></div>
-              <div class="legend"><span><i class="legend-input"></i>Input</span><span><i class="legend-output"></i>Output</span></div>
-            </div>
-            <canvas id="tokenChart" height="300"></canvas>
-          </article>
-          <article class="panel chart-panel">
-            <div class="panel-head">
-              <div><h2>Cost velocity</h2><p>Actual organization cost by day.</p></div>
-            </div>
-            <canvas id="costChart" height="300"></canvas>
-          </article>
-        </div>
+    <section id="attribution" class="page">
+      <div class="sectiontitle"><div><h2>Usage attribution</h2><p>Find the model, project, key, user, service tier or execution mode driving usage.</p></div></div>
+      <div class="tabchips"><button class="chip active" data-attr="models">Models</button><button class="chip" data-attr="projects">Projects</button><button class="chip" data-attr="api_keys">API Keys</button><button class="chip" data-attr="users">Users</button><button class="chip" data-attr="service_tiers">Service tiers</button><button class="chip" data-attr="batch_modes">Batch mode</button></div>
+      <article class="panel tablepanel">
+        <div class="head padded-head"><div><h2 id="attrTitle">Models</h2><p id="attrSubtitle">Token and request distribution.</p></div><button class="button export" data-export="models">Export model CSV</button></div>
+        <div class="scroll"><table><thead><tr><th>Name / ID</th><th>Total</th><th>Share</th><th>Input</th><th>Output</th><th>Cached</th><th>Cache %</th><th>Requests</th><th>Avg/request</th><th>Cost*</th></tr></thead><tbody id="attrTable"></tbody></table></div>
+        <div class="footnote">* Cost is directly attributable only where OpenAI’s Costs API returns the same dimension (project/API key). Model/user/service-tier rows show token telemetry without inferred billing.</div>
+      </article>
+    </section>
 
-        <div class="two-col">
-          <article class="panel">
-            <div class="panel-head"><div><h2>AI insights</h2><p>Deterministic signals generated from your telemetry.</p></div></div>
-            <div id="insightList" class="insight-list empty-state">Waiting for data…</div>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><h2>Anomaly radar</h2><p>Statistically unusual daily token spikes.</p></div><span id="anomalyCount" class="badge">0</span></div>
-            <div id="anomalyList" class="anomaly-list empty-state">No anomalies loaded.</div>
-          </article>
-        </div>
+    <section id="tools" class="page">
+      <div class="sectiontitle"><div><h2>Tools & resource telemetry</h2><p>Images, audio, vector stores, Code Interpreter, file search and web search.</p></div></div>
+      <div id="resourceCards" class="resourcegrid"></div>
+      <article class="panel tablepanel"><div class="scroll"><table><thead><tr><th>Resource</th><th>Requests/calls</th><th>Images</th><th>Characters</th><th>Seconds</th><th>Storage</th><th>Sessions</th></tr></thead><tbody id="resourceTable"></tbody></table></div></article>
+      <article class="panel padded"><div class="head"><div><h2>Token-bearing API sources</h2><p>Completions, embeddings and moderation workload distribution.</p></div></div><div id="sourceCards" class="resourcegrid"></div></article>
+    </section>
 
-        <div class="three-col">
-          <article class="panel mini-stat"><span>Input tokens</span><strong id="inputTokens">—</strong><small id="inputShare">— of total</small></article>
-          <article class="panel mini-stat"><span>Output tokens</span><strong id="outputTokens">—</strong><small id="outputRatio">— output/input</small></article>
-          <article class="panel mini-stat"><span>Daily average</span><strong id="dailyAverage">—</strong><small id="volatility">— volatility</small></article>
-        </div>
-      </section>
+    <section id="explorer" class="page">
+      <div class="sectiontitle"><div><h2>Telemetry explorer</h2><p>Filter the raw aggregated Usage API rows without changing the executive KPIs.</p></div></div>
+      <div class="panel filterbar">
+        <select id="filterModel" class="control"><option value="">All models</option></select>
+        <select id="filterProject" class="control"><option value="">All projects</option></select>
+        <select id="filterKey" class="control"><option value="">All API keys</option></select>
+        <select id="filterUser" class="control"><option value="">All users</option></select>
+        <select id="filterTier" class="control"><option value="">All tiers</option></select>
+        <select id="filterMode" class="control"><option value="">All modes</option></select>
+        <input id="filterSearch" class="control" placeholder="Search IDs / model…">
+        <button id="clearFilters" class="button">Clear</button>
+      </div>
+      <div class="explorer-summary">
+        <div><span>Filtered rows</span><strong id="filteredRows">—</strong></div>
+        <div><span>Filtered tokens</span><strong id="filteredTokens">—</strong></div>
+        <div><span>Filtered requests</span><strong id="filteredRequests">—</strong></div>
+        <div><span>Filtered cache rate</span><strong id="filteredCache">—</strong></div>
+      </div>
+      <article class="panel tablepanel"><div class="scroll"><table><thead><tr><th>Date</th><th>Source</th><th>Model</th><th>Project</th><th>API key</th><th>User</th><th>Tier</th><th>Mode</th><th>Input</th><th>Output</th><th>Cached</th><th>Requests</th></tr></thead><tbody id="explorerTable"></tbody></table></div></article>
+    </section>
 
-      <section id="tab-models" class="tab-panel">
-        <div class="section-header"><div><h2>Model intelligence</h2><p>Where token volume and cache behavior are concentrated.</p></div></div>
-        <div class="panel table-panel"><div class="table-scroll"><table>
-          <thead><tr><th>Model</th><th>Total</th><th>Share</th><th>Input</th><th>Output</th><th>Cached</th><th>Cache %</th><th>Requests</th><th>Avg / req</th></tr></thead>
-          <tbody id="modelsTable"></tbody>
-        </table></div></div>
-        <div class="panel">
-          <div class="panel-head"><div><h2>API token sources</h2><p>Token-bearing usage by API workload.</p></div></div>
-          <div id="sourceCards" class="source-grid"></div>
-        </div>
-      </section>
-
-      <section id="tab-projects" class="tab-panel">
-        <div class="section-header"><div><h2>Projects & spend</h2><p>Actual cost is sourced from the organization Costs API.</p></div></div>
-        <div class="panel table-panel"><div class="table-scroll"><table>
-          <thead><tr><th>Project</th><th>Total tokens</th><th>Share</th><th>Requests</th><th>Actual cost</th><th>Cost / req</th><th>Cache %</th></tr></thead>
-          <tbody id="projectsTable"></tbody>
-        </table></div></div>
-        <div class="two-col">
-          <article class="panel">
-            <div class="panel-head"><div><h2>Cost line items</h2><p>Billing categories returned by OpenAI.</p></div></div>
-            <div id="costLineItems" class="rank-list"></div>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><h2>Period comparison</h2><p>Selected period versus the immediately preceding period.</p></div></div>
-            <div id="comparisonGrid" class="comparison-grid"></div>
-          </article>
-        </div>
-      </section>
-
-      <section id="tab-activity" class="tab-panel">
-        <div class="section-header">
-          <div><h2>Activity & resources</h2><p>Daily telemetry plus non-token API resources.</p></div>
-          <div class="button-row">
-            <button class="button export-button" data-export="daily">Export daily CSV</button>
-          </div>
-        </div>
-        <div class="panel table-panel"><div class="table-scroll"><table>
-          <thead><tr><th>Date</th><th>Total</th><th>Input</th><th>Output</th><th>Cached</th><th>Requests</th><th>Actual cost</th></tr></thead>
-          <tbody id="dailyTable"></tbody>
-        </table></div></div>
-        <div class="panel">
-          <div class="panel-head"><div><h2>Other API resource usage</h2><p>Images, audio, vector storage and Code Interpreter activity when present.</p></div></div>
-          <div class="table-scroll"><table>
-            <thead><tr><th>Resource</th><th>Requests</th><th>Images</th><th>Characters</th><th>Seconds</th><th>Vector storage</th><th>Sessions</th></tr></thead>
-            <tbody id="resourceTable"></tbody>
-          </table></div>
-        </div>
-      </section>
-
-      <section id="tab-settings" class="tab-panel">
-        <div class="section-header"><div><h2>Operations settings</h2><p>Browser preferences stay local; secrets remain server-side.</p></div></div>
-        <div class="settings-grid">
-          <article class="panel setting-card">
-            <h3>Live refresh</h3>
-            <label>Interval
-              <select id="refreshInterval" class="control">
-                <option value="30">30 seconds</option>
-                <option value="60" selected>60 seconds</option>
-                <option value="300">5 minutes</option>
-                <option value="900">15 minutes</option>
-              </select>
-            </label>
-            <label class="toggle-row"><span>Auto refresh</span><input id="autoRefresh" type="checkbox" checked></label>
-          </article>
-          <article class="panel setting-card">
-            <h3>Budget intelligence</h3>
-            <label>Monthly target (USD)
-              <input id="budgetInput" class="control" type="number" min="0" step="1" placeholder="e.g. 50">
-            </label>
-            <p class="subtle">Stored only in this browser. It is never sent to GitHub or OpenAI.</p>
-          </article>
-          <article class="panel setting-card">
-            <h3>Appearance</h3>
-            <label>Theme
-              <select id="themeSelect" class="control">
-                <option value="dark">Dark</option>
-                <option value="light">Light</option>
-              </select>
-            </label>
-          </article>
-          <article class="panel setting-card">
-            <h3>Exports</h3>
-            <div class="button-stack">
-              <button class="button export-button" data-export="daily">Daily CSV</button>
-              <button class="button export-button" data-export="models">Models CSV</button>
-              <button class="button export-button" data-export="projects">Projects CSV</button>
-            </div>
-          </article>
-        </div>
-        <article class="panel diagnostics">
-          <div class="panel-head"><div><h2>System diagnostics</h2><p>Deployment and data-source health.</p></div></div>
-          <div id="diagnosticsGrid" class="diagnostics-grid"></div>
-        </article>
-      </section>
-    </main>
-  </div>
-
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <section id="settings" class="page">
+      <div class="sectiontitle"><div><h2>Dashboard settings</h2><p>Local display preferences; secrets remain server-side.</p></div></div>
+      <div class="settingsgrid">
+        <article class="panel setting"><h3>Live refresh</h3><label>Interval<select id="refreshInterval" class="control"><option value="30">30 seconds</option><option value="60">60 seconds</option><option value="300">5 minutes</option><option value="900">15 minutes</option></select></label><label class="switch">Auto refresh <input id="autoRefresh" type="checkbox"></label></article>
+        <article class="panel setting"><h3>Local budget overlay</h3><label>Monthly target (USD)<input id="localBudget" class="control" type="number" min="0" step="1" placeholder="Optional"></label><p>This is separate from OpenAI’s native hard limit and remains only in this browser.</p></article>
+        <article class="panel setting"><h3>Theme</h3><label>Appearance<select id="theme" class="control"><option value="dark">Dark</option><option value="light">Light</option></select></label></article>
+        <article class="panel setting"><h3>Exports</h3><div class="stack"><button class="button export" data-export="daily">Daily CSV</button><button class="button export" data-export="models">Models CSV</button><button class="button export" data-export="projects">Projects CSV</button></div></article>
+      </div>
+      <article class="panel padded"><div class="head"><div><h2>System diagnostics</h2><p>Service, data freshness and source coverage.</p></div></div><div id="diagnostics" class="diaggrid"></div></article>
+    </section>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
 </body>
 </html>
