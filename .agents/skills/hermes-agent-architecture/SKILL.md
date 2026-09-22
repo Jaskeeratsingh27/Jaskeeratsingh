@@ -1,7 +1,7 @@
 ---
 name: hermes-agent-architecture
 description: Design production Hermes agents and multi-agent systems
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [hermes, agents, multi-agent, architecture, orchestration]
@@ -20,6 +20,7 @@ Load this skill whenever the task involves Hermes Agent architecture, profile/Bo
 - Stable release verified during research: Hermes Agent v0.21.3 (`v2026.9.14`).
 - Hermes documentation can describe behavior ahead of the latest stable tag. Treat docs/current-main behavior and pinned-release behavior as separate claims.
 - For production work, pin a Hermes release/commit and validate generated config against that target.
+- Before making version-sensitive claims, consult `compatibility/hermes-compatibility.json`; if a capability is marked `needs_revalidation`, verify it against primary sources before relying on it.
 
 ## Operating Procedure
 
@@ -44,6 +45,14 @@ Load this skill whenever the task involves Hermes Agent architecture, profile/Bo
 10. Design failure behavior explicitly: retries, timeouts, blocked state, human escalation, idempotency, partial results, provider fallback, and verification evidence.
 11. Build observability around Hermes correlation IDs so sessions, turns, API requests, tools, and child agents can be stitched into one trace.
 12. Before finalizing production architecture, consult `references/11-production-checklist.md`.
+
+## Compatibility and Control Layer
+
+- `compatibility/hermes-compatibility.json` records the skill version, pinned stable Hermes baseline, verified capability status, source IDs, and revalidation flags.
+- `compatibility/primitive-routing.json` is the machine-readable canonical decision table for choosing core Hermes primitives.
+- `tests/architecture-cases.json` contains regression fixtures that protect those routing decisions.
+- Run both `python tests/validate_skill.py` and `python tests/test_architecture_regressions.py` before promoting a knowledge-base update.
+- Do not clear `needs_revalidation` entries until the affected capability has been checked against official primary sources for the intended Hermes version.
 
 ## Architecture Defaults
 
@@ -115,3 +124,5 @@ Use the templates under `templates/` rather than inventing incompatible handoff 
 ## Verification
 
 A Hermes architecture is ready to implement only when every agent has a persistent/ephemeral classification, every handoff has a contract, workflow state has an authoritative owner, permissions are explicit, failure paths terminate safely, artifacts are durable, and the design names the pinned Hermes version it targets.
+
+For skill maintenance, promotion is allowed only when structural validation and architecture regression validation both pass and compatibility status is consistent with the pinned Hermes baseline.

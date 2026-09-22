@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0.0",
+  "rules": [
+    {
+      "id": "persistent-specialist",
+      "primitive": "profile",
+      "decision": "Use a Profile/Bot when the worker needs persistent identity, independent state, memory/history, model, tools, credentials, or recurring behavior.",
+      "reference": "references/01-profiles-bots.md"
+    },
+    {
+      "id": "short-isolated-worker",
+      "primitive": "delegate_task",
+      "decision": "Use delegate_task for short isolated fork/join work whose result returns to a parent and does not need durable independent workflow state.",
+      "reference": "references/02-delegation.md"
+    },
+    {
+      "id": "durable-workflow",
+      "primitive": "kanban",
+      "decision": "Use Kanban when work must survive restarts, cross persistent agent boundaries, model dependencies, wait for humans/review, or remain auditable.",
+      "reference": "references/03-kanban.md"
+    },
+    {
+      "id": "reusable-procedure",
+      "primitive": "skill",
+      "decision": "Use a Skill for reusable procedures, SOPs, domain knowledge, templates, and progressive-disclosure reference material.",
+      "reference": "references/04-skills-context-soul.md"
+    },
+    {
+      "id": "project-rules",
+      "primitive": "project_context",
+      "decision": "Use AGENTS.md/.hermes.md-style project context for repository architecture, conventions, commands, and project-scoped rules.",
+      "reference": "references/04-skills-context-soul.md"
+    },
+    {
+      "id": "persistent-identity",
+      "primitive": "soul",
+      "decision": "Use SOUL.md for the persistent Profile's identity, mission, role boundary, and operating philosophy.",
+      "reference": "references/04-skills-context-soul.md"
+    },
+    {
+      "id": "scheduled-trigger",
+      "primitive": "cron",
+      "decision": "Use Cron for scheduled/recurring execution; hand durable cross-agent lifecycle to Kanban or another workflow state machine.",
+      "reference": "references/08-cron-automation.md"
+    },
+    {
+      "id": "external-capability",
+      "primitive": "mcp",
+      "decision": "Use built-in tools or MCP for external capabilities, with per-role tool filtering and explicit credential boundaries.",
+      "reference": "references/06-tools-code-mcp.md"
+    },
+    {
+      "id": "deterministic-multitool",
+      "primitive": "execute_code",
+      "decision": "Use execute_code for deterministic multi-tool loops, filtering, branching, and aggregation when intermediate outputs should stay out of model context.",
+      "reference": "references/06-tools-code-mcp.md"
+    },
+    {
+      "id": "execution-isolation",
+      "primitive": "sandbox",
+      "decision": "Use an actual sandbox/container/backend and technical capability restrictions for execution isolation; a Profile is only a Hermes-state boundary.",
+      "reference": "references/09-security.md"
+    }
+  ]
+}
