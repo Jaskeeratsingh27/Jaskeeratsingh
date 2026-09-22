@@ -1,0 +1,25 @@
+name: Hermes Control Plane CI
+
+on:
+  push:
+    paths:
+      - ".agents/hermes-control-plane/**"
+      - ".github/workflows/hermes-control-plane-ci.yml"
+  pull_request:
+    paths:
+      - ".agents/hermes-control-plane/**"
+      - ".github/workflows/hermes-control-plane-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run control-plane contract tests
+        run: python .agents/hermes-control-plane/tests/test_contracts.py
