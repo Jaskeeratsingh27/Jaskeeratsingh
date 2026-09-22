@@ -13,8 +13,9 @@
   <aside class="sidebar">
     <div class="brand"><div class="logo">T</div><div><strong>TokenTrack</strong><span>AI FinOps & Observability</span></div></div>
     <nav>
-      <button class="nav active" data-tab="overview">Overview</button>
-      <button class="nav" data-tab="finops">FinOps</button>
+      <button class="nav active" data-tab="chatgpt">ChatGPT Usage</button>
+      <button class="nav" data-tab="overview">API Overview</button>
+      <button class="nav" data-tab="finops">API FinOps</button>
       <button class="nav" data-tab="attribution">Attribution</button>
       <button class="nav" data-tab="tools">Tools & Resources</button>
       <button class="nav" data-tab="explorer">Explorer</button>
@@ -26,7 +27,7 @@
   <main>
     <header class="top">
       <div><div class="eyebrow">OPENAI ORGANIZATION TELEMETRY</div><h1>Usage command center</h1><p>Live cost, token, cache, attribution, tools and anomaly intelligence.</p></div>
-      <div class="actions">
+      <div class="actions" id="apiControls">
         <select id="days" class="control"><option value="1">24h</option><option value="7">7d</option><option value="30" selected>30d</option><option value="90">90d</option><option value="180">180d</option></select>
         <button id="refresh" class="button primary">Refresh</button>
       </div>
@@ -35,7 +36,68 @@
     <div id="errorBanner" class="banner danger hidden"></div>
     <div id="warningBanner" class="banner warning hidden"></div>
 
-    <section id="overview" class="page active">
+    <section id="chatgpt" class="page active">
+      <div class="source-note panel">
+        <div>
+          <span class="source-badge chatgpt-source">CHATGPT SUBSCRIPTION</span>
+          <h2>ChatGPT usage tracker</h2>
+          <p>ChatGPT does not expose your personal Plus usage through the OpenAI API. This section therefore uses checkpoints you enter from the ChatGPT usage screen and keeps them locally in this browser.</p>
+        </div>
+        <div class="source-state"><strong>Manual source</strong><small>Separate from API telemetry</small></div>
+      </div>
+
+      <div class="kpis chat-kpis">
+        <article class="card"><span>Usage consumed</span><strong id="chatUsed">—</strong><small id="chatLastSeen">No checkpoint yet</small></article>
+        <article class="card"><span>Remaining</span><strong id="chatRemaining">—</strong><small>of current allowance</small></article>
+        <article class="card"><span>Observed burn rate</span><strong id="chatBurnRate">—</strong><small id="chatBurnDetail">Needs 2 checkpoints</small></article>
+        <article class="card"><span>Projected exhaustion</span><strong id="chatProjected">—</strong><small id="chatProjectionDetail">Based on recent observed pace</small></article>
+      </div>
+
+      <div class="grid2">
+        <article class="panel padded">
+          <div class="head"><div><h2>Add usage checkpoint</h2><p>Copy the percentage shown in ChatGPT Settings → Usage.</p></div></div>
+          <form id="chatCheckpointForm" class="checkpoint-form">
+            <label>Usage consumed (%)
+              <input id="chatUsagePercent" class="control" type="number" min="0" max="100" step="0.1" required placeholder="e.g. 42">
+            </label>
+            <label>Allowance resets at (optional)
+              <input id="chatResetAt" class="control" type="datetime-local">
+            </label>
+            <label class="wide">Note (optional)
+              <input id="chatNote" class="control" maxlength="120" placeholder="e.g. after agent debugging session">
+            </label>
+            <button class="button primary" type="submit">Save checkpoint</button>
+          </form>
+          <div class="checkpoint-help">Nothing here is sent to OpenAI or GitHub. Checkpoints are stored in this browser only during Phase 1.</div>
+        </article>
+
+        <article class="panel chart">
+          <div class="head"><div><h2>Observed usage curve</h2><p>Consumption percentage from your saved checkpoints.</p></div></div>
+          <canvas id="chatUsageChart"></canvas>
+        </article>
+      </div>
+
+      <article class="panel tablepanel">
+        <div class="head padded-head">
+          <div><h2>Checkpoint history</h2><p>Your locally recorded ChatGPT usage observations.</p></div>
+          <div class="button-row"><button id="chatExport" class="button" type="button">Export JSON</button><button id="chatClear" class="button" type="button">Clear history</button></div>
+        </div>
+        <div class="scroll"><table>
+          <thead><tr><th>Recorded</th><th>Used</th><th>Remaining</th><th>Change</th><th>Reset</th><th>Note</th><th></th></tr></thead>
+          <tbody id="chatHistory"></tbody>
+        </table></div>
+      </article>
+
+      <article class="panel padded chat-boundary">
+        <div class="head"><div><h2>What this source means</h2><p>Keeping subscription usage and API usage separate prevents misleading telemetry.</p></div></div>
+        <div class="boundary-grid">
+          <div><strong>ChatGPT</strong><span>Subscription allowance checkpoints entered from the ChatGPT app.</span></div>
+          <div><strong>OpenAI API</strong><span>Server-side token, request and cost telemetry from your Admin API key.</span></div>
+        </div>
+      </article>
+    </section>
+
+    <section id="overview" class="page">
       <div class="livebar panel">
         <div class="livecopy"><i id="liveDot" class="pulse"></i><div><strong id="liveState">Connecting…</strong><small id="freshness">Loading telemetry</small></div></div>
         <div class="livefacts">
