@@ -22,7 +22,7 @@ function event(base){
   seq++;
   return {
     schema_version:"1.0",
-    orchestrator_version:"1.4.0",
+    orchestrator_version:"1.5.0",
     event_id:`evt_${String(seq).padStart(6,"0")}`,
     project_id:"0123456789abcdef0123",
     ...base
