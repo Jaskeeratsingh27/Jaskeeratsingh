@@ -13,6 +13,19 @@ When installed in Hermes, invoke with:
 Research date: 2026-09-21.  
 Latest stable release verified: Hermes Agent v0.21.3 (`v2026.9.14`).
 
+## v1.5 consumer dependency drift layer
+
+v1.5 protects the v1.4 consumer registry from becoming stale:
+
+- `consumers/detection-rules.json` — high-confidence candidate and capability evidence rules.
+- `evidence_assertions` on each registered consumer — explicit proof anchors for declared dependencies.
+- `maintenance/consumer_drift.py` — detects new candidate consumers, undeclared capability use, and missing registered evidence.
+- `research/consumer-drift/` — append-only weekly dependency-drift history.
+- `tests/test_consumer_drift.py` — canonical zero-drift plus synthetic drift regressions.
+- `references/17-consumer-dependency-drift.md` — operating and review policy.
+
+The detector never auto-registers or auto-removes a consumer. It raises a review finding so registry changes remain evidence-backed.
+
 ## v1.4 consumer-impact layer
 
 v1.4 adds downstream dependency intelligence on top of the v1.3 health/drift layer:
@@ -76,6 +89,7 @@ python tests/test_architecture_regressions.py
 python tests/test_release_impact.py
 python tests/test_health_drift.py
 python tests/test_consumer_impact.py
+python tests/test_consumer_drift.py
 ```
 
 Routine audit and health snapshots are historical operating evidence and can be committed without bumping the semantic skill version. Semantic version changes are reserved for knowledge or control-logic changes.

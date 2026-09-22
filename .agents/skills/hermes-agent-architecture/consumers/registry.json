@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "registry_scope": "active canonical consumers only",
   "ignored_path_prefixes": [
     ".claude/",
@@ -33,6 +33,31 @@
         "security",
         "observability"
       ],
+      "evidence_assertions": [
+        {
+          "id": "canonical-architecture-dependency",
+          "path": ".agents/skills/hermes-agent-creator/SKILL.md",
+          "patterns": [
+            "hermes-agent-architecture"
+          ],
+          "capability_ids": [
+            "profiles",
+            "bot_mode",
+            "delegation",
+            "structured_output",
+            "kanban",
+            "skills_context_soul",
+            "memory",
+            "tools_mcp",
+            "execute_code",
+            "model_routing",
+            "cron",
+            "security",
+            "observability"
+          ],
+          "mode": "all_listed"
+        }
+      ],
       "rationale": "The skill explicitly delegates current Hermes runtime facts and primitive selection to hermes-agent-architecture and authors/reviews Hermes-specific agent designs."
     },
     {
@@ -50,9 +75,70 @@
         "profiles",
         "delegation",
         "tools_mcp",
-        "cron"
+        "cron",
+        "memory"
       ],
-      "rationale": "The Hermes setup section specifies separate agent instances, delegate_task handoffs, Hermes web tools, and Cron-based automation."
+      "evidence_assertions": [
+        {
+          "id": "profiles-evidence",
+          "path": ".agents/skills/kaizen-orchestrator/references/kaizen-orchestrator-master-guide.md",
+          "patterns": [
+            "separate agent instance",
+            "SETTING THIS UP ON HERMES"
+          ],
+          "capability_ids": [
+            "profiles"
+          ],
+          "mode": "any_pattern"
+        },
+        {
+          "id": "delegation-evidence",
+          "path": ".agents/skills/kaizen-orchestrator/references/kaizen-orchestrator-master-guide.md",
+          "patterns": [
+            "delegate_task"
+          ],
+          "capability_ids": [
+            "delegation"
+          ],
+          "mode": "any_pattern"
+        },
+        {
+          "id": "tools-evidence",
+          "path": ".agents/skills/kaizen-orchestrator/references/kaizen-orchestrator-master-guide.md",
+          "patterns": [
+            "web_search",
+            "web_extract"
+          ],
+          "capability_ids": [
+            "tools_mcp"
+          ],
+          "mode": "any_pattern"
+        },
+        {
+          "id": "cron-evidence",
+          "path": ".agents/skills/kaizen-orchestrator/references/kaizen-orchestrator-master-guide.md",
+          "patterns": [
+            "cron job",
+            "cron jobs"
+          ],
+          "capability_ids": [
+            "cron"
+          ],
+          "mode": "any_pattern"
+        },
+        {
+          "id": "memory-evidence",
+          "path": ".agents/skills/kaizen-orchestrator/references/kaizen-orchestrator-master-guide.md",
+          "patterns": [
+            "Hermes memory"
+          ],
+          "capability_ids": [
+            "memory"
+          ],
+          "mode": "any_pattern"
+        }
+      ],
+      "rationale": "The Hermes setup section specifies separate agent instances, delegate_task handoffs, Hermes web tools, optional Hermes memory handoffs, and Cron-based automation."
     }
   ]
 }

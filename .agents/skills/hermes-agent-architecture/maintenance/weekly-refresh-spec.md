@@ -4,7 +4,7 @@ Status: ACTIVE MAINTENANCE CONTRACT. The canonical skill has an external ChatGPT
 
 ## Objective
 
-Keep the Hermes Agent architecture knowledge base synchronized with official releases/documentation while preserving historical evidence of what was checked, how fresh each capability is, whether the knowledge base is drifting, and which active downstream consumers may be affected.
+Keep the Hermes Agent architecture knowledge base synchronized with official releases/documentation while preserving historical evidence of what was checked, how fresh each capability is, whether the knowledge base is drifting, which active downstream consumers may be affected, and whether the consumer dependency registry itself has drifted.
 
 ## Cadence
 
@@ -18,6 +18,8 @@ Use `maintenance/source-manifest.json` as the machine-readable source inventory 
 
 ```text
 prior health + freshness state
+        ↓
+consumer dependency drift scan
         ↓
 official-source audit
         ↓
@@ -41,6 +43,16 @@ health-history snapshot
         ↓
 reviewed promotion when required
 ```
+
+## Consumer dependency drift policy
+
+Run `maintenance/consumer_drift.py` on every weekly maintenance cycle, even when no Hermes source changed.
+
+Persist the result under `research/consumer-drift/YYYY-MM-DD.json` and update `research/consumer-drift/index.json`.
+
+Findings include candidate unregistered consumers, undeclared capabilities, missing evidence assertions, and declared capabilities without surviving evidence. Findings require review; they never auto-register or auto-remove production dependencies.
+
+A verified registry-only control-data correction does not require a semantic skill-version bump unless detection/control logic also changes.
 
 ## Consumer-impact policy
 
@@ -131,6 +143,7 @@ For material/ambiguous changes:
 - release-impact regression validation
 - health/drift regression validation
 - consumer-impact regression validation
+- consumer dependency drift regression validation
 
 ## Promotion policy
 
@@ -156,7 +169,8 @@ A weekly refresh is complete only if:
 - health/drift delta was reported;
 - compatibility and upgrade state reflect verified knowledge;
 - all four deterministic validation suites pass;
+- consumer dependency drift was scanned and recorded;
 - affected downstream consumers were identified from the explicit registry;
 - consumer review/migration work was reported without silent unrelated edits;
-- all five deterministic validation suites pass;
+- all six deterministic validation suites pass;
 - required GitHub review/promotion rules were followed.
