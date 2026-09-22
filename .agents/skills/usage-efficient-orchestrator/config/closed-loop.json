@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "mode": "shadow_closed_loop",
+  "phases": [
+    "plan",
+    "predict",
+    "route",
+    "delegate",
+    "execute",
+    "measure",
+    "evaluate",
+    "learn"
+  ],
+  "execution": {
+    "adaptive_candidate_can_replace_baseline": false,
+    "require_preflight_before_nontrivial_execution": true,
+    "live_usage_checkpoint_enforcement": "when_available",
+    "proxy_governor_required_without_live_meter": true,
+    "single_writer_shared_tree": true
+  },
+  "control_actions": [
+    "execute",
+    "execute_with_proxy_guards",
+    "approval_required",
+    "split_required",
+    "plan_only",
+    "stop_target",
+    "stop_ceiling",
+    "stop_proxy_limit"
+  ],
+  "learning": {
+    "measured_usage_only_for_burn_calibration": true,
+    "completed_and_failed_outcomes_for_quality_learning": true,
+    "unmeasured_tasks_never_count_as_zero": true,
+    "legacy_unknown_task_kind_cannot_activate_adaptation": true
+  },
+  "safety": {
+    "active_adaptive_routing": false,
+    "canary_routing": false,
+    "candidate_route_is_advisory": true,
+    "risk_floor_overrides_efficiency": true,
+    "budget_floor_overrides_efficiency": true,
+    "quality_floor_overrides_efficiency": true,
+    "no_automatic_destructive_rollback": true
+  }
+}
