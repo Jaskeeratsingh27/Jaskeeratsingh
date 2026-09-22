@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hermes Control Plane Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "job_id", "status", "controller_id", "started_at", "finished_at", "source", "hermes"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "job_id": {"type": "string"},
+    "status": {
+      "enum": ["completed", "failed", "cancelled", "interrupted", "timed_out", "blocked_approval", "controller_error"]
+    },
+    "controller_id": {"type": "string"},
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": "string", "format": "date-time"},
+    "source": {"type": "object"},
+    "metadata": {"type": "object"},
+    "hermes": {"type": "object"}
+  }
+}
