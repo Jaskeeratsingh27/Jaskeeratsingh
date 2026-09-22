@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "scan_roots": [".agents/skills"],
+  "file_extensions": [".md", ".json", ".yaml", ".yml", ".py"],
+  "candidate_markers": [
+    "Hermes Agent",
+    "Hermes runtime",
+    "SETTING THIS UP ON HERMES",
+    "delegate_task",
+    "HERMES_HOME",
+    "Hermes Kanban",
+    ".hermes.md"
+  ],
+  "capability_patterns": {
+    "profiles": ["Hermes Profile", "Hermes Profiles", "separate agent instance", "separate agents"],
+    "bot_mode": ["Bot Mode"],
+    "delegation": ["delegate_task"],
+    "structured_output": ["output_schema"],
+    "kanban": ["Hermes Kanban", "Kanban worker"],
+    "skills_context_soul": ["SOUL.md", ".hermes.md", "HERMES.md"],
+    "memory": ["Hermes memory", "MEMORY.md"],
+    "tools_mcp": ["web_search", "web_extract", "Hermes tool", "MCP"],
+    "execute_code": ["execute_code"],
+    "model_routing": ["provider routing", "model routing", "fallback provider"],
+    "cron": ["Hermes Cron", "cron job", "cron jobs"],
+    "security": ["Hermes sandbox", "Vercel Sandbox", "Daytona", "Modal sandbox"],
+    "observability": ["observer hooks", "Hermes hooks", "correlation IDs"]
+  },
+  "candidate_policy": {
+    "minimum_marker_matches": 1,
+    "minimum_capability_matches": 1,
+    "new_candidate_requires_review": true,
+    "never_auto_register": true,
+    "never_auto_remove": true
+  }
+}

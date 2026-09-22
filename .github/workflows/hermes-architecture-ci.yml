@@ -42,3 +42,5 @@ jobs:
         run: python .agents/skills/hermes-agent-architecture/tests/test_health_drift.py
       - name: Run Hermes consumer-impact regressions
         run: python .agents/skills/hermes-agent-architecture/tests/test_consumer_impact.py
+      - name: Run Hermes consumer dependency drift regressions
+        run: python .agents/skills/hermes-agent-architecture/tests/test_consumer_drift.py

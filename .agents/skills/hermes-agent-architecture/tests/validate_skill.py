@@ -56,6 +56,9 @@ def main() -> None:
             ROOT / "maintenance" / "consumer-registry.schema.json",
             ROOT / "consumers" / "registry.json",
             ROOT / "tests" / "consumer-impact-cases.json",
+            ROOT / "consumers" / "detection-rules.json",
+            ROOT / "maintenance" / "consumer-drift-snapshot.schema.json",
+            ROOT / "research" / "consumer-drift" / "index.json",
             ROOT / "research" / "audits" / "index.json",
             ROOT / "research" / "health" / "index.json",
         ]
@@ -193,6 +196,27 @@ def main() -> None:
     if not consumer_cases:
         fail("consumer-impact regression fixtures are missing")
 
+    detection_rules = parsed[ROOT / "consumers" / "detection-rules.json"]
+    pattern_capabilities = set(detection_rules.get("capability_patterns", {}))
+    if pattern_capabilities != capability_ids:
+        fail("consumer detection-rule capability IDs do not exactly match compatibility capabilities")
+
+    for consumer in consumers:
+        assertion_ids = [a.get("id") for a in consumer.get("evidence_assertions", [])]
+        if len(assertion_ids) != len(set(assertion_ids)):
+            fail(f"consumer {consumer.get('id')} has duplicate evidence assertion IDs")
+        declared = set(consumer.get("capability_ids", []))
+        evidenced = set()
+        for assertion in consumer.get("evidence_assertions", []):
+            if assertion.get("path") not in consumer.get("paths", []):
+                fail(f"consumer {consumer.get('id')} evidence path is not registered in consumer paths: {assertion.get('path')}")
+            unknown_assertion_caps = set(assertion.get("capability_ids", [])) - declared
+            if unknown_assertion_caps:
+                fail(f"consumer {consumer.get('id')} evidence assertion uses undeclared capabilities: {sorted(unknown_assertion_caps)}")
+            evidenced.update(assertion.get("capability_ids", []))
+        if evidenced != declared:
+            fail(f"consumer {consumer.get('id')} evidence assertions do not cover exactly its declared capabilities")
+
     audit_index = parsed[ROOT / "research" / "audits" / "index.json"]
     parse_date(audit_index.get("latest_audit_date", ""), "audit_index.latest_audit_date")
     latest_snapshot_rel = audit_index.get("latest_snapshot")
@@ -214,6 +238,23 @@ def main() -> None:
     if len(audit_paths) != len(set(audit_paths)):
         fail("audit history contains duplicate snapshot paths")
 
+    drift_index = parsed[ROOT / "research" / "consumer-drift" / "index.json"]
+    parse_date(drift_index.get("latest_scan_date", ""), "consumer_drift_index.latest_scan_date")
+    latest_drift_rel = drift_index.get("latest_snapshot")
+    if not latest_drift_rel or not (ROOT / latest_drift_rel).exists():
+        fail("consumer drift index latest_snapshot is missing")
+    latest_drift = load_json(ROOT / latest_drift_rel)
+    if latest_drift.get("scan_date") != drift_index.get("latest_scan_date"):
+        fail("consumer drift index latest_scan_date does not match latest snapshot")
+    drift_paths = []
+    for entry in drift_index.get("snapshots", []):
+        rel = entry.get("path")
+        if not rel or not (ROOT / rel).exists():
+            fail(f"consumer drift history points to missing snapshot: {rel}")
+        drift_paths.append(rel)
+    if len(drift_paths) != len(set(drift_paths)):
+        fail("consumer drift history contains duplicate snapshot paths")
+
     health_index = parsed[ROOT / "research" / "health" / "index.json"]
     parse_date(health_index.get("latest_health_date", ""), "health_index.latest_health_date")
     latest_health_rel = health_index.get("latest_report")
@@ -233,7 +274,7 @@ def main() -> None:
         fail("health history contains duplicate report paths")
 
     candidates = re.findall(
-        r"`((?:references|templates|maintenance|research|tests|compatibility)/[^`]+|VERSION|CHANGELOG\.md|README\.md)`",
+        r"`((?:references|templates|maintenance|research|tests|compatibility|consumers)/[^`]+|VERSION|CHANGELOG\.md|README\.md)`",
         text,
     )
     missing = [p for p in candidates if not (ROOT / p).exists()]
@@ -273,6 +314,12 @@ def main() -> None:
         "references/16-consumer-impact.md",
         "tests/consumer-impact-cases.json",
         "tests/test_consumer_impact.py",
+        "consumers/detection-rules.json",
+        "maintenance/consumer_drift.py",
+        "maintenance/consumer-drift-snapshot.schema.json",
+        "research/consumer-drift/index.json",
+        "references/17-consumer-dependency-drift.md",
+        "tests/test_consumer_drift.py",
     ]
     for rel in required:
         if not (ROOT / rel).exists():
@@ -286,6 +333,7 @@ def main() -> None:
     print(f"PASS: {len(health_paths)} historical health report(s)")
     print(f"PASS: {len(release_cases)} release-impact, {len(health_cases)} health/drift, and {len(consumer_cases)} consumer-impact fixtures structurally valid")
     print(f"PASS: {len(consumers)} active Hermes consumer(s) structurally valid")
+    print(f"PASS: {len(drift_paths)} consumer dependency drift snapshot(s)")
 
 
 if __name__ == "__main__":

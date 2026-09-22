@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.5.0 — 2026-09-21
+
+- Added evidence assertions to every active Hermes consumer in the canonical registry.
+- Added conservative capability/candidate detection rules for active canonical skills.
+- Added deterministic consumer dependency drift detection for candidate unregistered consumers, undeclared Hermes capability use, missing registered evidence, and declared capabilities without surviving evidence.
+- Added append-only consumer-drift history with a clean v1.5 baseline snapshot.
+- Baseline drift analysis found and corrected a missing `memory` dependency for the Hermes adaptation of `kaizen-orchestrator`.
+- Added synthetic and canonical zero-drift regression tests.
+- Added a sixth GitHub CI gate for consumer dependency drift.
+- Updated weekly maintenance to scan repository-side dependency drift even when Hermes itself has not changed.
+- Established a no-auto-register/no-auto-remove policy: text evidence creates review findings, not automatic production dependency mutations.
+
 ## 1.4.0 — 2026-09-21
 
 - Added an explicit registry of active canonical repository consumers that depend on Hermes capabilities.
