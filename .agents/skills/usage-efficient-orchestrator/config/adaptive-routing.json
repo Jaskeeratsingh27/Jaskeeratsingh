@@ -38,7 +38,8 @@
     "minimum_success_rate": 0.9,
     "minimum_validation_pass_rate": 0.95,
     "maximum_success_rate_drop": 0.02,
-    "maximum_validation_pass_rate_drop": 0.02
+    "maximum_validation_pass_rate_drop": 0.02,
+    "minimum_validation_observations_for_active": 3
   },
   "efficiency": {
     "minimum_absolute_p90_improvement_points": 0.5,
