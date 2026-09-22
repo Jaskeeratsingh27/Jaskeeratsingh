@@ -10,7 +10,7 @@ const OPENAI_ADMIN_KEY = process.env.OPENAI_ADMIN_KEY || "";
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || "";
 const CACHE_TTL_MS = Math.max(10_000, Number(process.env.CACHE_TTL_MS || 30_000));
 const UPSTREAM_TIMEOUT_MS = 15_000;
-const VERSION = "4.0.0-p5";
+const VERSION = "4.0.0";
 const DATA_DIR = process.env.TOKENTRACK_DATA_DIR || "/data";
 const SYNC_DIR = path.join(DATA_DIR, "chatgpt-sync");
 const MONITOR_FILE = path.join(DATA_DIR, "api-monitor.json");
@@ -92,6 +92,10 @@ function securityHeaders(contentType = "application/json; charset=utf-8") {
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Resource-Policy": "same-origin",
+    "X-DNS-Prefetch-Control": "off",
     "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
   };
 }
@@ -322,7 +326,7 @@ function authOkay(req) {
     const decoded = Buffer.from(header.slice(6), "base64").toString("utf8");
     const split = decoded.indexOf(":");
     const password = split >= 0 ? decoded.slice(split + 1) : "";
-    return password === DASHBOARD_PASSWORD;
+    return safeEqualHex(sha256Hex(password), sha256Hex(DASHBOARD_PASSWORD));
   } catch {
     return false;
   }
@@ -1000,12 +1004,16 @@ function analyticsCsv(data, type) {
 }
 
 function serveStatic(req, res) {
+  if (!["GET", "HEAD"].includes(req.method || "GET")) {
+    return text(res, 405, "Method not allowed", "text/plain; charset=utf-8", { Allow: "GET, HEAD" });
+  }
   const publicDir = path.join(__dirname, "public");
   const requestPath = new URL(req.url, "http://" + (req.headers.host || "localhost")).pathname;
   const rel = requestPath === "/" ? "index.html" : requestPath.replace(/^\/+/, "");
   const file = path.normalize(path.join(publicDir, rel));
+  const relative = path.relative(publicDir, file);
 
-  if (!file.startsWith(publicDir)) return text(res, 403, "Forbidden");
+  if (relative.startsWith("..") || path.isAbsolute(relative)) return text(res, 403, "Forbidden");
 
   fs.readFile(file, (err, data) => {
     if (err) return text(res, 404, "Not found");
@@ -1021,9 +1029,12 @@ function serveStatic(req, res) {
     };
 
     const headers = securityHeaders(types[ext] || "application/octet-stream");
-    headers["Cache-Control"] = ext === ".html" ? "no-cache" : "public, max-age=300";
+    const base = path.basename(file);
+    headers["Cache-Control"] = ext === ".html" || base === "sw.js" || ext === ".webmanifest"
+      ? "no-cache"
+      : "public, max-age=300";
     res.writeHead(200, headers);
-    res.end(data);
+    res.end(req.method === "HEAD" ? undefined : data);
   });
 }
 
@@ -1070,11 +1081,15 @@ const server = http.createServer(async (req, res) => {
           last_run_at: apiMonitorState.last_run_at,
           last_success_at: apiMonitorState.last_success_at,
           last_error: apiMonitorState.last_error,
-          interval_seconds: Math.floor(MONITOR_INTERVAL_MS / 1000)
+          interval_seconds: Math.floor(MONITOR_INTERVAL_MS / 1000),
+          configuration_locked: !Boolean(DASHBOARD_PASSWORD)
         });
       }
 
       if (req.method === "PUT") {
+        if (!DASHBOARD_PASSWORD) {
+          return json(res, 403, { error: "Background monitor configuration is locked until DASHBOARD_PASSWORD is configured." });
+        }
         const body = await readJsonBody(req, 64 * 1024);
         apiMonitorState.rules = normalizeMonitorRules({ ...apiMonitorState.rules, ...(body.rules || {}) });
         saveMonitorState(apiMonitorState);
@@ -1083,6 +1098,9 @@ const server = http.createServer(async (req, res) => {
       }
 
       if (req.method === "DELETE") {
+        if (!DASHBOARD_PASSWORD) {
+          return json(res, 403, { error: "Background monitor event deletion is locked until DASHBOARD_PASSWORD is configured." });
+        }
         apiMonitorState.events = [];
         saveMonitorState(apiMonitorState);
         return json(res, 200, { ok: true, events_cleared: true });
@@ -1240,4 +1258,22 @@ server.listen(PORT, "0.0.0.0", () => {
     setInterval(() => runApiMonitor(), MONITOR_INTERVAL_MS).unref();
     console.log("TokenTrack background API monitor | interval_seconds=" + Math.floor(MONITOR_INTERVAL_MS / 1000));
   }
+});
+
+let shuttingDown = false;
+function gracefulShutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log("TokenTrack graceful shutdown | signal=" + signal);
+  const force = setTimeout(() => process.exit(1), 10_000);
+  force.unref();
+  server.close(error => {
+    clearTimeout(force);
+    process.exit(error ? 1 : 0);
+  });
+}
+process.once("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.once("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("unhandledRejection", error => {
+  console.error("TokenTrack unhandled rejection | " + (error?.message || String(error)));
 });
