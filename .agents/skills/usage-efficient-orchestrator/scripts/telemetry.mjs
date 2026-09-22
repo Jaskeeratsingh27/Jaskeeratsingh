@@ -5,7 +5,7 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const CONFIG = JSON.parse(fs.readFileSync(path.join(HERE, "..", "config", "observability.json"), "utf8"));
+const CONFIG = JSON.parse(fs.readFileSync(path.join(HERE, "..", "config", "observability.json"), "utf8"));\nconst MANIFEST = JSON.parse(fs.readFileSync(path.join(HERE, "..", "manifest.json"), "utf8"));
 const DEFAULT_DIR = CONFIG.data_dir.replace(/^~(?=\/|$)/, os.homedir());
 const DATA_DIR = process.env.ORCHESTRATOR_DATA_DIR || DEFAULT_DIR;
 const LEDGER = path.join(DATA_DIR, CONFIG.ledger_file);
@@ -207,6 +207,7 @@ function appendEvent(event) {
 function baseEvent(type, id, pid) {
   return {
     schema_version: SCHEMA_VERSION,
+    orchestrator_version: MANIFEST.version,
     event_id: crypto.randomUUID(),
     timestamp: new Date().toISOString(),
     event_type: type,
