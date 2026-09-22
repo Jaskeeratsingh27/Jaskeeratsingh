@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hermes Control Plane Job",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "job_id", "created_at", "submitted_by", "input"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "job_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "submitted_by": {"type": "string", "minLength": 1},
+    "input": {"type": "string", "minLength": 1},
+    "instructions": {"type": "string"},
+    "session_id": {"type": ["string", "null"]},
+    "model": {"type": ["string", "null"]},
+    "provider": {"type": ["string", "null"]},
+    "model_options": {"type": "object"},
+    "timeout_seconds": {"type": "integer", "minimum": 30, "maximum": 86400},
+    "poll_seconds": {"type": "integer", "minimum": 1, "maximum": 300},
+    "metadata": {"type": "object"}
+  }
+}
