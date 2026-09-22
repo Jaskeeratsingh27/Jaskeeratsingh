@@ -11,6 +11,7 @@ on:
       - '.codex/**'
       - 'tests/orchestrator/**'
       - 'scripts/*orchestrator*'
+      - 'scripts/test-observability.mjs'
       - 'docs/codex-usage-orchestrator.md'
       - '.github/workflows/orchestrator-ci.yml'
   pull_request:
@@ -20,6 +21,7 @@ on:
       - '.codex/**'
       - 'tests/orchestrator/**'
       - 'scripts/*orchestrator*'
+      - 'scripts/test-observability.mjs'
       - 'docs/codex-usage-orchestrator.md'
       - '.github/workflows/orchestrator-ci.yml'
   workflow_dispatch:
