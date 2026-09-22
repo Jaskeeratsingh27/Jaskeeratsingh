@@ -3,7 +3,7 @@
   "version": "1.5.0",
   "telemetry_schema_version": "1.0",
   "usage_intelligence_schema_version": "1.0",
-  "canonical_repository": "Jaskeeratsing27/Jaskeeratsingh",
+  "canonical_repository": "Jaskeeratsingh27/Jaskeeratsingh",
   "canonical_branch": "main",
   "managed_agents": [
     "luna-scout.toml",
