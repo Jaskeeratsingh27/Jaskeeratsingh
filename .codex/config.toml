@@ -1,0 +1,29 @@
+# Project-level Codex orchestration defaults.
+# Loaded only when this repository is trusted.
+
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 3
+default_subagent_model = "gpt-5.6-luna"
+default_subagent_reasoning_effort = "low"
+interrupt_message = true
+
+[agents.luna_scout]
+description = "Cheap read-only repository scout for targeted discovery and dependency mapping."
+config_file = "./agents/luna-scout.toml"
+
+[agents.luna_researcher]
+description = "Cheap read-only researcher for documentation, logs, API facts, and evidence extraction."
+config_file = "./agents/luna-researcher.toml"
+
+[agents.terra_implementer]
+description = "Efficient implementation worker for bounded code/file changes once scope is understood."
+config_file = "./agents/terra-implementer.toml"
+
+[agents.terra_reviewer]
+description = "Focused reviewer for correctness, security, regressions, and targeted test coverage."
+config_file = "./agents/terra-reviewer.toml"
+
+[agents.sol_specialist]
+description = "Escalation-only specialist for difficult implementation or integration that Terra could not resolve."
+config_file = "./agents/sol-specialist.toml"
