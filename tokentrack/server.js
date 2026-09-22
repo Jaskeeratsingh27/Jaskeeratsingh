@@ -9,20 +9,22 @@ const OPENAI_ADMIN_KEY = process.env.OPENAI_ADMIN_KEY || "";
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || "";
 const CACHE_TTL_MS = Math.max(10_000, Number(process.env.CACHE_TTL_MS || 30_000));
 const UPSTREAM_TIMEOUT_MS = 15_000;
-const VERSION = "2.0.0";
+const VERSION = "3.0.0";
 
 const CORE_SOURCES = [
-  { key: "completions", path: "completions", groupBy: ["model", "project_id"], required: true },
-  { key: "embeddings", path: "embeddings", groupBy: ["model", "project_id"] },
-  { key: "moderations", path: "moderations", groupBy: ["model", "project_id"] }
+  { key: "completions", path: "completions", groupBy: ["model", "project_id", "api_key_id", "user_id", "service_tier", "batch"], required: true },
+  { key: "embeddings", path: "embeddings", groupBy: ["model", "project_id", "api_key_id", "user_id"] },
+  { key: "moderations", path: "moderations", groupBy: ["model", "project_id", "api_key_id", "user_id"] }
 ];
 
 const RESOURCE_SOURCES = [
-  { key: "images", path: "images", groupBy: ["model", "project_id"] },
-  { key: "audio_speeches", path: "audio_speeches", groupBy: ["model", "project_id"] },
-  { key: "audio_transcriptions", path: "audio_transcriptions", groupBy: ["model", "project_id"] },
+  { key: "images", path: "images", groupBy: ["model", "project_id", "api_key_id", "user_id", "size", "source"] },
+  { key: "audio_speeches", path: "audio_speeches", groupBy: ["model", "project_id", "api_key_id", "user_id"] },
+  { key: "audio_transcriptions", path: "audio_transcriptions", groupBy: ["model", "project_id", "api_key_id", "user_id"] },
   { key: "vector_stores", path: "vector_stores", groupBy: ["project_id"] },
-  { key: "code_interpreter_sessions", path: "code_interpreter_sessions", groupBy: ["project_id"] }
+  { key: "code_interpreter_sessions", path: "code_interpreter_sessions", groupBy: ["project_id"] },
+  { key: "file_search_calls", path: "file_search_calls", groupBy: ["project_id", "api_key_id", "user_id", "vector_store_id"] },
+  { key: "web_search_calls", path: "web_search_calls", groupBy: ["model", "project_id", "api_key_id", "user_id", "context_level"] }
 ];
 
 const cache = new Map();
@@ -199,19 +201,35 @@ function normalizeUsage(source, buckets) {
         end_time: num(bucket.end_time),
         model: result.model || "unknown",
         project_id: result.project_id || "unassigned",
+        api_key_id: result.api_key_id || "unassigned",
+        user_id: result.user_id || "unassigned",
+        service_tier: result.service_tier || "unknown",
+        batch: result.batch === true ? "batch" : result.batch === false ? "realtime" : "unknown",
         input_tokens: num(result.input_tokens),
         output_tokens: num(result.output_tokens),
         cached_input_tokens: num(result.input_cached_tokens),
+        cache_write_tokens: num(result.input_cache_write_tokens),
+        uncached_input_tokens: num(result.input_uncached_tokens),
+        input_text_tokens: num(result.input_text_tokens),
+        input_image_tokens: num(result.input_image_tokens),
         input_audio_tokens: num(result.input_audio_tokens),
+        cached_text_tokens: num(result.input_cached_text_tokens),
+        cached_image_tokens: num(result.input_cached_image_tokens),
+        cached_audio_tokens: num(result.input_cached_audio_tokens),
+        output_text_tokens: num(result.output_text_tokens),
+        output_image_tokens: num(result.output_image_tokens),
         output_audio_tokens: num(result.output_audio_tokens),
-        requests: num(result.num_model_requests),
+        requests: num(result.num_model_requests || result.num_requests),
+        tool_calls: num(result.num_requests),
         images: num(result.images),
         characters: num(result.characters),
         seconds: num(result.seconds),
         usage_bytes: num(result.usage_bytes),
         sessions: num(result.num_sessions),
         size: result.size || null,
-        activity_source: result.source || null
+        activity_source: result.source || null,
+        vector_store_id: result.vector_store_id || null,
+        context_level: result.context_level || null
       });
     }
   }
@@ -225,6 +243,7 @@ async function fetchCosts(start, end) {
     ["bucket_width", "1d"],
     ["limit", "180"],
     ["group_by", "project_id"],
+    ["group_by", "api_key_id"],
     ["group_by", "line_item"]
   ];
   const buckets = await fetchPaged("https://api.openai.com/v1/organization/costs", params);
@@ -236,6 +255,7 @@ async function fetchCosts(start, end) {
         start_time: num(bucket.start_time),
         end_time: num(bucket.end_time),
         project_id: result.project_id || "unassigned",
+        api_key_id: result.api_key_id || "unassigned",
         line_item: result.line_item || "Uncategorized",
         amount: num(result.amount?.value),
         currency: result.amount?.currency || "usd"
@@ -250,6 +270,10 @@ function summarizeUsage(rows, costs) {
     acc.input_tokens += row.input_tokens;
     acc.output_tokens += row.output_tokens;
     acc.cached_input_tokens += row.cached_input_tokens;
+    acc.cache_write_tokens += row.cache_write_tokens;
+    acc.uncached_input_tokens += row.uncached_input_tokens;
+    acc.input_text_tokens += row.input_text_tokens;
+    acc.input_image_tokens += row.input_image_tokens;
     acc.input_audio_tokens += row.input_audio_tokens;
     acc.output_audio_tokens += row.output_audio_tokens;
     acc.requests += row.requests;
@@ -258,6 +282,10 @@ function summarizeUsage(rows, costs) {
     input_tokens: 0,
     output_tokens: 0,
     cached_input_tokens: 0,
+    cache_write_tokens: 0,
+    uncached_input_tokens: 0,
+    input_text_tokens: 0,
+    input_image_tokens: 0,
     input_audio_tokens: 0,
     output_audio_tokens: 0,
     requests: 0
@@ -266,6 +294,8 @@ function summarizeUsage(rows, costs) {
   totals.total_tokens = totals.input_tokens + totals.output_tokens;
   totals.cost = costs.reduce((sum, row) => sum + row.amount, 0);
   totals.cache_ratio = safeDivide(totals.cached_input_tokens, totals.input_tokens);
+  totals.uncached_ratio = safeDivide(totals.uncached_input_tokens, totals.input_tokens);
+  totals.cache_write_ratio = safeDivide(totals.cache_write_tokens, totals.input_tokens);
   totals.output_input_ratio = safeDivide(totals.output_tokens, totals.input_tokens);
   totals.avg_tokens_per_request = safeDivide(totals.total_tokens, totals.requests);
   totals.avg_input_per_request = safeDivide(totals.input_tokens, totals.requests);
@@ -361,7 +391,8 @@ function resourceSummary(rows) {
         characters: 0,
         seconds: 0,
         usage_bytes: 0,
-        sessions: 0
+        sessions: 0,
+        tool_calls: 0
       });
     }
     const item = map.get(row.source);
@@ -371,6 +402,7 @@ function resourceSummary(rows) {
     item.seconds += row.seconds;
     item.usage_bytes += row.usage_bytes;
     item.sessions += row.sessions;
+    item.tool_calls += row.tool_calls;
   }
   return [...map.values()];
 }
@@ -467,7 +499,66 @@ function buildInsights(current, previous, daily, models, projects, anomalies, da
   return insights.slice(0, 8);
 }
 
-function buildAnalytics(days, start, previousStart, end, tokenRows, resourceRows, costRows, warnings) {
+
+async function fetchJson(url) {
+  const response = await fetch(url, {
+    headers: { Authorization: "Bearer " + OPENAI_ADMIN_KEY, "Content-Type": "application/json" },
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS)
+  });
+  const raw = await response.text();
+  let data;
+  try { data = JSON.parse(raw); } catch { data = { error: { message: raw || "Invalid upstream response" } }; }
+  if (!response.ok) {
+    const err = new Error(data?.error?.message || "OpenAI API returned " + response.status);
+    err.status = response.status;
+    throw err;
+  }
+  return data;
+}
+
+async function fetchGovernance() {
+  const [limitResult, alertsResult] = await Promise.all([
+    fetchJson("https://api.openai.com/v1/organization/spend_limit")
+      .then(data => ({ ok: true, data }))
+      .catch(error => ({ ok: false, error })),
+    fetchJson("https://api.openai.com/v1/organization/spend_alerts?limit=100&order=asc")
+      .then(data => ({ ok: true, data }))
+      .catch(error => ({ ok: false, error }))
+  ]);
+  return {
+    spend_limit: limitResult.ok ? {
+      threshold_usd: num(limitResult.data.threshold_amount) / 100,
+      currency: limitResult.data.currency || "USD",
+      interval: limitResult.data.interval || "month",
+      enforcement: limitResult.data.enforcement?.status || "unknown"
+    } : null,
+    spend_alerts: alertsResult.ok ? (alertsResult.data.data || []).map(a => ({
+      id: a.id,
+      threshold_usd: num(a.threshold_amount) / 100,
+      currency: a.currency || "USD",
+      interval: a.interval || "month",
+      channel: a.notification_channel?.type || "unknown",
+      recipient_count: (a.notification_channel?.recipients || []).length
+    })) : [],
+    warnings: [
+      ...(limitResult.ok ? [] : ["spend_limit: " + limitResult.error.message]),
+      ...(alertsResult.ok ? [] : ["spend_alerts: " + alertsResult.error.message])
+    ]
+  };
+}
+
+function buildMovers(currentRows, previousRows, keyName) {
+  const cur = new Map(buildBreakdown(currentRows, [], keyName).map(r => [r.name, r]));
+  const prev = new Map(buildBreakdown(previousRows, [], keyName).map(r => [r.name, r]));
+  const keys = new Set([...cur.keys(), ...prev.keys()]);
+  return [...keys].map(name => {
+    const a = cur.get(name)?.total_tokens || 0;
+    const b = prev.get(name)?.total_tokens || 0;
+    return { name, current_tokens: a, previous_tokens: b, delta_tokens: a - b, delta_pct: percentChange(a, b) };
+  }).sort((a,b) => Math.abs(b.delta_tokens) - Math.abs(a.delta_tokens)).slice(0,12);
+}
+
+function buildAnalytics(days, start, previousStart, end, tokenRows, resourceRows, costRows, warnings, governance) {
   const currentRows = tokenRows.filter(r => r.start_time >= start && r.start_time < end);
   const previousRows = tokenRows.filter(r => r.start_time >= previousStart && r.start_time < start);
   const currentCosts = costRows.filter(r => r.start_time >= start && r.start_time < end);
@@ -478,6 +569,12 @@ function buildAnalytics(days, start, previousStart, end, tokenRows, resourceRows
   const models = buildBreakdown(currentRows, [], "model");
   const projects = buildBreakdown(currentRows, currentCosts, "project_id");
   const sources = buildBreakdown(currentRows, [], "source");
+  const apiKeys = buildBreakdown(currentRows, currentCosts, "api_key_id");
+  const users = buildBreakdown(currentRows, [], "user_id");
+  const serviceTiers = buildBreakdown(currentRows, [], "service_tier");
+  const batchModes = buildBreakdown(currentRows, [], "batch");
+  const modelMovers = buildMovers(currentRows, previousRows, "model");
+  const projectMovers = buildMovers(currentRows, previousRows, "project_id");
   const costLineItems = [...groupCosts(currentCosts, "line_item").entries()]
     .map(([name, cost]) => ({ name, cost }))
     .sort((a, b) => b.cost - a.cost);
@@ -520,6 +617,10 @@ function buildAnalytics(days, start, previousStart, end, tokenRows, resourceRows
       models,
       projects,
       sources,
+      api_keys: apiKeys,
+      users,
+      service_tiers: serviceTiers,
+      batch_modes: batchModes,
       cost_line_items: costLineItems
     },
     daily,
@@ -534,6 +635,8 @@ function buildAnalytics(days, start, previousStart, end, tokenRows, resourceRows
     },
     anomalies,
     insights,
+    movers: { models: modelMovers, projects: projectMovers },
+    governance,
     resources: resourceSummary(resourceRows),
     raw: {
       usage: currentRows,
@@ -568,12 +671,14 @@ async function computeAnalytics(days) {
   const costPromise = fetchCosts(previousStart, end)
     .then(rows => ({ ok: true, rows }))
     .catch(error => ({ ok: false, error }));
+  const governancePromise = fetchGovernance();
 
-  const [completionRows, optionalCore, resources, costResult] = await Promise.all([
+  const [completionRows, optionalCore, resources, costResult, governance] = await Promise.all([
     completionPromise,
     Promise.all(optionalCorePromises),
     Promise.all(resourcePromises),
-    costPromise
+    costPromise,
+    governancePromise
   ]);
 
   const tokenRows = [...completionRows];
@@ -590,8 +695,9 @@ async function computeAnalytics(days) {
 
   const costRows = costResult.ok ? costResult.rows : [];
   if (!costResult.ok) warnings.push("costs: " + costResult.error.message);
+  warnings.push(...(governance.warnings || []));
 
-  return buildAnalytics(days, start, previousStart, end, tokenRows, resourceRows, costRows, warnings);
+  return buildAnalytics(days, start, previousStart, end, tokenRows, resourceRows, costRows, warnings, governance);
 }
 
 async function loadAnalytics(days) {
