@@ -198,13 +198,25 @@ Before orchestrator promotion:
 node scripts/orchestrator-qa.mjs
 ```
 
-Drift/status:
+### Drift gate
 
 ```bash
 node scripts/orchestrator-status.mjs
 ```
 
-Safe sync:
+If global files are stale or missing, sync them before relying on the installed policy.
+
+### Security gate
+
+The release must pass `node scripts/security-check-orchestrator.mjs`. Secret capture, unsafe sandbox expansion, or observability privacy regression blocks promotion.
+
+### CI gate
+
+GitHub Actions must run the unified QA suite for orchestrator branches and pull requests. A failing CI result blocks promotion.
+
+### Safe sync
+
+
 
 ```bash
 node scripts/orchestrator-sync.mjs --dry-run
