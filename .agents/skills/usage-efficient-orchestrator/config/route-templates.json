@@ -105,9 +105,56 @@
       "initial_candidate": false,
       "escalation_only": true,
       "notes": "Escalation route; never selected as a cheaper initial route."
+    },
+    "scout_review": {
+      "roles": [
+        "cheap_reader",
+        "reviewer"
+      ],
+      "task_kinds": [
+        "discovery",
+        "review"
+      ],
+      "initial_candidate": true,
+      "notes": "Read-only discovery with independent reviewer coverage."
+    },
+    "architect_review": {
+      "roles": [
+        "architect",
+        "reviewer"
+      ],
+      "task_kinds": [
+        "architecture",
+        "mixed"
+      ],
+      "initial_candidate": true,
+      "plan_only": true,
+      "notes": "Plan-only architecture with independent review for elevated risk."
     }
   },
   "baseline_rules": [
+    {
+      "risk": "CRITICAL",
+      "route": "architect_review"
+    },
+    {
+      "complexity": "LARGE",
+      "route": "architect_review"
+    },
+    {
+      "task_kind": "architecture",
+      "risk": "HIGH",
+      "route": "architect_review"
+    },
+    {
+      "task_kind": "architecture",
+      "route": "architect_plan"
+    },
+    {
+      "task_kind": "discovery",
+      "risk": "HIGH",
+      "route": "scout_review"
+    },
     {
       "task_kind": "discovery",
       "route": "discovery"
@@ -115,18 +162,6 @@
     {
       "task_kind": "review",
       "route": "reviewer_only"
-    },
-    {
-      "task_kind": "architecture",
-      "route": "architect_plan"
-    },
-    {
-      "risk": "CRITICAL",
-      "route": "architect_plan"
-    },
-    {
-      "complexity": "LARGE",
-      "route": "architect_plan"
     },
     {
       "task_kind": "implementation",
