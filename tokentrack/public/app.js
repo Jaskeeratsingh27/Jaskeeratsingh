@@ -11,7 +11,8 @@ const state={
   autoRefresh:localStorage.getItem("tt-auto")!=="false",
   localBudget:Number(localStorage.getItem("tt-budget")||0),
   theme:localStorage.getItem("tt-theme")||"dark",
-  attr:"models",lastLoaded:0,nextRefresh:0
+  attr:"models",lastLoaded:0,nextRefresh:0,
+  chatSnapshots:loadChatSnapshots()
 };
 
 const num=v=>Number.isFinite(Number(v))?Number(v):0;
@@ -33,10 +34,13 @@ function setLive(kind,title,sub){$("liveDot").className="pulse "+kind;$("liveSta
 function setTab(tab){
   qsa(".nav").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
   qsa(".page").forEach(p=>p.classList.toggle("active",p.id===tab));
+  $("apiControls").classList.toggle("hidden",tab==="chatgpt");
   if(tab==="overview")requestAnimationFrame(renderCharts);
+  if(tab==="chatgpt")requestAnimationFrame(renderChatGPT);
 }
 
 function render(){
+  renderChatGPT();
   if(!state.data)return;
   renderOverview();renderFinops();renderAttribution();renderTools();populateFilters();renderExplorer();renderDiagnostics();
   $("version").textContent="TokenTrack v"+(state.data.version||"—");
@@ -44,6 +48,120 @@ function render(){
   show("warningBanner",warnings.length>0,warnings.length?'<strong>Partial telemetry:</strong> '+esc(warnings.join(" · ")):"");
   if(state.data.stale)show("errorBanner",true,'<strong>Last-known-good data:</strong> '+esc(state.data.stale_reason||"Upstream refresh failed."));
   else show("errorBanner",false);
+}
+
+
+function loadChatSnapshots(){
+  try{
+    const parsed=JSON.parse(localStorage.getItem("tt-chat-snapshots-v1")||"[]");
+    return Array.isArray(parsed)?parsed.filter(x=>Number.isFinite(Number(x.used))).sort((a,b)=>new Date(a.recorded_at)-new Date(b.recorded_at)):[];
+  }catch{return[]}
+}
+function saveChatSnapshots(){
+  localStorage.setItem("tt-chat-snapshots-v1",JSON.stringify(state.chatSnapshots));
+}
+function addChatSnapshot(used,resetAt,note){
+  state.chatSnapshots.push({
+    id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()),
+    recorded_at:new Date().toISOString(),
+    used:Math.max(0,Math.min(100,num(used))),
+    reset_at:resetAt?new Date(resetAt).toISOString():null,
+    note:String(note||"").trim()
+  });
+  state.chatSnapshots.sort((a,b)=>new Date(a.recorded_at)-new Date(b.recorded_at));
+  saveChatSnapshots();
+  renderChatGPT();
+}
+function currentChatCycle(){
+  const rows=state.chatSnapshots;
+  if(!rows.length)return[];
+  const latest=rows[rows.length-1];
+  let start=rows.length-1;
+  for(let i=rows.length-2;i>=0;i--){
+    const next=rows[i+1],cur=rows[i];
+    const resetChanged=(next.reset_at||"")!==(cur.reset_at||"") && Boolean(next.reset_at||cur.reset_at);
+    const usageDropped=num(next.used)<num(cur.used);
+    if(resetChanged||usageDropped)break;
+    start=i;
+  }
+  return rows.slice(start);
+}
+function chatMetrics(){
+  const rows=currentChatCycle();
+  if(!rows.length)return{latest:null,rate:null,projected:null,resetFirst:false};
+  const latest=rows[rows.length-1];
+  let rate=null;
+  if(rows.length>=2){
+    const a=rows[rows.length-2],b=latest;
+    const days=(new Date(b.recorded_at)-new Date(a.recorded_at))/86400000;
+    const change=num(b.used)-num(a.used);
+    if(days>0&&change>=0)rate=change/days;
+  }
+  let projected=null,resetFirst=false;
+  if(rate&&rate>0&&latest.used<100){
+    projected=new Date(new Date(latest.recorded_at).getTime()+((100-latest.used)/rate)*86400000);
+    if(latest.reset_at){
+      const reset=new Date(latest.reset_at);
+      if(Number.isFinite(reset.getTime())&&reset<projected)resetFirst=true;
+    }
+  }
+  return{latest,rate,projected,resetFirst};
+}
+function renderChatGPT(){
+  const m=chatMetrics(),latest=m.latest;
+  $("chatUsed").textContent=latest?num(latest.used).toFixed(1)+"%":"—";
+  $("chatRemaining").textContent=latest?(100-num(latest.used)).toFixed(1)+"%":"—";
+  $("chatLastSeen").textContent=latest?"Recorded "+timeLabel(latest.recorded_at):"No checkpoint yet";
+  if(m.rate!==null){
+    $("chatBurnRate").textContent=m.rate.toFixed(1)+"% / day";
+    $("chatBurnDetail").textContent="Based on the two latest checkpoints in this reset cycle";
+  }else{
+    $("chatBurnRate").textContent="—";
+    $("chatBurnDetail").textContent=state.chatSnapshots.length>1?"Allowance reset detected or insufficient interval":"Needs 2 checkpoints";
+  }
+  if(m.projected){
+    $("chatProjected").textContent=m.resetFirst?"Reset first":m.projected.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+    $("chatProjectionDetail").textContent=m.resetFirst&&latest.reset_at?"Allowance resets "+timeLabel(latest.reset_at):"At the latest observed burn rate";
+  }else{
+    $("chatProjected").textContent=latest&&latest.used>=100?"100%":"—";
+    $("chatProjectionDetail").textContent=latest?.reset_at?"Reset "+timeLabel(latest.reset_at):"Based on recent observed pace";
+  }
+
+  const rows=[...state.chatSnapshots].reverse();
+  $("chatHistory").innerHTML=rows.length?rows.map((r,idx)=>{
+    const chronological=state.chatSnapshots.findIndex(x=>x.id===r.id);
+    const prev=chronological>0?state.chatSnapshots[chronological-1]:null;
+    const sameCycle=prev&&num(r.used)>=num(prev.used)&&((r.reset_at||"")===(prev.reset_at||"")||!r.reset_at||!prev.reset_at);
+    const change=sameCycle?(num(r.used)-num(prev.used)).toFixed(1)+"%":"—";
+    return '<tr><td>'+timeLabel(r.recorded_at)+'</td><td>'+num(r.used).toFixed(1)+'%</td><td>'+(100-num(r.used)).toFixed(1)+'%</td><td>'+change+'</td><td>'+(r.reset_at?timeLabel(r.reset_at):"—")+'</td><td>'+esc(r.note||"")+'</td><td><button class="button chat-delete" type="button" data-id="'+esc(r.id)+'">Delete</button></td></tr>';
+  }).join(""):'<tr><td colspan="7">No ChatGPT checkpoints yet.</td></tr>';
+  qsa(".chat-delete").forEach(b=>b.onclick=()=>{
+    state.chatSnapshots=state.chatSnapshots.filter(x=>x.id!==b.dataset.id);
+    saveChatSnapshots();renderChatGPT();
+  });
+  drawChatUsageChart();
+}
+function drawChatUsageChart(){
+  const canvas=$("chatUsageChart");
+  if(!canvas)return;
+  const rows=state.chatSnapshots,{ctx,w,h}=canvasSetup(canvas),p={l:42,r:12,t:18,b:34},cw=w-p.l-p.r,ch=h-p.t-p.b;
+  ctx.font="11px system-ui";ctx.strokeStyle=css("--line");ctx.fillStyle=css("--muted");ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const value=100-i*25,y=p.t+ch*i/4;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();ctx.fillText(value+"%",4,y+4)}
+  if(!rows.length){ctx.fillText("Add a checkpoint to start the usage curve.",p.l+10,p.t+20);return}
+  ctx.beginPath();ctx.strokeStyle=css("--accent");ctx.lineWidth=2.5;ctx.lineJoin="round";ctx.lineCap="round";
+  rows.forEach((r,i)=>{
+    const x=p.l+(rows.length===1?cw/2:i*cw/(rows.length-1)),y=p.t+ch-(num(r.used)/100*ch);
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  });ctx.stroke();
+  rows.forEach((r,i)=>{const x=p.l+(rows.length===1?cw/2:i*cw/(rows.length-1)),y=p.t+ch-(num(r.used)/100*ch);ctx.beginPath();ctx.fillStyle=css("--accent");ctx.arc(x,y,3.5,0,Math.PI*2);ctx.fill()});
+  ctx.fillStyle=css("--muted");ctx.textAlign="center";const every=Math.max(1,Math.ceil(rows.length/5));
+  rows.forEach((r,i)=>{if(i%every&&i!==rows.length-1)return;const x=p.l+(rows.length===1?cw/2:i*cw/(rows.length-1));ctx.fillText(dateLabel(r.recorded_at),x,h-9)});ctx.textAlign="start";
+}
+function exportChatSnapshots(){
+  const payload={source:"manual-chatgpt-subscription-checkpoints",exported_at:new Date().toISOString(),snapshots:state.chatSnapshots};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download="tokentrack-chatgpt-checkpoints.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 function renderOverview(){
@@ -199,6 +317,21 @@ function countdown(){
 }
 
 qsa(".nav").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+$("chatCheckpointForm").onsubmit=e=>{
+  e.preventDefault();
+  const used=Number($("chatUsagePercent").value);
+  if(!Number.isFinite(used)||used<0||used>100){toast("Enter a usage percentage from 0 to 100");return}
+  addChatSnapshot(used,$("chatResetAt").value,$("chatNote").value);
+  $("chatUsagePercent").value="";$("chatNote").value="";
+  toast("ChatGPT checkpoint saved");
+};
+$("chatExport").onclick=()=>exportChatSnapshots();
+$("chatClear").onclick=()=>{
+  if(!state.chatSnapshots.length)return;
+  if(confirm("Clear all locally saved ChatGPT usage checkpoints?")){
+    state.chatSnapshots=[];saveChatSnapshots();renderChatGPT();toast("Checkpoint history cleared");
+  }
+};
 qsa(".chip").forEach(b=>b.onclick=()=>{state.attr=b.dataset.attr;qsa(".chip").forEach(x=>x.classList.toggle("active",x===b));renderAttribution()});
 $("refresh").onclick=()=>load(true);
 $("days").value=String(state.days);$("days").onchange=e=>{state.days=Number(e.target.value);localStorage.setItem("tt-days",state.days);load(false)};
@@ -211,6 +344,9 @@ qsa(".export").forEach(b=>b.onclick=()=>location.href="/api/export?days="+state.
 $("clearFilters").onclick=()=>{["filterModel","filterProject","filterKey","filterUser","filterTier","filterMode","filterSearch"].forEach(id=>$(id).value="");renderExplorer()};
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-state.lastLoaded>30000)load(false)});
 addEventListener("online",()=>load(false));addEventListener("offline",()=>setLive("error","Offline","Waiting for network"));
-let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(renderCharts,120)});
+let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{renderCharts();drawChatUsageChart()},120)});
 setInterval(countdown,1000);
-document.documentElement.dataset.theme=state.theme;state.nextRefresh=Date.now()+state.refreshSeconds*1000;load(false);
+document.documentElement.dataset.theme=state.theme;state.nextRefresh=Date.now()+state.refreshSeconds*1000;
+$("apiControls").classList.add("hidden");
+renderChatGPT();
+load(false);
