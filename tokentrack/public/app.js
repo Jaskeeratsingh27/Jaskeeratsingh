@@ -115,7 +115,8 @@ function renderAlertCenter(){
     $("serverMonitorState").textContent="Error";$("serverMonitorDetail").textContent=sm.error;
   }else if(sm){
     $("serverMonitorState").textContent=sm.rules?.enabled===false?"Paused":"Running";
-    $("serverMonitorDetail").textContent=sm.last_success_at?"Last success "+timeLabel(sm.last_success_at)+" · "+count((sm.active||[]).length)+" active":"Waiting for first background run";
+    const lockText=sm.configuration_locked?" · config locked while dashboard is public":"";
+    $("serverMonitorDetail").textContent=(sm.last_success_at?"Last success "+timeLabel(sm.last_success_at)+" · "+count((sm.active||[]).length)+" active":"Waiting for first background run")+lockText;
     mergeServerMonitorEvents();
   }else{
     $("serverMonitorState").textContent="Loading";$("serverMonitorDetail").textContent="Fetching server monitor state";
@@ -165,6 +166,7 @@ async function loadServerMonitor(){
   }
 }
 async function syncServerMonitorRules(){
+  if(state.serverMonitor?.configuration_locked)return;
   try{
     const response=await fetch("/api/server-monitor",{
       method:"PUT",
@@ -853,6 +855,17 @@ function renderDiagnostics(){
     ["Models",count((d.distribution?.models||[]).length)],["Projects",count((d.distribution?.projects||[]).length)],["API keys",count((d.distribution?.api_keys||[]).length)],["Key-level cost",d.coverage?.api_key_cost_attribution?"Available":"Unavailable"],["Spend limit",d.coverage?.spend_limit||"unknown"],["Spend alerts",d.coverage?.spend_alerts||"unknown"],["Password",h.password_protected?"Enabled":"Off"]
   ];
   $("diagnostics").innerHTML=items.map(([a,b])=>'<div class="diag"><span>'+esc(a)+'</span><strong>'+esc(b)+'</strong></div>').join("");
+  renderSecurityState();
+}
+function renderSecurityState(){
+  const protectedMode=Boolean(state.health?.password_protected),badge=$("securityState");
+  if(!badge)return;
+  badge.textContent=protectedMode?"PROTECTED":"PUBLIC";
+  badge.className="status-badge "+(protectedMode?"secure":"public");
+  $("securityTitle").textContent=protectedMode?"Dashboard authentication enabled":"Dashboard link is publicly reachable";
+  $("securityDetail").textContent=protectedMode
+    ?"All dashboard and API routes require the configured password, except /health."
+    :"Read-only usage telemetry is accessible to anyone with the URL. Background-monitor configuration changes are locked server-side until DASHBOARD_PASSWORD is configured.";
 }
 function formatDuration(s){s=Math.max(0,Math.floor(num(s)));const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return(d?d+"d ":"")+(h?h+"h ":"")+m+"m"}
 
@@ -874,6 +887,7 @@ async function load(notify=false){
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),45000);
     const [ar,hr]=await Promise.all([fetch("/api/analytics?days="+state.days,{cache:"no-store",signal:controller.signal}),fetch("/health",{cache:"no-store",signal:controller.signal})]);clearTimeout(timeout);
     const data=await ar.json().catch(()=>({error:"Invalid analytics response"}));state.health=await hr.json().catch(()=>({}));
+    renderSecurityState();
     if(!ar.ok)throw new Error(data.error||"HTTP "+ar.status);
     state.data=data;state.lastLoaded=Date.now();state.nextRefresh=Date.now()+state.refreshSeconds*1000;
     setLive(data.stale?"error":"live",data.stale?"Stale fallback":"Live 24/7",data.stale?"Serving last-known-good telemetry.":"Fresh OpenAI Usage + Costs telemetry.");
@@ -905,7 +919,9 @@ $("browserNotifications").onchange=e=>{state.browserNotifications=e.target.check
 $("requestNotificationPermission").onclick=()=>requestBrowserNotificationPermission();
 $("clearAlertEvents").onclick=async()=>{
   state.alertEvents=[];saveAlertEvents();renderAlertCenter();
-  try{await fetch("/api/server-monitor",{method:"DELETE"});await loadServerMonitor()}catch{}
+  if(!state.serverMonitor?.configuration_locked){
+    try{await fetch("/api/server-monitor",{method:"DELETE"});await loadServerMonitor()}catch{}
+  }
   toast("Alert event timeline cleared");
 };
 
