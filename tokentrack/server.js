@@ -10,9 +10,11 @@ const OPENAI_ADMIN_KEY = process.env.OPENAI_ADMIN_KEY || "";
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || "";
 const CACHE_TTL_MS = Math.max(10_000, Number(process.env.CACHE_TTL_MS || 30_000));
 const UPSTREAM_TIMEOUT_MS = 15_000;
-const VERSION = "4.0.0-p4";
+const VERSION = "4.0.0-p5";
 const DATA_DIR = process.env.TOKENTRACK_DATA_DIR || "/data";
 const SYNC_DIR = path.join(DATA_DIR, "chatgpt-sync");
+const MONITOR_FILE = path.join(DATA_DIR, "api-monitor.json");
+const MONITOR_INTERVAL_MS = Math.max(60_000, Number(process.env.API_MONITOR_INTERVAL_MS || 300_000));
 const MAX_SYNC_BODY_BYTES = 1024 * 1024;
 
 const CORE_SOURCES = [
@@ -194,6 +196,122 @@ function writeSyncRecordAtomic(file, record) {
   const temp = file + "." + process.pid + "." + Date.now() + ".tmp";
   fs.writeFileSync(temp, JSON.stringify(record), { encoding: "utf8", mode: 0o600 });
   fs.renameSync(temp, file);
+}
+
+
+function defaultMonitorState() {
+  return {
+    version: 1,
+    rules: {
+      enabled: true,
+      forecast_usd: 25,
+      token_growth_pct: 50,
+      cost_growth_pct: 50,
+      anomaly_count: 1
+    },
+    active: [],
+    events: [],
+    last_run_at: null,
+    last_success_at: null,
+    last_error: null
+  };
+}
+
+function loadMonitorState() {
+  try {
+    const data = JSON.parse(fs.readFileSync(MONITOR_FILE, "utf8"));
+    return { ...defaultMonitorState(), ...data, rules: { ...defaultMonitorState().rules, ...(data.rules || {}) } };
+  } catch (error) {
+    if (error?.code !== "ENOENT") console.warn("TokenTrack API monitor state read failed | " + error.message);
+    return defaultMonitorState();
+  }
+}
+
+function saveMonitorState(state) {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    const temp = MONITOR_FILE + "." + process.pid + ".tmp";
+    fs.writeFileSync(temp, JSON.stringify(state), { encoding: "utf8", mode: 0o600 });
+    fs.renameSync(temp, MONITOR_FILE);
+    return true;
+  } catch (error) {
+    console.error("TokenTrack API monitor state write failed | " + error.message);
+    return false;
+  }
+}
+
+let apiMonitorState = loadMonitorState();
+let apiMonitorRunning = false;
+
+function normalizeMonitorRules(input = {}) {
+  return {
+    enabled: input.enabled !== false,
+    forecast_usd: Math.max(0, num(input.forecast_usd ?? 25)),
+    token_growth_pct: Math.max(1, num(input.token_growth_pct ?? 50)),
+    cost_growth_pct: Math.max(1, num(input.cost_growth_pct ?? 50)),
+    anomaly_count: Math.max(1, Math.floor(num(input.anomaly_count ?? 1)))
+  };
+}
+
+function evaluateServerApiAlerts(data, rules) {
+  if (!rules.enabled) return [];
+  const alerts = [];
+  const runRate = data.run_rate || {};
+  const delta = data.comparison?.delta || {};
+
+  if (data.stale) {
+    alerts.push({ key: "api.stale", severity: "critical", title: "API telemetry is stale", message: "The background monitor is using last-known-good API telemetry." });
+  }
+  if (rules.forecast_usd > 0 && num(runRate.projected_30d_cost) >= rules.forecast_usd) {
+    alerts.push({ key: "api.forecast", severity: "warning", title: "API spend forecast threshold", message: "Projected 30-day spend is $" + num(runRate.projected_30d_cost).toFixed(2) + "." });
+  }
+  if (delta.total_tokens_pct !== null && delta.total_tokens_pct !== undefined && num(delta.total_tokens_pct) >= rules.token_growth_pct) {
+    alerts.push({ key: "api.token.growth", severity: "warning", title: "API token growth spike", message: "Token usage is up " + num(delta.total_tokens_pct).toFixed(1) + "% versus the prior period." });
+  }
+  if (delta.cost_pct !== null && delta.cost_pct !== undefined && num(delta.cost_pct) >= rules.cost_growth_pct) {
+    alerts.push({ key: "api.cost.growth", severity: "warning", title: "API cost growth spike", message: "API cost is up " + num(delta.cost_pct).toFixed(1) + "% versus the prior period." });
+  }
+  if ((data.anomalies || []).length >= rules.anomaly_count) {
+    alerts.push({ key: "api.anomalies", severity: "warning", title: "API usage anomalies detected", message: (data.anomalies || []).length + " unusual usage spike(s) detected." });
+  }
+  return alerts;
+}
+
+function appendMonitorEvent(kind, alert) {
+  apiMonitorState.events.unshift({
+    id: sha256Hex(kind + "|" + alert.key + "|" + Date.now() + "|" + Math.random()),
+    at: new Date().toISOString(),
+    kind,
+    key: alert.key,
+    source: "OpenAI API",
+    severity: kind === "resolved" ? "resolved" : alert.severity,
+    title: alert.title,
+    message: alert.message
+  });
+  apiMonitorState.events = apiMonitorState.events.slice(0, 300);
+}
+
+async function runApiMonitor() {
+  if (apiMonitorRunning || !OPENAI_ADMIN_KEY) return;
+  apiMonitorRunning = true;
+  apiMonitorState.last_run_at = new Date().toISOString();
+  try {
+    const data = await loadAnalytics(30);
+    const next = evaluateServerApiAlerts(data, normalizeMonitorRules(apiMonitorState.rules));
+    const prior = new Map((apiMonitorState.active || []).map(a => [a.key, a]));
+    const nextMap = new Map(next.map(a => [a.key, a]));
+    for (const alert of next) if (!prior.has(alert.key)) appendMonitorEvent("activated", alert);
+    for (const [key, old] of prior) if (!nextMap.has(key)) appendMonitorEvent("resolved", old);
+    apiMonitorState.active = next;
+    apiMonitorState.last_success_at = new Date().toISOString();
+    apiMonitorState.last_error = null;
+  } catch (error) {
+    apiMonitorState.last_error = error?.message || "Unknown API monitor error";
+    console.warn("TokenTrack background API monitor failed | " + apiMonitorState.last_error);
+  } finally {
+    saveMonitorState(apiMonitorState);
+    apiMonitorRunning = false;
+  }
 }
 
 function authOkay(req) {
@@ -928,9 +1046,51 @@ const server = http.createServer(async (req, res) => {
       key_configured: Boolean(OPENAI_ADMIN_KEY),
       password_protected: Boolean(DASHBOARD_PASSWORD),
       sync_storage: syncStorageStatus(),
+      api_monitor: {
+        enabled: Boolean(apiMonitorState.rules?.enabled),
+        interval_seconds: Math.floor(MONITOR_INTERVAL_MS / 1000),
+        last_run_at: apiMonitorState.last_run_at,
+        last_success_at: apiMonitorState.last_success_at,
+        last_error: apiMonitorState.last_error,
+        active_count: (apiMonitorState.active || []).length
+      },
       uptime_seconds: Math.floor(process.uptime()),
       time: new Date().toISOString()
     });
+  }
+
+  if (url.pathname === "/api/server-monitor") {
+    try {
+      if (req.method === "GET") {
+        return json(res, 200, {
+          rules: normalizeMonitorRules(apiMonitorState.rules),
+          active: apiMonitorState.active || [],
+          events: (apiMonitorState.events || []).slice(0, 200),
+          last_run_at: apiMonitorState.last_run_at,
+          last_success_at: apiMonitorState.last_success_at,
+          last_error: apiMonitorState.last_error,
+          interval_seconds: Math.floor(MONITOR_INTERVAL_MS / 1000)
+        });
+      }
+
+      if (req.method === "PUT") {
+        const body = await readJsonBody(req, 64 * 1024);
+        apiMonitorState.rules = normalizeMonitorRules({ ...apiMonitorState.rules, ...(body.rules || {}) });
+        saveMonitorState(apiMonitorState);
+        setTimeout(() => runApiMonitor(), 0);
+        return json(res, 200, { ok: true, rules: apiMonitorState.rules });
+      }
+
+      if (req.method === "DELETE") {
+        apiMonitorState.events = [];
+        saveMonitorState(apiMonitorState);
+        return json(res, 200, { ok: true, events_cleared: true });
+      }
+
+      return json(res, 405, { error: "Method not allowed" }, { Allow: "GET, PUT, DELETE" });
+    } catch (error) {
+      return json(res, error.status || 500, { error: error.message || "API monitor error" });
+    }
   }
 
   if (url.pathname === "/api/chatgpt-sync") {
@@ -1072,5 +1232,11 @@ server.listen(PORT, "0.0.0.0", () => {
     }, 1200);
   } else {
     console.warn("TokenTrack analytics self-test SKIPPED | OPENAI_ADMIN_KEY not configured");
+  }
+
+  if (OPENAI_ADMIN_KEY) {
+    setTimeout(() => runApiMonitor(), 2500);
+    setInterval(() => runApiMonitor(), MONITOR_INTERVAL_MS).unref();
+    console.log("TokenTrack background API monitor | interval_seconds=" + Math.floor(MONITOR_INTERVAL_MS / 1000));
   }
 });
