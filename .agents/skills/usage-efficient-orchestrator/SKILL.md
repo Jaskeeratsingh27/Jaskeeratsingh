@@ -1,13 +1,15 @@
 ---
 name: usage-efficient-orchestrator
-description: Conserve Work/Codex weekly allowance by planning once, estimating burn from measured history when statistically supportable, routing bounded work to the cheapest capable roles, enforcing risk-aware review, single-writer execution, proxy usage counters, failure-aware escalation, privacy-preserving telemetry, reliability gates, and user checkpoints before expensive continuation. Use for nontrivial coding, repository work, file/process creation, agent creation, debugging, refactors, deployments, or multi-step technical tasks.
+description: Conserve Work/Codex weekly allowance by planning once, estimating burn from measured history, evaluating cheaper capability routes conservatively, preserving quality/risk floors, routing bounded work to the cheapest proven-capable roles, enforcing single-writer execution, proxy usage counters, failure-aware escalation, privacy-preserving telemetry, reliability gates, and user checkpoints before expensive continuation. Use for nontrivial coding, repository work, file/process creation, agent creation, debugging, refactors, deployments, or multi-step technical tasks.
 ---
 
-# Usage-Efficient Orchestrator v1.4.0
+# Usage-Efficient Orchestrator v1.5.0
 
 ## Mission
 
-Act as a supervisor/architect, not an expensive universal worker. Achieve the requested outcome with the least costly combination of model capability, context, tool calls, retries, and verification that can reliably satisfy the task. Use real measured history to improve budget decisions, but never substitute a prediction for an actual usage meter.
+Act as a supervisor/architect, not an expensive universal worker. Achieve the requested outcome with the least costly combination of model capability, context, tool calls, retries, and verification that can reliably satisfy the task.
+
+Use measured history to improve budget and routing decisions, but never substitute a prediction for an actual usage meter and never trade away required quality or risk controls for lower historical usage.
 
 ## 1. Mandatory Task Envelope
 
@@ -15,10 +17,13 @@ Before substantial work, create a compact internal Task Envelope using `referenc
 
 It must define:
 - task_id;
+- task_kind: discovery | implementation | review | architecture | mixed;
 - goal and definition of done;
 - complexity and risk separately;
 - selected budget profile;
 - weekly usage baseline when known;
+- baseline route;
+- adaptive mode and candidate route when available;
 - likely files/components;
 - independent work units and dependencies;
 - capability role assigned to each work unit;
@@ -60,16 +65,75 @@ If the user supplied a real remaining percentage, add `--baseline <percent>`.
 Gate handling:
 - `proxy_only`: insufficient measured history; use proxy counters only.
 - `proceed_with_proxy_guards`: prediction is below target but confidence/calibration is not strong enough to relax proxies.
-- `proceed`: conservative historical upper band is within target and calibration is acceptable; proxies still remain a safety backstop.
+- `proceed`: conservative historical upper band is within target and calibration is acceptable; proxies remain a safety backstop.
 - `approval_required`: stop and ask before execution.
-- `split_required`: split into smaller phases; do not execute as one autonomous turn.
+- `split_required`: split into smaller phases.
 - `plan_only`: risk/complexity control plane forbids direct execution.
 
 The prediction is empirical guidance, not a guaranteed billing meter. The p25-p90 range is an empirical prediction band, not a formal confidence interval.
 
 A predictor failure gets one cheap retry at most. Then classify it as `tooling_environment` and continue with proxy controls rather than escalating model strength.
 
-## 4. Capability routing
+## 4. Adaptive routing gate
+
+Read:
+- `references/adaptive-routing-policy.md`;
+- `config/adaptive-routing.json`;
+- `config/route-templates.json`;
+- `config/adaptive-routing-approvals.json`.
+
+After the usage-intelligence gate, evaluate the baseline route against measured historical route evidence:
+
+```bash
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/adaptive-routing.mjs recommend \
+  --task-kind <discovery|implementation|review|architecture|mixed> \
+  --complexity <MICRO|SMALL|MEDIUM|LARGE> \
+  --risk <LOW|MEDIUM|HIGH|CRITICAL> \
+  --profile <economy|balanced|quality-critical> \
+  --json
+```
+
+Default mode is **shadow**.
+
+Shadow mode may recommend a candidate but must not silently replace the baseline route.
+
+A candidate route must clear:
+- minimum route-level task samples;
+- minimum measured usage samples;
+- success-rate floor;
+- validation-pass floor when evidence exists;
+- no material quality regression versus baseline;
+- task-kind compatibility;
+- risk-role requirements;
+- absolute p90 improvement threshold;
+- relative p90 improvement threshold;
+- stability/drift gates.
+
+Hard rules:
+- HIGH risk requires reviewer coverage.
+- CRITICAL or LARGE work remains plan-only.
+- `senior_specialist` routes are escalation-only and are never chosen as a cheaper initial route.
+- quality-critical active route changes require explicit user approval.
+- missing task-kind data cannot by itself justify active adaptation.
+- weak calibration or drift may allow shadow observation but suppresses active adaptation.
+
+### Canonical approval requirement
+
+Active route changes require a matching canonical approval entry and explicit user approval.
+
+The orchestrator must never create an approval entry merely because a candidate looks cheaper.
+
+### Observational evidence caveat
+
+Historical route comparisons are observational.
+
+Do not claim that a route **caused** lower usage unless controlled evidence exists. Use language such as:
+- historically lower measured burn;
+- candidate route;
+- observational evidence;
+- shadow recommendation.
+
+## 5. Capability routing
 
 Read `config/capabilities.toml`.
 
@@ -80,12 +144,15 @@ Route by logical capability role:
 - senior_specialist
 - architect
 
-The current role-to-model mapping is configuration, not policy. Use the cheapest capable role.
+The current role-to-model mapping is configuration, not policy.
 
-## 5. Risk-aware routing
+Use the cheapest **proven-capable** role, not simply the cheapest available model.
+
+## 6. Risk-aware routing
 
 Complexity answers "how hard is this?"
 Risk answers "how bad is a wrong change?"
+Task kind answers "what kind of work is being performed?"
 
 Classify risk:
 - LOW: local, reversible, non-sensitive.
@@ -99,9 +166,9 @@ Rules:
 - HIGH: reviewer required; explicit rollback plan; no silent scope expansion; user checkpoint before deployment/destructive action.
 - CRITICAL: plan-only first; user approval before write/deploy/destructive step.
 
-The stricter of the risk gate and usage-intelligence gate always wins.
+The strictest of risk, usage-intelligence, budget, and adaptive-routing gates wins.
 
-## 6. Single-writer execution
+## 7. Single-writer execution
 
 At most one write-capable worker may modify the same working tree at a time.
 
@@ -109,7 +176,7 @@ Parallelism is allowed for read-only scout/research/review work.
 
 Multiple writers are allowed only with isolated worktrees/branches, explicit file ownership, a planned integration step, and a clear efficiency benefit.
 
-## 7. Proxy usage counters
+## 8. Proxy usage counters
 
 When live allowance is unavailable, use `config/budget-profiles.toml`.
 
@@ -126,23 +193,41 @@ Track:
 
 Crossing a hard proxy limit is a stop condition.
 
-Predictions supplement these counters; they do not replace them.
+Predictions and adaptive routing supplement these counters; they do not replace them.
 
-## 8. Failure-aware escalation
+## 9. Failure-aware escalation
 
 Before escalating, classify the failure with `references/failure-taxonomy.md`.
 
-Do not escalate model strength for missing information, environment/tool failures, permission failures, bad/flaky fixtures, telemetry failures, or prediction-tool failures unless evidence shows stronger reasoning is relevant.
+Do not escalate model strength for:
+- missing information;
+- environment/tool failures;
+- permission failures;
+- bad/flaky fixtures;
+- telemetry failures;
+- prediction-tool failures;
+- adaptive-routing tool failures;
+
+unless evidence shows stronger reasoning is relevant.
 
 Pass a concise failure summary upward. Do not restart discovery from zero without evidence that prior discovery is stale.
 
-## 9. Structured delegation and handoff
+## 10. Structured delegation and handoff
 
-Every delegated task specifies task_id, goal, scope/path, access mode, capability role, expected output, stop condition, and maximum useful detail.
+Every delegated task specifies:
+- task_id;
+- work unit;
+- goal;
+- scope/path;
+- access mode;
+- capability role;
+- expected output;
+- stop condition;
+- maximum useful detail.
 
 Workers return `references/handoff-schema.md`. No raw transcript dumps.
 
-## 10. Privacy-preserving observability
+## 11. Privacy-preserving observability
 
 Read `references/observability-policy.md` and `config/observability.json`.
 
@@ -157,34 +242,48 @@ Never record:
 - full filesystem paths;
 - raw tool output.
 
-Allowed telemetry is structured metadata only. New events include the orchestrator version so calibration can detect policy/model drift across releases.
+Allowed telemetry is structured metadata only.
+
+New task-start events should record `task_kind`.
+
+Adaptive route recommendations may record:
+- baseline route;
+- candidate route;
+- decision mode;
+- controlled decision code;
+- evidence sample count;
+- estimated p90 savings.
 
 Use checkpoints only when a real remaining-percentage value is available. Do not infer one.
 
 Telemetry gets one retry at most. Then continue the primary task.
 
-## 11. Intelligence reporting and calibration
+## 12. Intelligence and routing reporting
 
-Useful commands:
+Usage intelligence:
 
 ```bash
 node ~/.agents/skills/usage-efficient-orchestrator/scripts/usage-intelligence.mjs analyze --days 56 --json
 node ~/.agents/skills/usage-efficient-orchestrator/scripts/usage-intelligence.mjs backtest --days 56
-node ~/.agents/skills/usage-efficient-orchestrator/scripts/usage-intelligence.mjs export --days 56 --out <file>
 ```
 
-The estimator:
-- uses only measured compatible checkpoint pairs;
-- selects the narrowest cohort with enough samples;
-- uses robust empirical quantiles and MAD;
-- detects median drift between older/newer halves when sample size permits;
-- uses leave-one-out backtesting for historical calibration;
-- downgrades confidence when calibration is weak;
-- never treats unmeasured work as zero burn.
+Adaptive routing:
 
-Descriptive role/route statistics are not causal claims. Adaptive routing decisions belong to v1.5.
+```bash
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/adaptive-routing.mjs analyze --days 56 --json
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/adaptive-routing.mjs shadow --days 56 --json
+```
 
-## 12. Context conservation
+The adaptive router:
+- compares known route templates only;
+- uses the narrowest adequately sampled cohort;
+- compares conservative p90 burn first;
+- enforces success/validation floors;
+- reports rejected routes and reasons;
+- suppresses active changes on drift/weak evidence;
+- never treats unmeasured work as zero usage.
+
+## 13. Context conservation
 
 - Reuse repository maps until relevant files change.
 - Prefer exact file/symbol references over large pasted contexts.
@@ -192,11 +291,13 @@ Descriptive role/route statistics are not causal claims. Adaptive routing decisi
 - Stop research when evidence is sufficient.
 - Do not make a stronger model reread already-distilled evidence unless verification is required.
 
-## 13. Test conservation
+## 14. Test conservation
 
-Match test breadth to risk and change breadth. Never rerun an unchanged passing suite for reassurance.
+Match test breadth to risk and change breadth.
 
-## 14. Reliability control plane
+Never rerun an unchanged passing suite for reassurance.
+
+## 15. Reliability control plane
 
 GitHub repository content is canonical. Global Codex copies are runtime mirrors.
 
@@ -218,11 +319,19 @@ The release must pass `node scripts/security-check-orchestrator.mjs`.
 
 ### Usage intelligence gate
 
-The release must pass `node scripts/test-usage-intelligence.mjs` and the intelligence configuration must match the budget profiles.
+The release must pass `node scripts/test-usage-intelligence.mjs`.
+
+### Adaptive routing gate
+
+The release must pass `node scripts/test-adaptive-routing.mjs`.
+
+Adaptive mode must remain `shadow` unless an active-mode change has been separately approved.
 
 ### CI gate
 
-GitHub Actions must run the unified QA suite for orchestrator branches and pull requests. A failing CI result blocks promotion.
+GitHub Actions must run the unified QA suite for orchestrator branches and pull requests.
+
+A failing CI result blocks promotion.
 
 ### Safe sync
 
@@ -231,12 +340,13 @@ node scripts/orchestrator-sync.mjs --dry-run
 node scripts/orchestrator-sync.mjs
 ```
 
-## 15. Stop-loss gates
+## 16. Stop-loss gates
 
 Stop and return control to the user when:
 - profile retry limit is reached;
 - a hard proxy counter is reached;
 - usage intelligence returns `approval_required`, `split_required`, or `plan_only`;
+- adaptive routing returns a result that requires manual approval for active use;
 - architecture materially changes;
 - scope expands outside the Task Envelope;
 - next step requires a higher-cost tier beyond the profile gate;
@@ -244,7 +354,7 @@ Stop and return control to the user when:
 - CRITICAL risk would move from planning to execution;
 - QA/security/drift status is unsafe for requested promotion or sync.
 
-## 16. Version-control and release policy
+## 17. Version-control and release policy
 
 1. Inspect current Git state/history before edits.
 2. Preserve unrelated user changes.
@@ -256,26 +366,34 @@ Stop and return control to the user when:
 8. Promotion must be traceable to a PR/commit.
 9. Record last known-good release.
 10. Do not merge an orchestrator release candidate until QA is green and the user approves.
+11. Concurrent main changes must be preserved by rebasing/reconciling before promotion.
 
-## 17. Validation accuracy
+## 18. Validation accuracy
 
-v1.4 can validate:
-- exact burn arithmetic from real checkpoints;
-- cohort selection;
-- deterministic gate behavior;
-- drift detection;
-- historical leave-one-out calibration metrics;
-- privacy boundaries.
+v1.5 can validate:
+- exact burn arithmetic from measured checkpoints;
+- usage cohort selection;
+- adaptive route cohort selection;
+- route template matching;
+- quality/risk floor enforcement;
+- candidate p90 savings calculation;
+- deterministic shadow decisions;
+- drift suppression;
+- privacy boundaries;
+- CI behavior.
 
-v1.4 cannot guarantee future burn. A prediction remains an empirical estimate based on historical tasks.
+v1.5 cannot prove that a candidate route will causally reduce future usage.
 
-Do not describe synthetic-test accuracy as real-world predictive accuracy. Real confidence improves only after enough of the user's actual tasks have measured checkpoints.
+Synthetic fixtures validate control logic, not real-world causal effect.
+
+Real confidence improves only after enough actual tasks have measured outcomes, and controlled exploration belongs to the final hardening/evaluation phase before v2.0.
 
 ## Default bounded-phase response
 
 Keep it compact:
 - version/phase;
 - usage-intelligence gate and confidence when available;
+- adaptive-routing decision and mode when available;
 - what changed;
 - validation result;
 - measured-data coverage;
@@ -292,7 +410,11 @@ Read supporting files only when needed:
 - `references/escalation-policy.md`
 - `references/observability-policy.md`
 - `references/usage-intelligence-policy.md`
+- `references/adaptive-routing-policy.md`
 - `config/capabilities.toml`
 - `config/budget-profiles.toml`
 - `config/observability.json`
 - `config/usage-intelligence.json`
+- `config/adaptive-routing.json`
+- `config/route-templates.json`
+- `config/adaptive-routing-approvals.json`
