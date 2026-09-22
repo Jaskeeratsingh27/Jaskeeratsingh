@@ -2,6 +2,8 @@
 
 Hermes documents a defense-in-depth model covering user authorization, dangerous-command approvals, file write safety, sandbox/container isolation, MCP credential filtering, context-file scanning, session isolation, and input sanitization.
 
+Stable v0.21.4 adds gateway `unauthorized_dm_behavior: decline`: an unauthorized sender receives one short decline message and subsequent messages from that sender are ignored for 24 hours. This is an authorization-response policy, not a substitute for allowlists, pairing controls, sandboxing, or least-privilege tool exposure.
+
 ## Profiles are not security boundaries
 
 A profile isolates Hermes state, not OS access. A local-terminal agent can still access files available to the OS user unless separate controls exist.

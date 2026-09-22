@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0.0",
+  "change_id": "hermes-v0.21.4-stable-2026-09-22",
+  "severity": "minor",
+  "affected_capabilities": [
+    "bot_mode",
+    "memory",
+    "profiles",
+    "security",
+    "skills_context_soul",
+    "tools_mcp"
+  ],
+  "affected_consumers": [
+    {
+      "consumer_id": "hermes-agent-creator",
+      "consumer_type": "skill",
+      "criticality": "high",
+      "dependency_mode": "canonical_knowledge_dependency",
+      "matched_capabilities": [
+        "bot_mode",
+        "memory",
+        "profiles",
+        "security",
+        "skills_context_soul",
+        "tools_mcp"
+      ],
+      "paths": [
+        ".agents/skills/hermes-agent-creator/SKILL.md",
+        ".agents/skills/hermes-agent-creator/references/runtime-map.md",
+        ".agents/skills/hermes-agent-creator/references/recovered-hermes-runtime.md"
+      ],
+      "recommended_action": "compatibility_review",
+      "blocks_consumer_compatibility_clearance": false
+    },
+    {
+      "consumer_id": "kaizen-orchestrator",
+      "consumer_type": "skill",
+      "criticality": "medium",
+      "dependency_mode": "hermes_adaptation",
+      "matched_capabilities": [
+        "memory",
+        "profiles",
+        "tools_mcp"
+      ],
+      "paths": [
+        ".agents/skills/kaizen-orchestrator/SKILL.md",
+        ".agents/skills/kaizen-orchestrator/references/kaizen-orchestrator-master-guide.md",
+        ".agents/skills/kaizen-orchestrator/references/universal-agent-portability-reference.md"
+      ],
+      "recommended_action": "targeted_review",
+      "blocks_consumer_compatibility_clearance": false
+    }
+  ],
+  "consumer_count": 2,
+  "coverage_gap": false,
+  "unknown_source_ids": [],
+  "unknown_capability_ids": [],
+  "requires_consumer_review": true,
+  "blocking_consumer_ids": []
+}

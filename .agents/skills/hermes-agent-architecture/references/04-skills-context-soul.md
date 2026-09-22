@@ -18,6 +18,10 @@ skill-name/
 
 Use skills for SOPs, decision rules, domain knowledge, output templates, and reusable procedures.
 
+## Auto-loaded skills
+
+Stable v0.21.4 supports profile-scoped `skills.auto_load`. Named skills in that setting are pinned into every new session's prompt, including CLI, TUI, gateway, Cron, and API sessions. Use auto-load only for procedures that truly belong in every session for that profile; keep large or situational knowledge on demand so progressive disclosure still controls context size.
+
 ## Project context
 
 Hermes automatically discovers project instructions. Current documented priority is approximately:

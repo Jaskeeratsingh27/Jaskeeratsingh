@@ -1,32 +1,246 @@
 {
   "manifest_version": "1.0.0",
-  "research_baseline_date": "2026-09-21",
+  "research_baseline_date": "2026-09-22",
   "repository": "https://github.com/NousResearch/hermes-agent",
   "sources": [
-    {"id":"releases","url":"https://github.com/NousResearch/hermes-agent/releases","topics":["versions","breaking-changes","release-notes"],"priority":"critical"},
-    {"id":"features-overview","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/overview","topics":["feature-map"],"priority":"high"},
-    {"id":"profiles","url":"https://hermes-agent.nousresearch.com/docs/user-guide/profiles","topics":["profiles","state-isolation"],"priority":"critical"},
-    {"id":"profile-distributions","url":"https://hermes-agent.nousresearch.com/docs/user-guide/profile-distributions","topics":["profiles","packaging","distribution"],"priority":"high"},
-    {"id":"bot-mode","url":"https://hermes-agent.nousresearch.com/docs/user-guide/bot-mode","topics":["bots","agent-messaging"],"priority":"high"},
-    {"id":"skills","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/skills","topics":["skills","progressive-disclosure"],"priority":"critical"},
-    {"id":"context-files","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/context-files","topics":["AGENTS.md","project-context"],"priority":"critical"},
-    {"id":"memory","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/memory","topics":["memory","persistence"],"priority":"high"},
-    {"id":"memory-providers","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/memory-providers","topics":["memory","providers"],"priority":"medium"},
-    {"id":"honcho","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/honcho","topics":["memory","external-memory"],"priority":"medium"},
-    {"id":"delegation","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation","topics":["subagents","delegate_task","output_schema","spawn-depth"],"priority":"critical"},
-    {"id":"kanban","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban","topics":["orchestration","durable-workflow","task-state"],"priority":"critical"},
-    {"id":"kanban-worker-lanes","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban-worker-lanes","topics":["kanban","workers","concurrency"],"priority":"high"},
-    {"id":"tools","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/tools","topics":["tools","toolsets","permissions"],"priority":"critical"},
-    {"id":"tools-reference","url":"https://hermes-agent.nousresearch.com/docs/reference/tools-reference","topics":["tools","parameters"],"priority":"high"},
-    {"id":"code-execution","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/code-execution","topics":["execute_code","deterministic-pipelines"],"priority":"high"},
-    {"id":"mcp","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp","topics":["MCP","external-tools"],"priority":"high"},
-    {"id":"cron","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/cron","topics":["cron","scheduling","automation"],"priority":"critical"},
-    {"id":"security","url":"https://hermes-agent.nousresearch.com/docs/user-guide/security","topics":["security","sandboxing","credentials"],"priority":"critical"},
-    {"id":"checkpoints","url":"https://hermes-agent.nousresearch.com/docs/user-guide/checkpoints-and-rollback","topics":["checkpoints","rollback","recovery"],"priority":"high"},
-    {"id":"models","url":"https://hermes-agent.nousresearch.com/docs/user-guide/configuring-models","topics":["models","providers","configuration"],"priority":"critical"},
-    {"id":"fallback-providers","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/fallback-providers/","topics":["providers","fallback","resilience"],"priority":"high"},
-    {"id":"provider-routing","url":"https://hermes-agent.nousresearch.com/docs/user-guide/features/provider-routing","topics":["routing","providers","models"],"priority":"high"},
-    {"id":"observer-hooks","url":"https://hermes-agent.nousresearch.com/docs/developer-guide/observer-hooks","topics":["observability","hooks","correlation-ids"],"priority":"critical"},
-    {"id":"plugins","url":"https://hermes-agent.nousresearch.com/docs/developer-guide/plugins","topics":["plugins","policy","extension"],"priority":"high"}
+    {
+      "id": "releases",
+      "url": "https://github.com/NousResearch/hermes-agent/releases",
+      "topics": [
+        "versions",
+        "breaking-changes",
+        "release-notes"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "features-overview",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/overview",
+      "topics": [
+        "feature-map"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "profiles",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/profiles",
+      "topics": [
+        "profiles",
+        "state-isolation"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "profile-distributions",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/profile-distributions",
+      "topics": [
+        "profiles",
+        "packaging",
+        "distribution"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "bot-mode",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/bot-mode",
+      "topics": [
+        "bots",
+        "agent-messaging"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "skills",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/skills",
+      "topics": [
+        "skills",
+        "progressive-disclosure"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "context-files",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/context-files",
+      "topics": [
+        "AGENTS.md",
+        "project-context"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "memory",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/memory",
+      "topics": [
+        "memory",
+        "persistence"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "memory-providers",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/memory-providers",
+      "topics": [
+        "memory",
+        "providers"
+      ],
+      "priority": "medium"
+    },
+    {
+      "id": "honcho",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/honcho",
+      "topics": [
+        "memory",
+        "external-memory"
+      ],
+      "priority": "medium"
+    },
+    {
+      "id": "delegation",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/delegation",
+      "topics": [
+        "subagents",
+        "delegate_task",
+        "output_schema",
+        "spawn-depth"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "kanban",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban",
+      "topics": [
+        "orchestration",
+        "durable-workflow",
+        "task-state"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "kanban-worker-lanes",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban-worker-lanes",
+      "topics": [
+        "kanban",
+        "workers",
+        "concurrency"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "tools",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/tools",
+      "topics": [
+        "tools",
+        "toolsets",
+        "permissions"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "tools-reference",
+      "url": "https://hermes-agent.nousresearch.com/docs/reference/tools-reference",
+      "topics": [
+        "tools",
+        "parameters"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "code-execution",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/code-execution",
+      "topics": [
+        "execute_code",
+        "deterministic-pipelines"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "mcp",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp",
+      "topics": [
+        "MCP",
+        "external-tools"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "cron",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/cron",
+      "topics": [
+        "cron",
+        "scheduling",
+        "automation"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "security",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/security",
+      "topics": [
+        "security",
+        "sandboxing",
+        "credentials"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "checkpoints",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/checkpoints-and-rollback",
+      "topics": [
+        "checkpoints",
+        "rollback",
+        "recovery"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "models",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/configuring-models",
+      "topics": [
+        "models",
+        "providers",
+        "configuration"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "fallback-providers",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/fallback-providers/",
+      "topics": [
+        "providers",
+        "fallback",
+        "resilience"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "provider-routing",
+      "url": "https://hermes-agent.nousresearch.com/docs/user-guide/features/provider-routing",
+      "topics": [
+        "routing",
+        "providers",
+        "models"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "observer-hooks",
+      "url": "https://hermes-agent.nousresearch.com/docs/developer-guide/observer-hooks",
+      "topics": [
+        "observability",
+        "hooks",
+        "correlation-ids"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "plugins",
+      "url": "https://hermes-agent.nousresearch.com/docs/developer-guide/plugins",
+      "topics": [
+        "plugins",
+        "policy",
+        "extension"
+      ],
+      "priority": "high"
+    }
   ]
 }

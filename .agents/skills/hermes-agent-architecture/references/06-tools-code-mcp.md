@@ -20,6 +20,12 @@ MCP connects Hermes to external tool servers such as GitHub, databases, internal
 
 Treat MCP as a capability boundary. Prefer exposing only the tools a role needs rather than attaching an entire broad server surface to every profile.
 
+Stable v0.21.4 bounds MCP server discovery to 4 simultaneous connects per discovery pass by default. Configure `mcp.discovery_concurrency` per deployment; `0` means unlimited. This reduces startup CPU/RAM and provider bursts, especially on hosts running multiple profiles.
+
+## Programmatic CLI output
+
+v0.21.4 adds CLI `--format stream-json` structured JSONL output. This is an interface/automation output format and is distinct from delegated-agent `output_schema` contracts; do not conflate the two when designing machine-consumed workflows.
+
 ## Agent design pattern
 
 For each profile, explicitly list:

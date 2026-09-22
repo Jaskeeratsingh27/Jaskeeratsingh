@@ -2,9 +2,11 @@
 
 ## Baseline
 
-Research performed 2026-09-21. Latest stable GitHub release found: Hermes Agent v0.21.3, tag `v2026.9.14`, released 2026-09-14.
+Research performed 2026-09-22. Latest stable GitHub release verified: Hermes Agent v0.21.4, tag `v2026.9.21`, released 2026-09-21.
 
-The release notes state that v0.21.3 is a patch roll-up and that fuller curated notes for the window are intended for v0.22.0. This reinforces the need to validate features against a pinned version rather than assuming every current-doc detail is in the stable tag.
+The v0.21.4 release is explicitly a patch roll-up of the development window since v0.21.3. Upstream defers the full curated notes for that window to v0.22.0. The release itself calls out gateway/Desktop ownership, CLI stream-JSON output, skill auto-loading, unauthorized-DM decline behavior, MCP discovery concurrency, session-search changes, journal-mode management, and broad profile/multiplex, Cron, Kanban, Desktop, and state-database fixes.
+
+This reinforces the production rule: distinguish the pinned stable tag from documentation/current-main behavior, and revalidate version-sensitive claims at each stable transition.
 
 ## Fast-moving interfaces
 
@@ -15,7 +17,7 @@ Hermes is developing rapidly. Higher-risk compatibility surfaces include:
 - profile/gateway multiplexing
 - state database behavior
 - model/provider routing
-- MCP auth/SDK behavior
+- MCP auth/SDK/discovery behavior
 - plugin/hook payloads
 - desktop/Bot Mode integration
 
@@ -26,7 +28,7 @@ Hermes is developing rapidly. Higher-risk compatibility surfaces include:
 3. Test generated configuration against that target.
 4. Keep a compatibility matrix for providers/models/toolsets.
 5. Upgrade in a branch/staging environment.
-6. Re-run workflow, security, and contract tests before promotion.
+6. Re-run workflow, security, persistence, and contract tests before promotion.
 
 ## Source-of-truth hierarchy
 

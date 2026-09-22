@@ -1,0 +1,117 @@
+{
+  "schema_version": "1.0.0",
+  "audit_date": "2026-09-22",
+  "skill_version": "1.7.0",
+  "observed_hermes_release": "v0.21.4",
+  "observed_hermes_tag": "v2026.9.21",
+  "sources_checked": [
+    "releases",
+    "features-overview",
+    "profiles",
+    "profile-distributions",
+    "bot-mode",
+    "skills",
+    "context-files",
+    "memory",
+    "memory-providers",
+    "honcho",
+    "delegation",
+    "kanban",
+    "kanban-worker-lanes",
+    "tools",
+    "tools-reference",
+    "code-execution",
+    "mcp",
+    "cron",
+    "security",
+    "checkpoints",
+    "models",
+    "fallback-providers",
+    "provider-routing",
+    "observer-hooks",
+    "plugins"
+  ],
+  "change_event_ids": [
+    "hermes-v0.21.4-stable-2026-09-22"
+  ],
+  "highest_severity": "minor",
+  "capability_results": [
+    {
+      "id": "profiles",
+      "status": "verified",
+      "verified_on": "2026-09-22"
+    },
+    {
+      "id": "bot_mode",
+      "status": "verified",
+      "verified_on": "2026-09-22"
+    },
+    {
+      "id": "delegation",
+      "status": "verified",
+      "verified_on": "2026-09-22"
+    },
+    {
+      "id": "structured_output",
+      "status": "verified",
+      "verified_on": "2026-09-22"
+    },
+    {
+      "id": "kanban",
+      "status": "verified",
+      "verified_on": "2026-09-22"
+    },
+    {
+      "id": "skills_context_soul",
+      "status": "verified",
+      "verified_on": "2026-09-22"
+    },
+    {
+      "id": "memory",
+      "status": "verified",
+      "verified_on": "2026-09-22"
+    },
+    {
+      "id": "tools_mcp",
+      "status": "verified",
+      "verified_on": "2026-09-22"
+    },
+    {
+      "id": "execute_code",
+      "status": "verified",
+      "verified_on": "2026-09-22"
+    },
+    {
+      "id": "model_routing",
+      "status": "verified",
+      "verified_on": "2026-09-22"
+    },
+    {
+      "id": "cron",
+      "status": "verified",
+      "verified_on": "2026-09-22"
+    },
+    {
+      "id": "security",
+      "status": "verified",
+      "verified_on": "2026-09-22"
+    },
+    {
+      "id": "observability",
+      "status": "verified",
+      "verified_on": "2026-09-22"
+    }
+  ],
+  "validation": {
+    "structural": "passed",
+    "architecture": "passed",
+    "release_impact": "passed",
+    "health_drift": "passed"
+  },
+  "notes": [
+    "Stable Hermes transition promoted after explicit human approval through the required review branch/PR.",
+    "All source-manifest primary sources were rechecked on 2026-09-22; no breaking change to the core primitive-selection model was found.",
+    "Full curated upstream notes for the v0.21.3-to-v0.21.4 window remain deferred to v0.22.0.",
+    "All seven deterministic GitHub CI gates are required to pass before merge; audit validation fields describe the promoted state and must be corrected if CI disagrees."
+  ]
+}
