@@ -62,9 +62,18 @@ const m=config.match(/max_concurrent_threads_per_session\s*=\s*(\d+)/);
 if(m && Number(m[1])<=3) pass("max concurrency safety",m[1]); else fail("max concurrency safety",m?.[1]??"missing");
 
 const skill=fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/SKILL.md"),"utf8");
-for(const gate of ["Reliability control plane","Security gate","Drift gate","CI gate"]){
+for(const gate of ["Reliability control plane","Security gate","Drift gate","CI gate","Privacy-preserving observability"]){
   (skill.includes(gate)?pass:fail)(`skill gate: ${gate}`);
 }
+
+const observability=JSON.parse(fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/config/observability.json"),"utf8"));
+const capture=observability.capture || {};
+const privacyOk=[
+  "prompt_text","conversation_text","source_code","file_contents","full_file_paths","raw_tool_output","secrets"
+].every(k=>capture[k]===false);
+(privacyOk?pass:fail)("observability privacy config");
+const exportCfg=observability.export || {};
+(exportCfg.aggregate_only===true && exportCfg.include_task_ids===false && exportCfg.include_project_ids===false ? pass : fail)("aggregate-only telemetry export");
 
 const failed=results.filter(r=>!r.ok);
 for(const r of results) console.log(`${r.ok?"PASS":"FAIL"} | ${r.name}${r.detail?" | "+r.detail:""}`);
