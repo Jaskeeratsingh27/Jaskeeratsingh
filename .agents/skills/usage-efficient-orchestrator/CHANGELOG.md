@@ -1,8 +1,23 @@
 # Changelog
 
+## 1.2.0 - 2026-09-21
+
+Reliability release candidate.
+
+- Added a unified QA runner for orchestrator releases.
+- Added GitHub Actions CI for orchestrator policy/config changes.
+- Added canonical manifest and version consistency checks.
+- Added global install drift detection.
+- Added safe one-command global sync with dry-run and backups.
+- Added high-confidence secret scanning and sandbox/config safety checks.
+- Expanded routing/reliability scenario coverage from 12 to 24 cases.
+- Added deterministic routing-policy evaluation.
+- Added release-consistency validation.
+- Added reliability documentation and release report requirements.
+
 ## 1.1.0 - 2026-09-21
 
-Control-plane hardening release candidate.
+Control-plane hardening release.
 
 - Added mandatory structured Task Envelope.
 - Added budget profiles: economy, balanced, quality-critical.
@@ -18,14 +33,3 @@ Control-plane hardening release candidate.
 ## 1.0.0 - 2026-09-21
 
 Initial version-controlled release of the usage-efficient Codex orchestration policy.
-
-- Added 5-percentage-point default turn target and 10-point absolute planning ceiling.
-- Added conservative proxy guards for sessions without a live usage meter.
-- Added Luna scout/research roles.
-- Added Terra implementation/review roles.
-- Added Sol escalation specialist.
-- Added three-thread default concurrency cap.
-- Added two-failure stop rule and mandatory user checkpoints before expensive escalation.
-- Added Git/version-control and deployment traceability requirements.
-- Added repository-level AGENTS.md and Codex project configuration.
-- Added macOS/Linux global installer.
