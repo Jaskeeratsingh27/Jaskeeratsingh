@@ -34,7 +34,9 @@
         "usage_checkpoint",
         "budget_stop",
         "task_finished",
-        "routing_recommendation"
+        "routing_recommendation",
+        "preflight_decision",
+        "post_task_evaluation"
       ]
     },
     "task_id": {
@@ -231,6 +233,104 @@
     "estimated_savings_p90": {
       "type": "number",
       "minimum": 0
+    },
+    "loop_mode": {
+      "enum": [
+        "shadow_closed_loop"
+      ]
+    },
+    "control_action": {
+      "enum": [
+        "execute",
+        "execute_with_proxy_guards",
+        "approval_required",
+        "split_required",
+        "plan_only",
+        "stop_target",
+        "stop_ceiling",
+        "stop_proxy_limit"
+      ]
+    },
+    "selected_route": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,100}$"
+    },
+    "usage_gate": {
+      "enum": [
+        "proxy_only",
+        "proceed_with_proxy_guards",
+        "proceed",
+        "approval_required",
+        "split_required",
+        "plan_only"
+      ]
+    },
+    "predicted_typical_points": {
+      "type": "number",
+      "minimum": 0
+    },
+    "predicted_upper_points": {
+      "type": "number",
+      "minimum": 0
+    },
+    "prediction_confidence": {
+      "enum": [
+        "none",
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "calibration_status": {
+      "enum": [
+        "insufficient",
+        "acceptable",
+        "weak"
+      ]
+    },
+    "actual_burn_points": {
+      "type": "number",
+      "minimum": 0
+    },
+    "prediction_abs_error_points": {
+      "type": "number",
+      "minimum": 0
+    },
+    "target_points": {
+      "type": "number",
+      "minimum": 0
+    },
+    "ceiling_points": {
+      "type": "number",
+      "minimum": 0
+    },
+    "budget_outcome": {
+      "enum": [
+        "within_target",
+        "above_target",
+        "above_ceiling",
+        "unmeasured"
+      ]
+    },
+    "quality_outcome": {
+      "enum": [
+        "passed",
+        "failed",
+        "blocked",
+        "stopped",
+        "cancelled",
+        "unknown"
+      ]
+    },
+    "learning_status": {
+      "enum": [
+        "measured_eligible",
+        "unmeasured",
+        "invalid"
+      ]
+    },
+    "learning_eligible": {
+      "type": "boolean"
     }
   }
 }
