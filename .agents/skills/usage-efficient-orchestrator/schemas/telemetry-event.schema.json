@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/usage-efficient-orchestrator/telemetry-event.schema.json",
+  "title": "Usage-Efficient Orchestrator Telemetry Event",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "event_id",
+    "timestamp",
+    "event_type",
+    "task_id",
+    "project_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 80
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "event_type": {
+      "enum": [
+        "task_started",
+        "route_selected",
+        "worker_finished",
+        "validation",
+        "usage_checkpoint",
+        "budget_stop",
+        "task_finished"
+      ]
+    },
+    "task_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,80}$"
+    },
+    "project_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{12,64}$"
+    },
+    "work_unit": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,40}$"
+    },
+    "profile": {
+      "enum": [
+        "economy",
+        "balanced",
+        "quality-critical"
+      ]
+    },
+    "complexity": {
+      "enum": [
+        "MICRO",
+        "SMALL",
+        "MEDIUM",
+        "LARGE"
+      ]
+    },
+    "risk": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ]
+    },
+    "role": {
+      "enum": [
+        "cheap_reader",
+        "standard_engineer",
+        "reviewer",
+        "senior_specialist",
+        "architect"
+      ]
+    },
+    "model": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._/-]{1,80}$"
+    },
+    "reasoning": {
+      "enum": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "extra-high"
+      ]
+    },
+    "access": {
+      "enum": [
+        "read-only",
+        "workspace-write",
+        "isolated-write",
+        "none"
+      ]
+    },
+    "status": {
+      "enum": [
+        "started",
+        "complete",
+        "blocked",
+        "failed",
+        "passed",
+        "stopped",
+        "cancelled"
+      ]
+    },
+    "failure_class": {
+      "enum": [
+        "none",
+        "information",
+        "tooling_environment",
+        "test_fixture",
+        "implementation",
+        "architecture",
+        "permission_security"
+      ]
+    },
+    "stop_reason": {
+      "enum": [
+        "budget_target",
+        "budget_ceiling",
+        "retry_limit",
+        "scope_expansion",
+        "architecture_change",
+        "risk_gate",
+        "user_checkpoint",
+        "qa_failure",
+        "security_gate",
+        "drift_gate",
+        "other"
+      ]
+    },
+    "remaining_pct": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "usage_source": {
+      "enum": [
+        "user",
+        "status"
+      ]
+    },
+    "usage_cycle_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,80}$"
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "files_inspected": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "files_touched": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tests_run": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "retries": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "check_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failed_count": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}
