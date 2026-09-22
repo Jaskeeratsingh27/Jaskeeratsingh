@@ -1,4 +1,4 @@
-const CACHE_NAME="tokentrack-p5-shell-v1";
+const CACHE_NAME="tokentrack-v4-final-shell-v1";
 const SHELL=["/","/styles.css","/app.js","/manifest.webmanifest","/icon.svg"];
 
 self.addEventListener("install",event=>{
