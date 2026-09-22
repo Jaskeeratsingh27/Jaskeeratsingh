@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/hermes/change-event.schema.json",
+  "title": "Hermes Knowledge Change Event",
+  "type": "object",
+  "properties": {
+    "change_id": {"type": "string", "minLength": 1},
+    "observed_on": {"type": "string", "format": "date"},
+    "source_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "change_types": {
+      "type": "array",
+      "items": {"type": "string", "enum": ["documentation", "behavior", "deprecation", "breaking", "security", "architecture"]},
+      "minItems": 1
+    },
+    "stable_release_changed": {"type": "boolean"},
+    "from_release": {"type": ["string", "null"]},
+    "to_release": {"type": ["string", "null"]},
+    "evidence_status": {"type": "string", "enum": ["verified", "ambiguous"]},
+    "explicit_capability_ids": {"type": "array", "items": {"type": "string"}},
+    "summary": {"type": "string"}
+  },
+  "required": ["change_id", "observed_on", "source_ids", "change_types", "stable_release_changed", "evidence_status", "summary"],
+  "additionalProperties": false
+}

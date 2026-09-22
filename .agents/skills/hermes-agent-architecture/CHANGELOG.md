@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.0 — 2026-09-21
+
+- Added a deterministic release-impact engine that classifies Hermes changes by severity and computes their blast radius.
+- Added capability-to-source, knowledge-file, primitive-routing, and regression-case impact mapping.
+- Added a machine-readable upgrade matrix for the pinned Hermes baseline and future release transitions.
+- Added a strict change-event JSON Schema for scheduled audit findings.
+- Added targeted regression selection so affected capabilities identify the architecture cases that matter most.
+- Added release-impact regression fixtures covering documentation changes, stable behavior changes, breaking Kanban changes, security changes, ambiguous evidence, and unknown future subsystems.
+- Expanded structural validation to cross-check compatibility, impact mapping, source IDs, routing IDs, knowledge files, upgrade baseline, and impact fixtures.
+- Extended GitHub CI with release-impact regression tests.
+- Updated the weekly maintenance contract to classify change events before patching the knowledge base.
+
 ## 1.1.0 — 2026-09-21
 
 - Added machine-readable Hermes compatibility manifest tied to the skill version and official source IDs.

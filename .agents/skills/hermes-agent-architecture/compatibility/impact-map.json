@@ -1,0 +1,109 @@
+{
+  "schema_version": "1.0.0",
+  "severity_policy": {
+    "levels": ["info", "patch", "minor", "major", "critical"],
+    "review_required_at_or_above": "major",
+    "rules": {
+      "documentation_only": "patch",
+      "stable_release_changed": "minor",
+      "behavior_or_deprecation": "minor",
+      "breaking_or_architecture": "major",
+      "security": "critical",
+      "ambiguous_evidence_floor": "major",
+      "unknown_source_floor": "major"
+    }
+  },
+  "capabilities": [
+    {
+      "id": "profiles",
+      "source_ids": ["profiles", "profile-distributions"],
+      "knowledge_files": ["references/00-architecture-map.md", "references/01-profiles-bots.md", "references/11-production-checklist.md"],
+      "routing_rule_ids": ["persistent-specialist"],
+      "regression_case_ids": ["persistent-researcher"]
+    },
+    {
+      "id": "bot_mode",
+      "source_ids": ["bot-mode", "profiles"],
+      "knowledge_files": ["references/01-profiles-bots.md"],
+      "routing_rule_ids": ["persistent-specialist"],
+      "regression_case_ids": ["persistent-researcher"]
+    },
+    {
+      "id": "delegation",
+      "source_ids": ["delegation"],
+      "knowledge_files": ["references/02-delegation.md", "templates/task-envelope.schema.json", "templates/delegation-result.schema.json"],
+      "routing_rule_ids": ["short-isolated-worker"],
+      "regression_case_ids": ["parallel-source-checks"]
+    },
+    {
+      "id": "structured_output",
+      "source_ids": ["delegation"],
+      "knowledge_files": ["references/02-delegation.md", "templates/delegation-result.schema.json"],
+      "routing_rule_ids": [],
+      "regression_case_ids": ["parallel-source-checks"]
+    },
+    {
+      "id": "kanban",
+      "source_ids": ["kanban", "kanban-worker-lanes"],
+      "knowledge_files": ["references/03-kanban.md", "references/11-production-checklist.md"],
+      "routing_rule_ids": ["durable-workflow"],
+      "regression_case_ids": ["restart-human-approval"]
+    },
+    {
+      "id": "skills_context_soul",
+      "source_ids": ["skills", "context-files"],
+      "knowledge_files": ["references/04-skills-context-soul.md", "templates/AGENTS.template.md", "templates/SOUL.template.md"],
+      "routing_rule_ids": ["reusable-procedure", "project-rules", "persistent-identity"],
+      "regression_case_ids": ["coding-sop", "repo-conventions", "agent-persona"]
+    },
+    {
+      "id": "memory",
+      "source_ids": ["memory", "memory-providers", "honcho"],
+      "knowledge_files": ["references/05-memory-sessions.md"],
+      "routing_rule_ids": [],
+      "regression_case_ids": []
+    },
+    {
+      "id": "tools_mcp",
+      "source_ids": ["tools", "tools-reference", "mcp"],
+      "knowledge_files": ["references/06-tools-code-mcp.md", "references/11-production-checklist.md"],
+      "routing_rule_ids": ["external-capability"],
+      "regression_case_ids": ["github-integration"]
+    },
+    {
+      "id": "execute_code",
+      "source_ids": ["code-execution", "tools"],
+      "knowledge_files": ["references/06-tools-code-mcp.md"],
+      "routing_rule_ids": ["deterministic-multitool"],
+      "regression_case_ids": ["bulk-tool-processing"]
+    },
+    {
+      "id": "model_routing",
+      "source_ids": ["models", "fallback-providers", "provider-routing"],
+      "knowledge_files": ["references/07-model-routing.md", "references/11-production-checklist.md"],
+      "routing_rule_ids": [],
+      "regression_case_ids": []
+    },
+    {
+      "id": "cron",
+      "source_ids": ["cron"],
+      "knowledge_files": ["references/08-cron-automation.md", "maintenance/weekly-refresh-spec.md"],
+      "routing_rule_ids": ["scheduled-trigger"],
+      "regression_case_ids": ["weekly-audit"]
+    },
+    {
+      "id": "security",
+      "source_ids": ["security", "checkpoints"],
+      "knowledge_files": ["references/09-security.md", "references/11-production-checklist.md"],
+      "routing_rule_ids": ["execution-isolation"],
+      "regression_case_ids": ["untrusted-code"]
+    },
+    {
+      "id": "observability",
+      "source_ids": ["observer-hooks", "plugins"],
+      "knowledge_files": ["references/10-observability-hooks.md", "references/11-production-checklist.md"],
+      "routing_rule_ids": [],
+      "regression_case_ids": []
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Hermes Agent Architecture Knowledge Skill
 
-A production-oriented Hermes knowledge-base skill for designing persistent agents, subagents, workflows, instructions, contracts, tool boundaries, automation, security, and observability.
+A production-oriented Hermes knowledge-base skill for designing persistent agents, subagents, workflows, instructions, contracts, tool boundaries, automation, security, observability, and release compatibility.
 
 ## Invocation
 
@@ -20,17 +20,19 @@ Examples:
 Research date: 2026-09-21.  
 Latest stable release verified: Hermes Agent v0.21.3 (`v2026.9.14`).
 
-## v1.1 quality layer
+## v1.2 release-impact layer
 
-The skill now includes a machine-readable compatibility/control layer:
+v1.2 adds a deterministic change-control engine on top of the v1.1 compatibility layer:
 
-- `compatibility/hermes-compatibility.json` — current verified Hermes baseline and capability status.
-- `compatibility/primitive-routing.json` — canonical Hermes primitive-selection rules.
-- `tests/architecture-cases.json` — regression scenarios that must keep routing to the intended primitive.
-- `tests/test_architecture_regressions.py` — deterministic architecture contract tests.
-- `.github/workflows/hermes-architecture-ci.yml` — repository CI for skill changes and pull requests.
+- `compatibility/impact-map.json` — maps Hermes capabilities and source areas to affected files/routing/tests.
+- `compatibility/upgrade-matrix.json` — tracks the verified baseline and future stable-release transitions.
+- `maintenance/change-event.schema.json` — strict input contract for weekly detected changes.
+- `maintenance/impact_engine.py` — classifies severity, review requirements, blast radius, and targeted regression cases.
+- `tests/release-impact-cases.json` — deterministic release/change scenarios.
+- `tests/test_release_impact.py` — verifies classification and targeted regression selection.
+- `references/14-release-impact-engine.md` — operating guide.
 
-The regression tests intentionally validate deterministic architecture contracts rather than trying to grade arbitrary LLM prose.
+Severity levels are `info -> patch -> minor -> major -> critical`. Stable-release changes always require a branch/PR even when not breaking. Ambiguous, unknown, breaking, architectural, and security changes are review-gated.
 
 ## Maintenance
 
@@ -39,9 +41,10 @@ The regression tests intentionally validate deterministic architecture contracts
 - Ready-to-schedule execution prompt: `maintenance/weekly-refresh-prompt.md`
 - Structural validation: `python tests/validate_skill.py`
 - Architecture regression validation: `python tests/test_architecture_regressions.py`
+- Release-impact regression validation: `python tests/test_release_impact.py`
 
-The preferred maintenance pattern is:
+Preferred maintenance pattern:
 
-`audit -> diff -> compatibility update -> structural validation -> regression validation -> reviewed promotion`
+`research -> change event -> impact classification -> targeted patch -> compatibility/upgrade update -> deterministic tests -> reviewed promotion`
 
-Material or ambiguous Hermes changes should be proposed through a branch/PR instead of silently rewriting the canonical knowledge base.
+The impact engine selects the most relevant architecture regression cases for the affected capabilities while CI still runs the complete deterministic suite before merge.
