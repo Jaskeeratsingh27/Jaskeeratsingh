@@ -15,7 +15,12 @@ const state={
   chatSnapshots:loadChatSnapshots(),
   chatSyncKey:localStorage.getItem("tt-chat-sync-key-v1")||"",
   chatAutoSync:localStorage.getItem("tt-chat-auto-sync-v1")!=="false",
-  chatSyncBusy:false
+  chatSyncBusy:false,
+  alertRules:loadAlertRules(),
+  alertsEnabled:localStorage.getItem("tt-alerts-enabled-v1")!=="false",
+  browserNotifications:localStorage.getItem("tt-browser-notifications-v1")==="true",
+  alertEvents:loadAlertEvents(),
+  activeAlerts:[]
 };
 
 const num=v=>Number.isFinite(Number(v))?Number(v):0;
@@ -28,6 +33,111 @@ const bytes=v=>{const n=num(v);if(!n)return"0 B";const u=["B","KB","MB","GB","TB
 const shortId=v=>{const s=String(v??"");return s.length>28?s.slice(0,15)+"…"+s.slice(-8):s};
 const dateLabel=v=>{if(!v)return"—";const d=v.includes("T")?new Date(v):new Date(v+"T00:00:00Z");return d.toLocaleDateString(undefined,{month:"short",day:"numeric"})};
 const timeLabel=v=>v?new Date(v).toLocaleString():"—";
+
+
+function loadAlertRules(){
+  try{
+    return {...{
+      chatWarn:70,chatCritical:90,chatStaleHours:24,
+      apiForecastUsd:25,apiTokenGrowthPct:50,apiCostGrowthPct:50
+    },...JSON.parse(localStorage.getItem("tt-alert-rules-v1")||"{}")};
+  }catch{return{chatWarn:70,chatCritical:90,chatStaleHours:24,apiForecastUsd:25,apiTokenGrowthPct:50,apiCostGrowthPct:50}}
+}
+function loadAlertEvents(){
+  try{const rows=JSON.parse(localStorage.getItem("tt-alert-events-v1")||"[]");return Array.isArray(rows)?rows.slice(0,200):[]}catch{return[]}
+}
+function saveAlertRules(){localStorage.setItem("tt-alert-rules-v1",JSON.stringify(state.alertRules))}
+function saveAlertEvents(){state.alertEvents=state.alertEvents.slice(0,200);localStorage.setItem("tt-alert-events-v1",JSON.stringify(state.alertEvents))}
+function alertEvent(kind,alert){
+  const event={id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()),at:new Date().toISOString(),kind,key:alert.key,source:alert.source,severity:kind==="resolved"?"resolved":alert.severity,title:alert.title,message:alert.message};
+  state.alertEvents.unshift(event);saveAlertEvents();
+}
+function maybeNotify(alert){
+  if(!state.alertsEnabled||!state.browserNotifications)return;
+  if(typeof Notification==="undefined"||Notification.permission!=="granted")return;
+  try{new Notification("TokenTrack: "+alert.title,{body:alert.message,tag:"tokentrack-"+alert.key})}catch{}
+}
+function evaluateAlerts(){
+  const next=[];
+  const rules=state.alertRules;
+  const m=chatMetrics(),latest=m.latest;
+  if(state.alertsEnabled&&latest){
+    const used=num(latest.used);
+    if(used>=num(rules.chatCritical))next.push({key:"chat.usage.critical",source:"ChatGPT",severity:"critical",title:"ChatGPT usage critical",message:used.toFixed(1)+"% of the current allowance is consumed."});
+    else if(used>=num(rules.chatWarn))next.push({key:"chat.usage.warning",source:"ChatGPT",severity:"warning",title:"ChatGPT usage warning",message:used.toFixed(1)+"% of the current allowance is consumed."});
+    if(m.staleHours!==null&&m.staleHours>=num(rules.chatStaleHours))next.push({key:"chat.stale",source:"ChatGPT",severity:"warning",title:"ChatGPT checkpoint is stale",message:"Latest checkpoint is "+(m.staleHours/24).toFixed(1)+" days old."});
+    if(m.pace==="At risk")next.push({key:"chat.exhaustion",source:"ChatGPT",severity:"critical",title:"Allowance exhaustion risk",message:m.projected?"Projected exhaustion "+timeLabel(m.projected)+" before reset.":"Current pace may exhaust the allowance before reset."});
+    if(m.pace==="Reset due")next.push({key:"chat.resetdue",source:"ChatGPT",severity:"warning",title:"Allowance reset time passed",message:"The recorded reset time has passed; add a fresh checkpoint."});
+  }
+  if(state.alertsEnabled&&state.data){
+    const d=state.data,r=d.run_rate||{},chg=d.comparison?.delta||{};
+    if(d.stale)next.push({key:"api.stale",source:"OpenAI API",severity:"critical",title:"API telemetry is stale",message:"TokenTrack is serving last-known-good API telemetry."});
+    if(num(rules.apiForecastUsd)>0&&num(r.projected_30d_cost)>=num(rules.apiForecastUsd))next.push({key:"api.forecast",source:"OpenAI API",severity:"warning",title:"API spend forecast threshold",message:"Projected 30-day spend is "+money(r.projected_30d_cost)+"."});
+    if(chg.total_tokens_pct!==null&&num(chg.total_tokens_pct)>=num(rules.apiTokenGrowthPct))next.push({key:"api.token.growth",source:"OpenAI API",severity:"warning",title:"API token growth spike",message:"Token usage is up "+num(chg.total_tokens_pct).toFixed(1)+"% versus the prior period."});
+    if(chg.cost_pct!==null&&num(chg.cost_pct)>=num(rules.apiCostGrowthPct))next.push({key:"api.cost.growth",source:"OpenAI API",severity:"warning",title:"API cost growth spike",message:"API cost is up "+num(chg.cost_pct).toFixed(1)+"% versus the prior period."});
+    if((d.anomalies||[]).length)next.push({key:"api.anomalies",source:"OpenAI API",severity:"warning",title:"API usage anomalies detected",message:(d.anomalies||[]).length+" unusual usage spike(s) detected in the selected period."});
+  }
+  const priorKeys=new Set((JSON.parse(localStorage.getItem("tt-active-alert-keys-v1")||"[]")));
+  const nextKeys=new Set(next.map(a=>a.key));
+  for(const alert of next){if(!priorKeys.has(alert.key)){alertEvent("activated",alert);maybeNotify(alert)}}
+  for(const key of priorKeys){
+    if(!nextKeys.has(key)){
+      const old=state.activeAlerts.find(a=>a.key===key)||{key,source:"TokenTrack",severity:"resolved",title:"Condition resolved",message:key};
+      alertEvent("resolved",old);
+    }
+  }
+  localStorage.setItem("tt-active-alert-keys-v1",JSON.stringify([...nextKeys]));
+  state.activeAlerts=next;
+  renderAlertCenter();
+  renderAttentionBar();
+}
+function renderAttentionBar(){
+  const bar=$("attentionBar");
+  if(!state.activeAlerts.length){bar.classList.add("hidden");return}
+  const sorted=[...state.activeAlerts].sort((a,b)=>(a.severity==="critical"?0:1)-(b.severity==="critical"?0:1));
+  const top=sorted[0],critical=state.activeAlerts.some(a=>a.severity==="critical");
+  bar.classList.remove("hidden");bar.classList.toggle("critical",critical);
+  $("attentionSeverity").textContent=critical?"CRITICAL":"ATTENTION";
+  $("attentionTitle").textContent=top.title;
+  $("attentionText").textContent=top.message+(state.activeAlerts.length>1?" · "+(state.activeAlerts.length-1)+" more active":"");
+}
+function renderAlertCenter(){
+  const active=state.activeAlerts,crit=active.filter(a=>a.severity==="critical").length,warn=active.filter(a=>a.severity==="warning").length;
+  $("alertCenterBadge").textContent=active.length+" active";$("activeAlertCount").textContent=count(active.length);$("criticalAlertCount").textContent=count(crit);$("warningAlertCount").textContent=count(warn);
+  $("activeAlertDetail").textContent=active.length?crit+" critical · "+warn+" warning":"No active conditions";
+  const perm=typeof Notification==="undefined"?"unsupported":Notification.permission;
+  $("notificationState").textContent=state.browserNotifications&&perm==="granted"?"On":"Off";
+  $("notificationDetail").textContent=perm==="granted"?"Permission granted":perm==="denied"?"Permission blocked":perm==="unsupported"?"Not supported":"Permission not requested";
+  $("activeAlerts").className="alert-list"+(active.length?"":" empty");
+  $("activeAlerts").innerHTML=active.length?active.map(a=>'<div class="alert-item '+esc(a.severity)+'"><span class="sev">'+esc(a.severity.toUpperCase())+'</span><div><strong>'+esc(a.title)+'</strong><small>'+esc(a.source)+' · '+esc(a.message)+'</small></div><time>Now</time></div>').join(""):"No active alerts.";
+  $("alertEvents").className="alert-list"+(state.alertEvents.length?"":" empty");
+  $("alertEvents").innerHTML=state.alertEvents.length?state.alertEvents.slice(0,100).map(e=>'<div class="alert-item '+esc(e.severity)+'"><span class="sev">'+esc((e.kind==="resolved"?"RESOLVED":e.severity).toUpperCase())+'</span><div><strong>'+esc(e.title)+'</strong><small>'+esc(e.source)+' · '+esc(e.message)+'</small></div><time>'+esc(timeLabel(e.at))+'</time></div>').join(""):"No alert events yet.";
+  $("ruleChatWarn").value=state.alertRules.chatWarn;$("ruleChatCritical").value=state.alertRules.chatCritical;$("ruleChatStale").value=state.alertRules.chatStaleHours;
+  $("ruleApiForecast").value=state.alertRules.apiForecastUsd;$("ruleApiTokenGrowth").value=state.alertRules.apiTokenGrowthPct;$("ruleApiCostGrowth").value=state.alertRules.apiCostGrowthPct;
+  $("alertsEnabled").checked=state.alertsEnabled;$("browserNotifications").checked=state.browserNotifications;
+}
+function updateAlertRulesFromUi(){
+  state.alertRules={
+    chatWarn:Math.max(1,Math.min(100,num($("ruleChatWarn").value)||70)),
+    chatCritical:Math.max(1,Math.min(100,num($("ruleChatCritical").value)||90)),
+    chatStaleHours:Math.max(1,num($("ruleChatStale").value)||24),
+    apiForecastUsd:Math.max(0,num($("ruleApiForecast").value)),
+    apiTokenGrowthPct:Math.max(1,num($("ruleApiTokenGrowth").value)||50),
+    apiCostGrowthPct:Math.max(1,num($("ruleApiCostGrowth").value)||50)
+  };
+  if(state.alertRules.chatCritical<state.alertRules.chatWarn)state.alertRules.chatCritical=state.alertRules.chatWarn;
+  saveAlertRules();evaluateAlerts();
+}
+async function requestBrowserNotificationPermission(){
+  if(typeof Notification==="undefined"){toast("Browser notifications are not supported here");return}
+  try{
+    const result=await Notification.requestPermission();
+    state.browserNotifications=result==="granted";
+    localStorage.setItem("tt-browser-notifications-v1",String(state.browserNotifications));
+    renderAlertCenter();
+    toast(result==="granted"?"Browser notifications enabled":"Notification permission not granted");
+  }catch(e){toast("Notification permission failed")}
+}
 
 function toast(msg){const e=$("toast");e.textContent=msg;e.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove("show"),2200)}
 function show(id,on,html){const e=$(id);e.classList.toggle("hidden",!on);if(html!==undefined)e.innerHTML=html}
@@ -44,8 +154,15 @@ function setTab(tab){
 
 function render(){
   renderChatGPT();
+  if(state.data)renderOverview();
+  if(state.data)renderFinops();
+  if(state.data)renderAttribution();
+  if(state.data)renderTools();
+  if(state.data)populateFilters();
+  if(state.data)renderExplorer();
+  if(state.data)renderDiagnostics();
+  evaluateAlerts();
   if(!state.data)return;
-  renderOverview();renderFinops();renderAttribution();renderTools();populateFilters();renderExplorer();renderDiagnostics();
   $("version").textContent="TokenTrack v"+(state.data.version||"—");
   const warnings=state.data.warnings||[];
   show("warningBanner",warnings.length>0,warnings.length?'<strong>Partial telemetry:</strong> '+esc(warnings.join(" · ")):"");
@@ -630,6 +747,13 @@ function countdown(){
 }
 
 qsa(".nav").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+$("attentionOpen").onclick=()=>setTab("alerts");
+["ruleChatWarn","ruleChatCritical","ruleChatStale","ruleApiForecast","ruleApiTokenGrowth","ruleApiCostGrowth"].forEach(id=>$(id).onchange=updateAlertRulesFromUi);
+$("alertsEnabled").onchange=e=>{state.alertsEnabled=e.target.checked;localStorage.setItem("tt-alerts-enabled-v1",String(state.alertsEnabled));evaluateAlerts()};
+$("browserNotifications").onchange=e=>{state.browserNotifications=e.target.checked;localStorage.setItem("tt-browser-notifications-v1",String(state.browserNotifications));renderAlertCenter()};
+$("requestNotificationPermission").onclick=()=>requestBrowserNotificationPermission();
+$("clearAlertEvents").onclick=()=>{state.alertEvents=[];saveAlertEvents();renderAlertCenter();toast("Alert event timeline cleared")};
+
 $("chatSyncCreate").onclick=()=>createChatSync().catch(e=>toast("Could not enable sync: "+e.message));
 $("chatSyncCopy").onclick=()=>copyChatSyncCode();
 $("chatSyncDisable").onclick=()=>{
@@ -704,5 +828,7 @@ document.documentElement.dataset.theme=state.theme;state.nextRefresh=Date.now()+
 $("apiControls").classList.add("hidden");
 renderChatSync();
 renderChatGPT();
+renderAlertCenter();
+evaluateAlerts();
 if(state.chatSyncKey&&state.chatAutoSync)setTimeout(()=>syncPullMerge(),700);
 load(false);
