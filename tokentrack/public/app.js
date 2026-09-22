@@ -1,287 +1,214 @@
-const $ = id => document.getElementById(id);
-const qsa = sel => [...document.querySelectorAll(sel)];
-const nf = new Intl.NumberFormat();
-const compact = new Intl.NumberFormat(undefined,{notation:"compact",maximumFractionDigits:2});
-const usd = new Intl.NumberFormat(undefined,{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:4});
+const $=id=>document.getElementById(id);
+const qsa=s=>[...document.querySelectorAll(s)];
+const nf=new Intl.NumberFormat();
+const compact=new Intl.NumberFormat(undefined,{notation:"compact",maximumFractionDigits:2});
+const usd=new Intl.NumberFormat(undefined,{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:4});
 
-const state = {
-  data:null,
-  health:null,
-  days:Number(localStorage.getItem("tt-days") || 30),
-  refreshSeconds:Number(localStorage.getItem("tt-refresh") || 60),
-  autoRefresh:localStorage.getItem("tt-auto") !== "false",
-  budget:Number(localStorage.getItem("tt-budget") || 0),
-  theme:localStorage.getItem("tt-theme") || "dark",
-  lastLoadedAt:0,
-  nextRefreshAt:0,
-  loading:false
+const state={
+  data:null,health:null,loading:false,
+  days:Number(localStorage.getItem("tt-days")||30),
+  refreshSeconds:Number(localStorage.getItem("tt-refresh")||60),
+  autoRefresh:localStorage.getItem("tt-auto")!=="false",
+  localBudget:Number(localStorage.getItem("tt-budget")||0),
+  theme:localStorage.getItem("tt-theme")||"dark",
+  attr:"models",lastLoaded:0,nextRefresh:0
 };
 
-function num(v){const n=Number(v);return Number.isFinite(n)?n:0}
-function fmt(v){return compact.format(num(v))}
-function count(v){return nf.format(Math.round(num(v)))}
-function money(v){return usd.format(num(v))}
-function percent(v,d=1){return (num(v)*100).toFixed(d)+"%"}
-function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
-function dateLabel(v){return v?new Date(v+"T00:00:00Z").toLocaleDateString(undefined,{month:"short",day:"numeric"}):"—"}
-function timeLabel(v){return v?new Date(v).toLocaleString():"—"}
-function bytes(v){const n=num(v);if(!n)return "0 B";const units=["B","KB","MB","GB","TB"];const i=Math.min(units.length-1,Math.floor(Math.log(n)/Math.log(1024)));return (n/(1024**i)).toFixed(i?1:0)+" "+units[i]}
+const num=v=>Number.isFinite(Number(v))?Number(v):0;
+const fmt=v=>compact.format(num(v));
+const count=v=>nf.format(Math.round(num(v)));
+const money=v=>usd.format(num(v));
+const percent=(v,d=1)=>(num(v)*100).toFixed(d)+"%";
+const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+const bytes=v=>{const n=num(v);if(!n)return"0 B";const u=["B","KB","MB","GB","TB"],i=Math.min(u.length-1,Math.floor(Math.log(n)/Math.log(1024)));return(n/1024**i).toFixed(i?1:0)+" "+u[i]};
+const shortId=v=>{const s=String(v??"");return s.length>28?s.slice(0,15)+"…"+s.slice(-8):s};
+const dateLabel=v=>{if(!v)return"—";const d=v.includes("T")?new Date(v):new Date(v+"T00:00:00Z");return d.toLocaleDateString(undefined,{month:"short",day:"numeric"})};
+const timeLabel=v=>v?new Date(v).toLocaleString():"—";
 
-function deltaText(value){
-  if(value===null||value===undefined||!Number.isFinite(Number(value))) return '<span class="delta flat">No baseline</span>';
-  const n=Number(value),cls=n>1?"up":n<-1?"down":"flat",arrow=n>1?"↑":n<-1?"↓":"→";
-  return '<span class="delta '+cls+'">'+arrow+" "+Math.abs(n).toFixed(1)+"% vs prior period</span>";
-}
+function toast(msg){const e=$("toast");e.textContent=msg;e.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove("show"),2200)}
+function show(id,on,html){const e=$(id);e.classList.toggle("hidden",!on);if(html!==undefined)e.innerHTML=html}
+function delta(v){if(v===null||v===undefined||!Number.isFinite(Number(v)))return'<span>No baseline</span>';const n=Number(v),cls=n>1?"delta-up":n<-1?"delta-down":"",arrow=n>1?"↑":n<-1?"↓":"→";return'<span class="'+cls+'">'+arrow+" "+Math.abs(n).toFixed(1)+"% vs prior</span>"}
+function setLive(kind,title,sub){$("liveDot").className="pulse "+kind;$("liveState").textContent=title;$("freshness").textContent=sub||"";$("sideDot").className="dot "+kind;$("sideStatus").textContent=title}
 
-function toast(message){
-  const el=$("toast");el.textContent=message;el.classList.add("show");
-  clearTimeout(window.__ttToast);window.__ttToast=setTimeout(()=>el.classList.remove("show"),2200);
-}
-
-function setLive(kind,label,detail){
-  $("liveDot").className="pulse-dot "+kind;
-  $("liveLabel").textContent=label;
-  $("freshnessLabel").textContent=detail||"";
-  $("serviceDot").className="status-dot "+kind;
-  $("serviceText").textContent=label;
-}
-
-function setTab(name){
-  qsa(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.tab===name));
-  qsa(".tab-panel").forEach(p=>p.classList.toggle("active",p.id==="tab-"+name));
-  if(name==="overview") requestAnimationFrame(renderCharts);
-}
-
-function applyTheme(){
-  document.documentElement.dataset.theme=state.theme;
-  $("themeSelect").value=state.theme;
-  requestAnimationFrame(renderCharts);
-}
-
-function showBanner(id,show,html){
-  const el=$(id);el.classList.toggle("hidden",!show);if(html!==undefined)el.innerHTML=html;
+function setTab(tab){
+  qsa(".nav").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
+  qsa(".page").forEach(p=>p.classList.toggle("active",p.id===tab));
+  if(tab==="overview")requestAnimationFrame(renderCharts);
 }
 
 function render(){
   if(!state.data)return;
-  const d=state.data,t=d.totals||{},delta=d.comparison?.delta||{},stats=d.statistics||{},run=d.run_rate||{};
+  renderOverview();renderFinops();renderAttribution();renderTools();populateFilters();renderExplorer();renderDiagnostics();
+  $("version").textContent="TokenTrack v"+(state.data.version||"—");
+  const warnings=state.data.warnings||[];
+  show("warningBanner",warnings.length>0,warnings.length?'<strong>Partial telemetry:</strong> '+esc(warnings.join(" · ")):"");
+  if(state.data.stale)show("errorBanner",true,'<strong>Last-known-good data:</strong> '+esc(state.data.stale_reason||"Upstream refresh failed."));
+  else show("errorBanner",false);
+}
 
-  $("kpiTokens").textContent=fmt(t.total_tokens);
-  $("deltaTokens").innerHTML=deltaText(delta.total_tokens_pct);
-  $("kpiCost").textContent=money(t.cost);
-  $("deltaCost").innerHTML=deltaText(delta.cost_pct);
-  $("kpiRequests").textContent=count(t.requests);
-  $("deltaRequests").innerHTML=deltaText(delta.requests_pct);
-  $("kpiCache").textContent=percent(t.cache_ratio);
-  $("cacheTokens").textContent=fmt(t.cached_input_tokens)+" cached tokens";
-  $("kpiAvgRequest").textContent=fmt(t.avg_tokens_per_request);
-  $("avgRequestDetail").textContent=fmt(t.avg_input_per_request)+" in · "+fmt(t.avg_output_per_request)+" out";
-  $("kpiCostPerM").textContent=money(t.cost_per_million_tokens);
-  $("kpiRunRate").textContent=money(run.projected_30d_cost);
-  $("runRateTokens").textContent=fmt(run.projected_30d_tokens)+" projected tokens";
-  $("kpiP95").textContent=fmt(stats.p95_daily_tokens);
-  $("peakDay").textContent=stats.peak_day?"Peak "+dateLabel(stats.peak_day)+" · "+fmt(stats.peak_daily_tokens):"No peak yet";
-  $("requestCount").textContent=count(t.requests);
-  $("updatedAt").textContent=timeLabel(d.generated_at);
-  $("inputTokens").textContent=fmt(t.input_tokens);
-  $("inputShare").textContent=percent(t.total_tokens?t.input_tokens/t.total_tokens:0)+" of total";
-  $("outputTokens").textContent=fmt(t.output_tokens);
-  $("outputRatio").textContent=(num(t.output_input_ratio)).toFixed(2)+"× output/input";
-  $("dailyAverage").textContent=fmt(run.daily_tokens);
-  const cv=stats.mean_daily_tokens?stats.daily_token_stddev/stats.mean_daily_tokens:0;
-  $("volatility").textContent=percent(cv,0)+" coefficient of variation";
+function renderOverview(){
+  const d=state.data,t=d.totals||{},r=d.run_rate||{},s=d.statistics||{},chg=d.comparison?.delta||{};
+  $("totalTokens").textContent=fmt(t.total_tokens);$("tokenDelta").innerHTML=delta(chg.total_tokens_pct);
+  $("totalCost").textContent=money(t.cost);$("costDelta").innerHTML=delta(chg.cost_pct);
+  $("cacheRate").textContent=percent(t.cache_ratio);$("cacheDetail").textContent=fmt(t.cached_input_tokens)+" cached · "+fmt(t.cache_write_tokens)+" cache writes";
+  $("avgTokens").textContent=fmt(t.avg_tokens_per_request);$("avgDetail").textContent=fmt(t.avg_input_per_request)+" in · "+fmt(t.avg_output_per_request)+" out";
+  $("costPerRequest").textContent=money(t.cost_per_request);$("costPerM").textContent=money(t.cost_per_million_tokens)+" / 1M tokens";
+  $("forecastCost").textContent=money(r.projected_30d_cost);$("forecastTokens").textContent=fmt(r.projected_30d_tokens)+" tokens";
+  $("p95").textContent=fmt(s.p95_daily_tokens);$("peak").textContent=s.peak_day?"Peak "+dateLabel(s.peak_day)+" · "+fmt(s.peak_daily_tokens):"No peak";
+  $("anomalyKpi").textContent=count((d.anomalies||[]).length);
+  $("requests").textContent=count(t.requests);$("updated").textContent=timeLabel(d.generated_at);
 
-  $("versionLabel").textContent="TokenTrack v"+(d.version||"—");
-  renderBudget();
-  renderInsights();
-  renderAnomalies();
-  renderModels();
-  renderProjects();
-  renderSources();
-  renderCostLines();
-  renderComparison();
-  renderDaily();
-  renderResources();
-  renderDiagnostics();
+  const insights=d.insights||[];$("insights").className="list"+(insights.length?"":" empty");
+  $("insights").innerHTML=insights.length?insights.map(x=>'<div class="insight '+esc(x.type)+'"><strong>'+esc(x.title)+'</strong><p>'+esc(x.message)+'</p></div>').join(""):"No insight signals.";
+
+  const anomalies=d.anomalies||[];$("anomalyBadge").textContent=count(anomalies.length);$("anomalies").className="list"+(anomalies.length?"":" empty");
+  $("anomalies").innerHTML=anomalies.length?anomalies.map(x=>'<div class="anomaly '+esc(x.severity)+'"><strong>'+dateLabel(x.date)+' · '+fmt(x.value)+' tokens</strong><p>Baseline '+fmt(x.baseline)+' · z-score '+num(x.z_score).toFixed(2)+'</p></div>').join(""):"No statistically unusual spikes.";
+
+  renderMovers("modelMovers",d.movers?.models||[]);
+  renderMovers("projectMovers",d.movers?.projects||[]);
   renderCharts();
-
-  showBanner("staleBanner",!!d.stale,d.stale?'<strong>Serving last-known-good telemetry.</strong> '+esc(d.stale_reason||"OpenAI upstream refresh failed."):"");
-  showBanner("warningBanner",(d.warnings||[]).length>0,(d.warnings||[]).length?'<strong>Partial telemetry:</strong> '+esc(d.warnings.join(" · ")):"");
+}
+function renderMovers(id,rows){
+  $(id).innerHTML=rows.length?rows.slice(0,7).map(r=>{
+    const sign=num(r.delta_tokens)>=0?"+":"",cls=num(r.delta_tokens)>0?"negative":"positive";
+    const pctv=r.delta_pct===null?"new":((num(r.delta_pct)>=0?"+":"")+num(r.delta_pct).toFixed(1)+"%");
+    return'<div class="rankrow"><span title="'+esc(r.name)+'">'+esc(shortId(r.name))+'</span><b class="'+cls+'">'+sign+fmt(r.delta_tokens)+'</b><small>'+fmt(r.current_tokens)+' current · '+pctv+' vs prior</small></div>'
+  }).join(""):'<div class="empty">No comparable movers.</div>';
 }
 
-function renderBudget(){
-  const p=$("budgetPanel");
-  if(!state.budget){p.classList.add("hidden");return}
-  p.classList.remove("hidden");
-  const projected=num(state.data?.run_rate?.projected_30d_cost),ratio=state.budget?projected/state.budget:0;
-  $("budgetProjection").textContent=money(projected)+" projected";
-  $("budgetTarget").textContent="of "+money(state.budget)+" target";
-  $("budgetBar").style.width=Math.min(100,ratio*100)+"%";
-  $("budgetBar").style.background=ratio>1?"var(--danger)":ratio>.8?"var(--warning)":"linear-gradient(90deg,var(--accent),var(--accent2))";
-}
+function renderFinops(){
+  const d=state.data,t=d.totals||{},r=d.run_rate||{},chg=d.comparison?.delta||{},g=d.governance||{},limit=g.spend_limit;
+  $("finSpend").textContent=money(t.cost);$("finSpendDelta").innerHTML=delta(chg.cost_pct);$("finForecast").textContent=money(r.projected_30d_cost);
+  if(limit){
+    const l=num(limit.threshold_usd),ratio=l?r.projected_30d_cost/l:0,head=l-r.projected_30d_cost;
+    $("hardLimit").textContent=money(l);$("hardLimitState").textContent=(limit.enforcement||"unknown")+" · "+(limit.interval||"month");
+    $("limitUtil").textContent=percent(ratio);$("limitHeadroom").textContent=head>=0?money(head)+" projected headroom":money(Math.abs(head))+" projected over";
+    $("meterForecast").textContent=money(r.projected_30d_cost)+" forecast";$("meterLimit").textContent=money(l)+" hard limit";
+    $("limitBar").style.width=Math.min(100,ratio*100)+"%";$("limitBar").style.background=ratio>=1?"var(--danger)":ratio>=.8?"var(--warn)":"linear-gradient(90deg,var(--accent),var(--accent2))";
+  }else{
+    $("hardLimit").textContent="Not configured";$("hardLimitState").textContent="No OpenAI hard limit returned";$("limitUtil").textContent="—";$("limitHeadroom").textContent=state.localBudget?"Local target "+money(state.localBudget):"Set in OpenAI or local settings";
+    $("meterForecast").textContent=money(r.projected_30d_cost)+" forecast";$("meterLimit").textContent=state.localBudget?money(state.localBudget)+" local target":"No hard limit";$("limitBar").style.width=state.localBudget?Math.min(100,r.projected_30d_cost/state.localBudget*100)+"%":"0%";
+  }
 
-function renderInsights(){
-  const list=state.data.insights||[];
-  $("insightList").className="insight-list"+(list.length?"":" empty-state");
-  $("insightList").innerHTML=list.length?list.map(x=>'<div class="insight '+esc(x.type)+'"><strong>'+esc(x.title)+'</strong><p>'+esc(x.message)+'</p></div>').join(""):"No insights for this period.";
-}
+  const alerts=g.spend_alerts||[],maxAlert=Math.max(...alerts.map(a=>a.threshold_usd),1);
+  $("spendAlerts").innerHTML=alerts.length?alerts.map(a=>'<div class="rankrow"><span>'+money(a.threshold_usd)+' / '+esc(a.interval)+'</span><b>'+esc(a.channel)+'</b><small>'+count(a.recipient_count)+' recipient(s)<div class="progress"><i style="width:'+Math.min(100,a.threshold_usd/maxAlert*100)+'%"></i></div></small></div>').join(""):'<div class="empty">No native OpenAI spend alerts returned.</div>';
 
-function renderAnomalies(){
-  const list=state.data.anomalies||[];$("anomalyCount").textContent=count(list.length);
-  $("anomalyList").className="anomaly-list"+(list.length?"":" empty-state");
-  $("anomalyList").innerHTML=list.length?list.map(x=>'<div class="anomaly '+esc(x.severity)+'"><strong>'+dateLabel(x.date)+' · '+fmt(x.value)+' tokens</strong><p>Baseline '+fmt(x.baseline)+' · z-score '+num(x.z_score).toFixed(2)+' · '+esc(x.severity)+' severity</p></div>').join(""):"No statistically unusual spikes detected.";
-}
+  const lines=d.distribution?.cost_line_items||[],maxCost=Math.max(...lines.map(x=>x.cost),1);
+  $("costLines").innerHTML=lines.length?lines.map(x=>'<div class="rankrow"><span>'+esc(x.name)+'</span><b>'+money(x.cost)+'</b><small><div class="progress"><i style="width:'+Math.min(100,x.cost/maxCost*100)+'%"></i></div></small></div>').join(""):'<div class="empty">No cost line items.</div>';
 
-function renderModels(){
-  const rows=state.data.distribution?.models||[];
-  $("modelsTable").innerHTML=rows.length?rows.map(r=>{
+  renderCostTable("projectCostTable",d.distribution?.projects||[],false);
+  renderCostTable("apiKeyCostTable",d.distribution?.api_keys||[],true);
+}
+function renderCostTable(id,rows,isKey){
+  $(id).innerHTML=rows.length?rows.map(r=>{
     const cache=r.input_tokens?r.cached_input_tokens/r.input_tokens:0;
-    return '<tr><td class="primary-cell">'+esc(r.name)+'</td><td>'+fmt(r.total_tokens)+'</td><td class="share-cell"><div class="mini-bar"><div class="progress"><i style="width:'+Math.min(100,r.token_share*100)+'%"></i></div>'+percent(r.token_share)+'</div></td><td>'+fmt(r.input_tokens)+'</td><td>'+fmt(r.output_tokens)+'</td><td>'+fmt(r.cached_input_tokens)+'</td><td>'+percent(cache)+'</td><td>'+count(r.requests)+'</td><td>'+fmt(r.avg_tokens_per_request)+'</td></tr>';
-  }).join(""):'<tr><td colspan="9" class="subtle">No model usage.</td></tr>';
+    return isKey
+      ?'<tr><td title="'+esc(r.name)+'">'+esc(shortId(r.name))+'</td><td>'+fmt(r.total_tokens)+'</td><td>'+count(r.requests)+'</td><td>'+money(r.cost)+'</td><td>'+percent(r.token_share)+'</td><td>'+percent(cache)+'</td></tr>'
+      :'<tr><td title="'+esc(r.name)+'">'+esc(shortId(r.name))+'</td><td>'+fmt(r.total_tokens)+'</td><td>'+count(r.requests)+'</td><td>'+money(r.cost)+'</td><td>'+money(r.requests?r.cost/r.requests:0)+'</td><td>'+percent(cache)+'</td></tr>'
+  }).join(""):'<tr><td colspan="6">No attributed usage.</td></tr>';
 }
 
-function renderProjects(){
-  const rows=state.data.distribution?.projects||[];
-  $("projectsTable").innerHTML=rows.length?rows.map(r=>{
+const attrLabels={models:"Models",projects:"Projects",api_keys:"API Keys",users:"Users",service_tiers:"Service tiers",batch_modes:"Batch mode"};
+function renderAttribution(){
+  const rows=state.data.distribution?.[state.attr]||[];$("attrTitle").textContent=attrLabels[state.attr]||state.attr;
+  $("attrTable").innerHTML=rows.length?rows.map(r=>{
     const cache=r.input_tokens?r.cached_input_tokens/r.input_tokens:0;
-    return '<tr><td class="primary-cell">'+esc(r.name)+'</td><td>'+fmt(r.total_tokens)+'</td><td>'+percent(r.token_share)+'</td><td>'+count(r.requests)+'</td><td>'+money(r.cost)+'</td><td>'+money(r.requests?r.cost/r.requests:0)+'</td><td>'+percent(cache)+'</td></tr>';
-  }).join(""):'<tr><td colspan="7" class="subtle">No project usage.</td></tr>';
+    return'<tr><td title="'+esc(r.name)+'">'+esc(shortId(r.name))+'</td><td>'+fmt(r.total_tokens)+'</td><td>'+percent(r.token_share)+'</td><td>'+fmt(r.input_tokens)+'</td><td>'+fmt(r.output_tokens)+'</td><td>'+fmt(r.cached_input_tokens)+'</td><td>'+percent(cache)+'</td><td>'+count(r.requests)+'</td><td>'+fmt(r.avg_tokens_per_request)+'</td><td>'+((state.attr==="projects"||state.attr==="api_keys")?money(r.cost):"—")+'</td></tr>'
+  }).join(""):'<tr><td colspan="10">No data.</td></tr>';
 }
 
-function renderSources(){
-  const rows=state.data.distribution?.sources||[];
-  $("sourceCards").innerHTML=rows.length?rows.map(r=>'<div class="source-card"><span>'+esc(r.name)+'</span><strong>'+fmt(r.total_tokens)+'</strong><small>'+percent(r.token_share)+' of tokens · '+count(r.requests)+' requests</small></div>').join(""):'<div class="subtle">No token source data.</div>';
-}
-
-function renderCostLines(){
-  const rows=state.data.distribution?.cost_line_items||[],max=Math.max(...rows.map(r=>r.cost),1);
-  $("costLineItems").innerHTML=rows.length?rows.map(r=>'<div class="rank-row"><span>'+esc(r.name)+'</span><strong>'+money(r.cost)+'</strong><div class="progress"><i style="width:'+Math.min(100,r.cost/max*100)+'%"></i></div></div>').join(""):'<div class="empty-state">No cost line items.</div>';
-}
-
-function renderComparison(){
-  const d=state.data.comparison?.delta||{};
-  const items=[
-    ["Tokens",d.total_tokens_pct],["Cost",d.cost_pct],["Requests",d.requests_pct],
-    ["Input",d.input_tokens_pct],["Output",d.output_tokens_pct],["Cached",d.cached_input_tokens_pct]
-  ];
-  $("comparisonGrid").innerHTML=items.map(([label,val])=>'<div class="comparison-item"><span>'+label+'</span><strong>'+((val===null||val===undefined)?"—":(val>=0?"+":"")+Number(val).toFixed(1)+"%")+'</strong></div>').join("");
-}
-
-function renderDaily(){
-  const rows=[...(state.data.daily||[])].reverse();
-  $("dailyTable").innerHTML=rows.length?rows.map(r=>'<tr><td class="primary-cell">'+dateLabel(r.date)+'</td><td>'+fmt(r.total_tokens)+'</td><td>'+fmt(r.input_tokens)+'</td><td>'+fmt(r.output_tokens)+'</td><td>'+fmt(r.cached_input_tokens)+'</td><td>'+count(r.requests)+'</td><td>'+money(r.cost)+'</td></tr>').join(""):'<tr><td colspan="7" class="subtle">No daily telemetry.</td></tr>';
-}
-
-function renderResources(){
+function renderTools(){
   const rows=state.data.resources||[];
-  $("resourceTable").innerHTML=rows.length?rows.map(r=>'<tr><td class="primary-cell">'+esc(r.source)+'</td><td>'+count(r.requests)+'</td><td>'+count(r.images)+'</td><td>'+count(r.characters)+'</td><td>'+count(r.seconds)+'</td><td>'+bytes(r.usage_bytes)+'</td><td>'+count(r.sessions)+'</td></tr>').join(""):'<tr><td colspan="7" class="subtle">No non-token resource usage in this period.</td></tr>';
+  $("resourceCards").innerHTML=rows.length?rows.map(r=>{
+    const primary=r.tool_calls||r.requests||r.images||r.sessions||r.usage_bytes||r.seconds||r.characters;
+    return'<div class="resourcecard"><span>'+esc(r.source.replaceAll("_"," "))+'</span><strong>'+fmt(primary)+'</strong><small>'+resourceDetail(r)+'</small></div>'
+  }).join(""):'<div class="empty">No tool/resource activity.</div>';
+  $("resourceTable").innerHTML=rows.length?rows.map(r=>'<tr><td>'+esc(r.source)+'</td><td>'+count(r.tool_calls||r.requests)+'</td><td>'+count(r.images)+'</td><td>'+count(r.characters)+'</td><td>'+count(r.seconds)+'</td><td>'+bytes(r.usage_bytes)+'</td><td>'+count(r.sessions)+'</td></tr>').join(""):'<tr><td colspan="7">No resource activity.</td></tr>';
+
+  const sources=state.data.distribution?.sources||[];
+  $("sourceCards").innerHTML=sources.length?sources.map(r=>'<div class="resourcecard"><span>'+esc(r.name)+'</span><strong>'+fmt(r.total_tokens)+'</strong><small>'+percent(r.token_share)+' of tokens · '+count(r.requests)+' requests</small></div>').join(""):'<div class="empty">No token sources.</div>';
+}
+function resourceDetail(r){
+  const parts=[];if(r.tool_calls)parts.push(count(r.tool_calls)+" calls");if(r.images)parts.push(count(r.images)+" images");if(r.seconds)parts.push(count(r.seconds)+" sec");if(r.usage_bytes)parts.push(bytes(r.usage_bytes));if(r.sessions)parts.push(count(r.sessions)+" sessions");if(r.characters)parts.push(fmt(r.characters)+" chars");return parts.join(" · ")||"No activity";
+}
+
+function populateFilters(){
+  const rows=state.data.raw?.usage||[];
+  fillSelect("filterModel",rows.map(r=>r.model));fillSelect("filterProject",rows.map(r=>r.project_id));fillSelect("filterKey",rows.map(r=>r.api_key_id));fillSelect("filterUser",rows.map(r=>r.user_id));fillSelect("filterTier",rows.map(r=>r.service_tier));fillSelect("filterMode",rows.map(r=>r.batch));
+}
+function fillSelect(id,values){
+  const el=$(id),selected=el.value,label=el.options[0]?.text||"All";const vals=[...new Set(values.filter(v=>v&&v!=="unknown"&&v!=="unassigned"))].sort();
+  el.innerHTML='<option value="">'+esc(label)+'</option>'+vals.map(v=>'<option value="'+esc(v)+'">'+esc(shortId(v))+'</option>').join("");if(vals.includes(selected))el.value=selected;
+}
+function explorerRows(){
+  const vals={model:$("filterModel").value,project_id:$("filterProject").value,api_key_id:$("filterKey").value,user_id:$("filterUser").value,service_tier:$("filterTier").value,batch:$("filterMode").value};
+  const search=$("filterSearch").value.trim().toLowerCase();
+  return(state.data.raw?.usage||[]).filter(r=>{
+    for(const[k,v]of Object.entries(vals))if(v&&String(r[k])!==v)return false;
+    if(search&&!([r.source,r.model,r.project_id,r.api_key_id,r.user_id,r.service_tier,r.batch].join(" ").toLowerCase().includes(search)))return false;
+    return true;
+  }).sort((a,b)=>b.start_time-a.start_time);
+}
+function renderExplorer(){
+  if(!state.data)return;const rows=explorerRows(),tot=rows.reduce((a,r)=>{a.input+=num(r.input_tokens);a.output+=num(r.output_tokens);a.cached+=num(r.cached_input_tokens);a.requests+=num(r.requests);return a},{input:0,output:0,cached:0,requests:0});
+  $("filteredRows").textContent=count(rows.length);$("filteredTokens").textContent=fmt(tot.input+tot.output);$("filteredRequests").textContent=count(tot.requests);$("filteredCache").textContent=percent(tot.input?tot.cached/tot.input:0);
+  $("explorerTable").innerHTML=rows.length?rows.slice(0,500).map(r=>'<tr><td>'+dateLabel(r.timestamp)+'</td><td>'+esc(r.source)+'</td><td>'+esc(r.model)+'</td><td title="'+esc(r.project_id)+'">'+esc(shortId(r.project_id))+'</td><td title="'+esc(r.api_key_id)+'">'+esc(shortId(r.api_key_id))+'</td><td title="'+esc(r.user_id)+'">'+esc(shortId(r.user_id))+'</td><td>'+esc(r.service_tier)+'</td><td>'+esc(r.batch)+'</td><td>'+fmt(r.input_tokens)+'</td><td>'+fmt(r.output_tokens)+'</td><td>'+fmt(r.cached_input_tokens)+'</td><td>'+count(r.requests)+'</td></tr>').join(""):'<tr><td colspan="12">No rows match the filters.</td></tr>';
 }
 
 function renderDiagnostics(){
-  const d=state.data,h=state.health||{};
-  const items=[
-    ["Service",h.ok?"Healthy":"Unknown"],
-    ["API key",h.key_configured?"Configured":"Missing"],
-    ["Version",h.version||d.version||"—"],
-    ["Uptime",h.uptime_seconds?formatDuration(h.uptime_seconds):"—"],
-    ["Cache",d.cache_status||"—"],
-    ["Data state",d.stale?"Stale fallback":"Live"],
-    ["Warnings",count((d.warnings||[]).length)],
-    ["Protected",h.password_protected?"Yes":"No"]
+  const d=state.data,h=state.health||{},items=[
+    ["Service",h.ok?"Healthy":"Unknown"],["Version",h.version||d.version||"—"],["API key",h.key_configured?"Configured":"Missing"],["Uptime",formatDuration(h.uptime_seconds)],
+    ["Data state",d.stale?"Stale fallback":"Live"],["Cache",d.cache_status||"—"],["Warnings",count((d.warnings||[]).length)],["Tool sources",count((d.resources||[]).length)],
+    ["Models",count((d.distribution?.models||[]).length)],["Projects",count((d.distribution?.projects||[]).length)],["API keys",count((d.distribution?.api_keys||[]).length)],["Password",h.password_protected?"Enabled":"Off"]
   ];
-  $("diagnosticsGrid").innerHTML=items.map(([a,b])=>'<div class="diagnostic"><span>'+esc(a)+'</span><strong>'+esc(b)+'</strong></div>').join("");
+  $("diagnostics").innerHTML=items.map(([a,b])=>'<div class="diag"><span>'+esc(a)+'</span><strong>'+esc(b)+'</strong></div>').join("");
 }
+function formatDuration(s){s=Math.max(0,Math.floor(num(s)));const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return(d?d+"d ":"")+(h?h+"h ":"")+m+"m"}
 
-function formatDuration(seconds){
-  const s=Math.max(0,Math.floor(num(seconds))),d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);
-  return (d?d+"d ":"")+(h?h+"h ":"")+m+"m";
+function canvasSetup(canvas){const ratio=devicePixelRatio||1,w=Math.max(320,canvas.clientWidth),h=300;canvas.width=w*ratio;canvas.height=h*ratio;const ctx=canvas.getContext("2d");ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,w,h);return{ctx,w,h}}
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function lineChart(canvas,rows,series,formatter){
+  const{ctx,w,h}=canvasSetup(canvas),p={l:55,r:12,t:18,b:34},cw=w-p.l-p.r,ch=h-p.t-p.b,max=Math.max(1,...rows.flatMap(r=>series.map(s=>num(r[s.key]))));
+  ctx.font="11px system-ui";ctx.fillStyle=css("--muted");ctx.strokeStyle=css("--line");ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const y=p.t+ch*i/4;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();ctx.fillText(formatter(max*(1-i/4)),3,y+4)}
+  if(!rows.length){ctx.fillText("No data",p.l+10,p.t+20);return}
+  series.forEach(s=>{ctx.beginPath();ctx.strokeStyle=css(s.color);ctx.lineWidth=2;ctx.lineJoin="round";ctx.lineCap="round";rows.forEach((r,i)=>{const x=p.l+(rows.length===1?cw/2:i*cw/(rows.length-1)),y=p.t+ch-num(r[s.key])/max*ch;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()});
+  ctx.fillStyle=css("--muted");ctx.textAlign="center";const every=Math.max(1,Math.ceil(rows.length/6));rows.forEach((r,i)=>{if(i%every&&i!==rows.length-1)return;const x=p.l+(rows.length===1?cw/2:i*cw/(rows.length-1));ctx.fillText(dateLabel(r.date),x,h-9)});ctx.textAlign="start";
 }
+function renderCharts(){if(!state.data)return;const rows=state.data.daily||[];lineChart($("tokenChart"),rows,[{key:"input_tokens",color:"--input"},{key:"output_tokens",color:"--output"}],fmt);lineChart($("costChart"),rows,[{key:"cost",color:"--good"}],money)}
 
-function canvasSetup(canvas){
-  const ratio=window.devicePixelRatio||1,w=Math.max(320,canvas.clientWidth),h=300;
-  canvas.width=w*ratio;canvas.height=h*ratio;const ctx=canvas.getContext("2d");ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,w,h);return{ctx,w,h};
-}
-
-function css(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim()}
-
-function drawLineChart(canvas,series,keys,formatter){
-  const {ctx,w,h}=canvasSetup(canvas),pad={l:54,r:14,t:20,b:34},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b;
-  const values=series.flatMap(r=>keys.map(k=>num(r[k.key]))),max=Math.max(...values,1);
-  ctx.font="11px system-ui";ctx.strokeStyle=css("--line");ctx.fillStyle=css("--muted");ctx.lineWidth=1;
-  for(let i=0;i<=4;i++){const y=pad.t+ch*i/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.fillText(formatter(max*(1-i/4)),4,y+4)}
-  if(!series.length){ctx.fillText("No data",pad.l+10,pad.t+20);return}
-  keys.forEach(k=>{
-    ctx.beginPath();ctx.strokeStyle=css(k.color);ctx.lineWidth=2;ctx.lineJoin="round";ctx.lineCap="round";
-    series.forEach((r,i)=>{const x=pad.l+(series.length===1?cw/2:i*cw/(series.length-1)),y=pad.t+ch-(num(r[k.key])/max*ch);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});
-    ctx.stroke();
-  });
-  const every=Math.max(1,Math.ceil(series.length/6));ctx.fillStyle=css("--muted");ctx.textAlign="center";
-  series.forEach((r,i)=>{if(i%every&&i!==series.length-1)return;const x=pad.l+(series.length===1?cw/2:i*cw/(series.length-1));ctx.fillText(dateLabel(r.date),x,h-10)});
-  ctx.textAlign="start";
-}
-
-function renderCharts(){
-  if(!state.data)return;
-  const daily=state.data.daily||[];
-  drawLineChart($("tokenChart"),daily,[{key:"input_tokens",color:"--input"},{key:"output_tokens",color:"--output"}],v=>fmt(v));
-  drawLineChart($("costChart"),daily,[{key:"cost",color:"--good"}],v=>money(v));
-}
-
-async function load(showToast=false){
-  if(state.loading)return;state.loading=true;setLive("","Refreshing","Pulling latest organization telemetry…");
+async function load(notify=false){
+  if(state.loading)return;state.loading=true;setLive("","Refreshing","Pulling OpenAI organization telemetry…");
   try{
-    const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),25000);
-    const [analyticsResponse,healthResponse]=await Promise.all([
-      fetch("/api/analytics?days="+state.days,{cache:"no-store",signal:controller.signal}),
-      fetch("/health",{cache:"no-store",signal:controller.signal})
-    ]);
-    clearTimeout(timeout);
-    const analytics=await analyticsResponse.json().catch(()=>({error:"Invalid analytics response"}));
-    const health=await healthResponse.json().catch(()=>({}));
-    state.health=health;
-
-    if(!analyticsResponse.ok)throw new Error(analytics.error||("HTTP "+analyticsResponse.status));
-    state.data=analytics;state.lastLoadedAt=Date.now();state.nextRefreshAt=Date.now()+state.refreshSeconds*1000;
-    setLive(analytics.stale?"error":"live",analytics.stale?"Stale fallback":"Live 24/7",analytics.stale?"Upstream refresh failed; showing last-known-good data.":"Fresh from OpenAI organization telemetry.");
-    showBanner("setupBanner",false);
-    render();
-    if(showToast)toast("Telemetry refreshed");
-  }catch(error){
-    const msg=error.name==="AbortError"?"Telemetry request timed out":error.message;
-    setLive("error","Not updating",msg);
-    if(msg.includes("OPENAI_ADMIN_KEY")){
-      showBanner("setupBanner",true,'<strong>Live source not connected.</strong> Add <code>OPENAI_ADMIN_KEY</code> to the Railway service variables. The dashboard and 24/7 service are deployed; this secret is required to read organization usage.');
-    }else{
-      showBanner("setupBanner",true,'<strong>Telemetry error.</strong> '+esc(msg));
-    }
+    const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),45000);
+    const [ar,hr]=await Promise.all([fetch("/api/analytics?days="+state.days,{cache:"no-store",signal:controller.signal}),fetch("/health",{cache:"no-store",signal:controller.signal})]);clearTimeout(timeout);
+    const data=await ar.json().catch(()=>({error:"Invalid analytics response"}));state.health=await hr.json().catch(()=>({}));
+    if(!ar.ok)throw new Error(data.error||"HTTP "+ar.status);
+    state.data=data;state.lastLoaded=Date.now();state.nextRefresh=Date.now()+state.refreshSeconds*1000;
+    setLive(data.stale?"error":"live",data.stale?"Stale fallback":"Live 24/7",data.stale?"Serving last-known-good telemetry.":"Fresh OpenAI Usage + Costs telemetry.");
+    show("errorBanner",false);render();if(notify)toast("Telemetry refreshed");
+  }catch(e){
+    const msg=e.name==="AbortError"?"Telemetry request timed out":e.message;setLive("error","Not updating",msg);show("errorBanner",true,'<strong>Telemetry error:</strong> '+esc(msg));
   }finally{state.loading=false}
 }
-
-function updateCountdown(){
-  if(!state.autoRefresh){$("refreshCountdown").textContent="Paused";return}
-  const left=Math.max(0,Math.ceil((state.nextRefreshAt-Date.now())/1000));
-  $("refreshCountdown").textContent=left+"s";
-  if(!state.loading&&left<=0)load(false);
+function countdown(){
+  if(!state.autoRefresh){$("countdown").textContent="Paused";return}
+  const left=Math.max(0,Math.ceil((state.nextRefresh-Date.now())/1000));$("countdown").textContent=left+"s";if(!state.loading&&left<=0)load(false);
 }
 
-qsa(".nav-item").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
-$("refreshButton").addEventListener("click",()=>load(true));
-$("daysSelect").value=String(state.days);
-$("daysSelect").addEventListener("change",e=>{state.days=Number(e.target.value);localStorage.setItem("tt-days",state.days);load(false)});
-$("refreshInterval").value=String(state.refreshSeconds);
-$("refreshInterval").addEventListener("change",e=>{state.refreshSeconds=Number(e.target.value);localStorage.setItem("tt-refresh",state.refreshSeconds);state.nextRefreshAt=Date.now()+state.refreshSeconds*1000;toast("Refresh interval updated")});
-$("autoRefresh").checked=state.autoRefresh;
-$("autoRefresh").addEventListener("change",e=>{state.autoRefresh=e.target.checked;localStorage.setItem("tt-auto",String(state.autoRefresh));state.nextRefreshAt=Date.now()+state.refreshSeconds*1000});
-$("budgetInput").value=state.budget||"";
-$("budgetInput").addEventListener("input",e=>{state.budget=Math.max(0,num(e.target.value));localStorage.setItem("tt-budget",String(state.budget));if(state.data)renderBudget()});
-$("themeSelect").addEventListener("change",e=>{state.theme=e.target.value;localStorage.setItem("tt-theme",state.theme);applyTheme()});
-qsa(".export-button").forEach(b=>b.addEventListener("click",()=>{window.location.href="/api/export?days="+state.days+"&type="+encodeURIComponent(b.dataset.export)}));
-document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-state.lastLoadedAt>30000)load(false)});
-window.addEventListener("online",()=>load(false));
-window.addEventListener("offline",()=>setLive("error","Offline","Waiting for network connection."));
-let resizeTimer;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(renderCharts,120)});
-setInterval(updateCountdown,1000);
-
-applyTheme();
-state.nextRefreshAt=Date.now()+state.refreshSeconds*1000;
-load(false);
+qsa(".nav").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+qsa(".chip").forEach(b=>b.onclick=()=>{state.attr=b.dataset.attr;qsa(".chip").forEach(x=>x.classList.toggle("active",x===b));renderAttribution()});
+$("refresh").onclick=()=>load(true);
+$("days").value=String(state.days);$("days").onchange=e=>{state.days=Number(e.target.value);localStorage.setItem("tt-days",state.days);load(false)};
+$("refreshInterval").value=String(state.refreshSeconds);$("refreshInterval").onchange=e=>{state.refreshSeconds=Number(e.target.value);localStorage.setItem("tt-refresh",state.refreshSeconds);state.nextRefresh=Date.now()+state.refreshSeconds*1000};
+$("autoRefresh").checked=state.autoRefresh;$("autoRefresh").onchange=e=>{state.autoRefresh=e.target.checked;localStorage.setItem("tt-auto",String(state.autoRefresh));state.nextRefresh=Date.now()+state.refreshSeconds*1000};
+$("localBudget").value=state.localBudget||"";$("localBudget").oninput=e=>{state.localBudget=Math.max(0,num(e.target.value));localStorage.setItem("tt-budget",state.localBudget);if(state.data)renderFinops()};
+$("theme").value=state.theme;$("theme").onchange=e=>{state.theme=e.target.value;localStorage.setItem("tt-theme",state.theme);document.documentElement.dataset.theme=state.theme;renderCharts()};
+qsa(".export").forEach(b=>b.onclick=()=>location.href="/api/export?days="+state.days+"&type="+encodeURIComponent(b.dataset.export));
+["filterModel","filterProject","filterKey","filterUser","filterTier","filterMode"].forEach(id=>$(id).onchange=renderExplorer);$("filterSearch").oninput=renderExplorer;
+$("clearFilters").onclick=()=>{["filterModel","filterProject","filterKey","filterUser","filterTier","filterMode","filterSearch"].forEach(id=>$(id).value="");renderExplorer()};
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-state.lastLoaded>30000)load(false)});
+addEventListener("online",()=>load(false));addEventListener("offline",()=>setLive("error","Offline","Waiting for network"));
+let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(renderCharts,120)});
+setInterval(countdown,1000);
+document.documentElement.dataset.theme=state.theme;state.nextRefresh=Date.now()+state.refreshSeconds*1000;load(false);
