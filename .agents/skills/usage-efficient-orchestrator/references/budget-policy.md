@@ -2,57 +2,60 @@
 
 ## Objective
 
-Prevent one Codex turn from silently becoming an unbounded multi-agent job.
+Prevent a Codex turn from silently becoming an unbounded multi-agent job.
 
-## Default budget
+The default profile is **balanced**.
 
-- Target: <=5 percentage points of weekly Work/Codex allowance per user turn.
-- Absolute planning ceiling: never intentionally exceed 10 percentage points in one turn.
-- Exact enforcement requires a live allowance reading. Without one, use proxy guards and do not report fabricated percentages.
+## Percentage policy
 
-## Proxy guards when live usage is unavailable
+- economy: target <=3 percentage points; ceiling <=5.
+- balanced: target <=5 percentage points; ceiling <=10.
+- quality-critical: target <=5 percentage points; ceiling <=10.
 
-A normal turn should stay within:
-- one compact planning pass;
-- <=3 concurrent subagents;
-- <=1 broad-ish discovery pass, preferably targeted;
-- <=1 implementation pass per independent work unit;
-- <=1 targeted validation pass after each changed work unit;
-- <=2 failed implementation attempts total before stop;
-- no Astra high/extra-high escalation without returning to the user first;
-- no second full repository scan;
-- no second full test-suite run unless code changed in a way that requires it.
+Exact enforcement requires a live allowance reading. Without one, do not fabricate a percentage; use the hard proxy counters from `../config/budget-profiles.toml`.
 
-## Budget classes
+## Proxy counters
+
+Track counters per Task Envelope:
+- concurrent agents;
+- total agent spawns;
+- broad discovery passes;
+- write phases;
+- failed implementation attempts;
+- test cycles;
+- full-suite runs;
+- senior escalations;
+- scope expansions.
+
+When a hard profile limit is reached, stop before starting another unit that would exceed it.
+
+## Complexity classes
 
 MICRO
 - one obvious local change
-- no subagent unless needed
-- Luna/Terra low
-- one targeted check
+- usually direct or one standard_engineer
+- targeted check
 
 SMALL
 - 1-3 files or one bounded concern
-- max 1-2 workers
-- Terra implementation
-- supervisor integrates
+- max 1-2 workers normally
+- one writer
 
 MEDIUM
-- several components or an integration change
-- Luna scout + Terra implementer/reviewer
-- split into phases if uncertainty is high
+- several components or integration change
+- read-only discovery + writer + reviewer
+- use branch and explicit verification
 
 LARGE
 - migration, broad refactor, multiple systems, unclear architecture
-- do not execute end-to-end in one turn
-- phase 1: discovery/architecture
-- return to user
-- later phases: implementation/review/deploy
+- plan-only first
+- phase execution with user checkpoints
 
 ## User-provided usage checkpoint
 
-If the user says, for example, "I have 62% remaining":
-- record 62% as baseline;
-- default stop target is 57% remaining;
-- never intentionally plan below 52% in that same turn;
-- if no live re-check is possible, use proxy guards and ask the user to confirm usage before the next expensive phase.
+If the user says "62% remaining" under balanced:
+- baseline = 62%;
+- target stop = 57%;
+- absolute ceiling = 52%;
+- re-check before senior escalation when possible;
+- if no live re-check is possible, enforce proxies and ask before another expensive phase.
