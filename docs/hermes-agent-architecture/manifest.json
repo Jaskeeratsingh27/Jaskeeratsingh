@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "project_name": "Hermes Agent Architecture Knowledge System",
+  "project_slug": "hermes-agent-architecture",
+  "repository": "Jaskeeratsingh27/Jaskeeratsingh",
+  "project_root": ".agents/skills/hermes-agent-architecture",
+  "project_version": "1.6.0",
+  "guide_revision": 1,
+  "canonical_guide": "docs/hermes-agent-architecture/MASTER_GUIDE.md",
+  "latest_snapshot": "docs/hermes-agent-architecture/history/MASTER_GUIDE_v1.6.0.md",
+  "source_commit": "0627a9e3966bd6d317057d0917b338b2168cb2db",
+  "last_updated_on": "2026-09-22",
+  "snapshot_policy": "semantic_release",
+  "exports": [
+    "docs/hermes-agent-architecture/exports/MASTER_GUIDE_v1.6.0.docx"
+  ],
+  "status": "current",
+  "known_gaps": [
+    "Normal ChatGPT does not natively auto-discover arbitrary GitHub skills; explicit invocation or repository closeout routing may be required."
+  ]
+}

@@ -1,6 +1,6 @@
 ---
 name: github-project-sync
-description: Make GitHub the verified canonical record for each new user project, agent, app, website, dashboard, workflow, or reusable skill. Use proactively when the user clearly starts, builds, or approves a durable project, or requests GitHub preservation or sync. Classify the request, verify GitHub capability and permissions, create or reuse the correct repository, save controlled project records and artifacts, verify each milestone, and record defects for improvement. Do not use for questions, casual brainstorming, or one-off answers without a durable deliverable.
+description: Make GitHub the verified canonical record for each new user project, agent, app, website, dashboard, workflow, or reusable skill. Use proactively when the user clearly starts, builds, or approves a durable project, or requests GitHub preservation or sync. Classify the request, verify GitHub capability and permissions, create or reuse the correct repository, save controlled project records and artifacts, verify each milestone, and record defects for improvement. At meaningful project closeout or release, route durable work through project-knowledge-handoff so future chats can reconstruct the project. Do not use for questions, casual brainstorming, or one-off answers without a durable deliverable.
 ---
 
 # GitHub Project Sync
@@ -36,11 +36,13 @@ Use the gates below. Never announce a repository, commit, sync, or installation 
 - Save after each logical milestone using a concise, truthful description. Record the verified commit reference and outcome in `docs/run-ledger.md`.
 - When resuming, read `PROJECT.md`, the manifest, ledger, relevant decisions, and recent history before relying on conversation memory.
 
-## G4 — close and learn
+## G4 — close, hand off, and learn
 
 - Confirm all in-scope requirements have a traceable artifact and verification result. Confirm no secrets were detected, the manifest is current, and the remote state is visible.
-- Report: repository, branch, latest verified commit, completed requirements, open risks, and next action. Do not call the project synchronized if any of these are unknown.
-- Log each failed permission check, duplicate-prevention event, secret finding, or verification failure in the ledger. Promote recurring causes into the skill's improvement backlog.
+- For a meaningful completion, stable milestone, release, migration, or ownership handoff of a durable project, invoke `project-knowledge-handoff` before final closeout. Create/update the stable master guide and create a historical snapshot when its snapshot policy applies.
+- If the project is too small/transient for a master guide, explicitly mark the handoff step not applicable rather than generating boilerplate.
+- Report: repository, branch, latest verified commit, completed requirements, open risks, project knowledge-guide status, and next action. Do not call the project synchronized if any of these are unknown.
+- Log each failed permission check, duplicate-prevention event, secret finding, verification failure, or continuity/handoff gap in the ledger. Promote recurring causes into the relevant skill improvement backlog.
 
 ## Recovery rules
 
