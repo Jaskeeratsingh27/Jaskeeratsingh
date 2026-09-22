@@ -1,6 +1,7 @@
 {
   "name": "usage-efficient-orchestrator",
-  "version": "1.2.0",
+  "version": "1.3.0",
+  "telemetry_schema_version": "1.0",
   "canonical_repository": "Jaskeeratsingh27/Jaskeeratsingh",
   "canonical_branch": "main",
   "managed_agents": [
@@ -15,12 +16,14 @@
     "skill": "~/.agents/skills/usage-efficient-orchestrator",
     "agents_dir": "~/.codex/agents",
     "config": "~/.codex/config.toml",
-    "config_candidate": "~/.codex/usage-efficient-orchestrator.config.toml"
+    "config_candidate": "~/.codex/usage-efficient-orchestrator.config.toml",
+    "telemetry_dir": "~/.codex/orchestrator/telemetry"
   },
   "qa_commands": [
     "node scripts/validate-orchestrator.mjs",
     "node scripts/evaluate-routing-policy.mjs",
     "node scripts/security-check-orchestrator.mjs",
+    "node scripts/test-observability.mjs",
     "node scripts/release-check-orchestrator.mjs"
   ]
 }

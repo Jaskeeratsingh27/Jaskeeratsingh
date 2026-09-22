@@ -1,63 +1,64 @@
 # Usage-Efficient Codex Orchestrator
 
-Version: 1.2.0
+Version: 1.3.0
 
-This repository contains the canonical, version-controlled Codex architecture for conserving Work/Codex allowance while preserving engineering quality.
+GitHub is the canonical source for the orchestration policy.
 
-## Architecture
+## Runtime architecture
 
-Primary supervisor (for example Astra at Light/Low)
--> cheap read-only discovery
--> standard implementation
+Primary supervisor
+-> Task Envelope
+-> privacy-preserving telemetry start
+-> cheap read-only discovery where needed
+-> one standard writer
 -> independent review when risk requires it
--> senior escalation only when evidence justifies it
--> primary supervisor integrates and enforces budget/risk gates
+-> senior escalation only with evidence
+-> targeted validation
+-> measured checkpoint when available
+-> telemetry finish
+-> compact report
 
-## Reliability model
+## Usage profiles
 
-GitHub is the canonical source of truth. Global Codex files are runtime mirrors.
+- economy: target <=3 percentage points, ceiling <=5.
+- balanced: target <=5, ceiling <=10.
+- quality-critical: target <=5, ceiling <=10 with stronger assurance.
 
-Before promotion:
+If live usage is unavailable, the system uses enforceable proxy counters and never fabricates a percentage.
+
+## Observability
+
+Local ledger:
+
+`~/.codex/orchestrator/telemetry/events.jsonl`
+
+The ledger stores structured metadata only. Prompts, source code, file contents, secrets, and raw tool output are intentionally excluded.
+
+Useful commands after global sync:
+
+```bash
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs report --days 7
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs export --days 7 --out /tmp/tokentrack-orchestrator.json
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs prune
+```
+
+Measured allowance burn is reported only for tasks that have real before/after remaining-percentage checkpoints.
+
+## Reliability
 
 ```bash
 node scripts/orchestrator-qa.mjs
-```
-
-Check installed/global drift:
-
-```bash
 node scripts/orchestrator-status.mjs
-```
-
-Preview a global update:
-
-```bash
 node scripts/orchestrator-sync.mjs --dry-run
-```
-
-Apply a global update:
-
-```bash
 node scripts/orchestrator-sync.mjs
 ```
 
-The sync process backs up managed files and will not silently overwrite an unrecognized existing global `[agents]` configuration.
+## Roadmap
 
-## Usage budget model
-
-The default balanced profile targets <=5 percentage points of weekly allowance and never intentionally plans >10 percentage points in a single turn.
-
-This is an account-side target, not a guaranteed meter when live usage is unavailable. Proxy counters are the enforceable fallback.
-
-## Version control
-
-Orchestrator versions are built on isolated version branches, validated, reviewed, and only promoted after explicit approval.
-
-Release progression:
 - v1.0 foundation
 - v1.1 control plane
 - v1.2 reliability
 - v1.3 observability
-- v1.4 usage intelligence
+- v1.4 usage intelligence and calibrated burn estimation
 - v1.5 adaptive routing
 - v2.0 closed-loop orchestrator

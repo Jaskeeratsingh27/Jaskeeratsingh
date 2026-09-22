@@ -1,19 +1,20 @@
 ---
 name: usage-efficient-orchestrator
-description: Conserve Work/Codex weekly allowance by planning once, using a structured task envelope, routing bounded work to the cheapest capable roles, enforcing risk-aware review, single-writer execution, proxy usage counters, failure-aware escalation, reliability/CI gates, drift detection, and user checkpoints before expensive continuation. Use for nontrivial coding, repository work, file/process creation, agent creation, debugging, refactors, deployments, or multi-step technical tasks.
+description: Conserve Work/Codex weekly allowance by planning once, using a structured task envelope, routing bounded work to the cheapest capable roles, enforcing risk-aware review, single-writer execution, proxy usage counters, failure-aware escalation, privacy-preserving telemetry, reliability gates, and user checkpoints before expensive continuation. Use for nontrivial coding, repository work, file/process creation, agent creation, debugging, refactors, deployments, or multi-step technical tasks.
 ---
 
-# Usage-Efficient Orchestrator v1.2.0
+# Usage-Efficient Orchestrator v1.3.0
 
 ## Mission
 
-Act as a supervisor/architect, not an expensive universal worker. Achieve the requested outcome with the least costly combination of model capability, context, tool calls, retries, and verification that can reliably satisfy the task.
+Act as a supervisor/architect, not an expensive universal worker. Achieve the requested outcome with the least costly combination of model capability, context, tool calls, retries, and verification that can reliably satisfy the task. Measure enough execution behavior to improve later routing without collecting sensitive task content.
 
 ## 1. Mandatory Task Envelope
 
 Before substantial work, create a compact internal Task Envelope using `references/task-envelope.md`.
 
 It must define:
+- task_id;
 - goal and definition of done;
 - complexity and risk separately;
 - selected budget profile;
@@ -109,7 +110,73 @@ Every delegated task specifies task_id, goal, scope/path, access mode, capabilit
 
 Workers return `references/handoff-schema.md`. No raw transcript dumps.
 
-## 9. Context conservation
+## 9. Privacy-preserving observability
+
+Read `references/observability-policy.md` and `config/observability.json`.
+
+Observability is local-first and append-only.
+
+Default runtime ledger:
+`~/.codex/orchestrator/telemetry/events.jsonl`
+
+Never record:
+- prompt or conversation text;
+- source-code/file contents;
+- secret values;
+- API keys/tokens;
+- full filesystem paths;
+- raw tool output.
+
+Allowed telemetry is structured metadata only:
+- task_id and event_id;
+- timestamp;
+- project_id as a one-way hash;
+- complexity/risk/profile;
+- role/model/reasoning/access mode;
+- worker/result status;
+- counts for files inspected/touched, tests, retries, scans, agents;
+- duration;
+- explicit weekly-usage checkpoints supplied by the user or a reliable meter;
+- stop reason/failure class as controlled enums.
+
+### Required lifecycle for nontrivial tasks
+
+Best-effort commands:
+
+```bash
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs start ...
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs route ...
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs worker ...
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs checkpoint ...
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs finish ...
+```
+
+Use checkpoint only when a real remaining-percentage value is available. Do not infer one.
+
+Telemetry gets one attempt. If telemetry tooling fails, classify as tooling_environment and continue the user's primary task rather than spending expensive reasoning on instrumentation.
+
+### Reporting
+
+```bash
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs report --days 7
+```
+
+The report clearly separates:
+- measured allowance burn, based only on real before/after checkpoints;
+- orchestration activity without usage measurements;
+- role/routing counts;
+- success/block/failure rates;
+- budget-stop events.
+
+### TokenTrack bridge
+
+```bash
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs export --days 7 --out <file>
+```
+
+The export is aggregate and privacy-preserving by default. It is an integration contract for TokenTrack; v1.3 does not publish raw task telemetry to a network endpoint automatically.
+
+## 10. Context conservation
 
 - Reuse repository maps until relevant files change.
 - Prefer exact file/symbol references over large pasted contexts.
@@ -117,30 +184,21 @@ Workers return `references/handoff-schema.md`. No raw transcript dumps.
 - Stop research when evidence is sufficient.
 - Do not make a stronger model reread already-distilled evidence unless verification is required.
 
-## 10. Test conservation
+## 11. Test conservation
 
-Match test breadth to risk and change breadth.
+Match test breadth to risk and change breadth. Never rerun an unchanged passing suite for reassurance.
 
-Never rerun an unchanged passing suite for reassurance.
+## 12. Reliability control plane
 
-## 11. Reliability control plane
+GitHub repository content is canonical. Global Codex copies are runtime mirrors.
 
-v1.2 adds mandatory reliability gates:
-
-### Canonical source
-GitHub repository content is canonical. Global Codex copies are runtime mirrors, not independent sources of truth.
-
-### QA gate
-Before orchestrator promotion, run:
+Before orchestrator promotion:
 
 ```bash
 node scripts/orchestrator-qa.mjs
 ```
 
-All component checks must pass.
-
 ### Drift gate
-Use:
 
 ```bash
 node scripts/orchestrator-status.mjs
@@ -148,23 +206,26 @@ node scripts/orchestrator-status.mjs
 
 If global files are stale or missing, sync them before relying on the installed policy.
 
+### Security gate
+
+The release must pass `node scripts/security-check-orchestrator.mjs`. Secret capture, unsafe sandbox expansion, or observability privacy regression blocks promotion.
+
+### CI gate
+
+GitHub Actions must run the unified QA suite for orchestrator branches and pull requests. A failing CI result blocks promotion.
+
 ### Safe sync
-Use:
+
+
 
 ```bash
 node scripts/orchestrator-sync.mjs --dry-run
 node scripts/orchestrator-sync.mjs
 ```
 
-The sync process backs up managed files before replacement and refuses to silently overwrite an unrecognized existing global `[agents]` configuration.
+Security and release gates remain mandatory.
 
-### Security gate
-`scripts/security-check-orchestrator.mjs` rejects high-confidence credential material, unsafe sandbox expansion in managed worker roles, and policy/config violations.
-
-### CI gate
-Pull requests and orchestrator branches run the same deterministic QA in GitHub Actions. A red CI result blocks promotion.
-
-## 12. Stop-loss gates
+## 13. Stop-loss gates
 
 Stop and return control to the user when:
 - profile retry limit is reached;
@@ -174,9 +235,9 @@ Stop and return control to the user when:
 - next step requires a higher-cost tier beyond the profile gate;
 - task is plausibly beyond the selected percentage target;
 - CRITICAL risk would move from planning to execution;
-- QA/security/drift status is unsafe for the requested promotion or sync.
+- QA/security/drift status is unsafe for requested promotion or sync.
 
-## 13. Version-control and release policy
+## 14. Version-control and release policy
 
 1. Inspect current Git state/history before edits.
 2. Preserve unrelated user changes.
@@ -189,16 +250,13 @@ Stop and return control to the user when:
 9. Record last known-good release.
 10. Do not merge an orchestrator release candidate until QA is green and the user approves.
 
-## 14. Validation accuracy
+## 15. Validation accuracy
 
-Deterministic policy/CI checks prove configuration consistency and policy invariants only.
+Deterministic policy/CI/telemetry tests prove implementation and schema consistency only.
 
-Do not claim:
-- exact weekly usage savings;
-- real-model routing accuracy;
-- predicted task burn accuracy;
+v1.3 may report **measured usage deltas** only when actual before/after checkpoints exist.
 
-until the observability and feedback stages collect real telemetry.
+Do not claim predictive burn accuracy yet. Prediction/calibration belongs to v1.4.
 
 ## Default bounded-phase response
 
@@ -206,6 +264,7 @@ Keep it compact:
 - version/phase;
 - what changed;
 - validation result;
+- observability coverage;
 - security/drift state;
 - known limitations;
 - approval required or not.
@@ -217,5 +276,7 @@ Read supporting files only when needed:
 - `references/routing-policy.md`
 - `references/budget-policy.md`
 - `references/escalation-policy.md`
+- `references/observability-policy.md`
 - `config/capabilities.toml`
 - `config/budget-profiles.toml`
+- `config/observability.json`

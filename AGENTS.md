@@ -1,6 +1,6 @@
 # Usage-Efficient Codex Policy
 
-Version: 1.2.0
+Version: 1.3.0
 
 For every nontrivial engineering, agent-building, process-building, repository, or file-generation task in this repository, apply the `usage-efficient-orchestrator` skill before substantial work.
 
@@ -10,7 +10,7 @@ For every nontrivial engineering, agent-building, process-building, repository, 
 2. Treat the primary model as supervisor/architect first. Delegate bounded work to the cheapest capable role.
 3. Default budget profile is **balanced**: target <=5 percentage points of weekly allowance per user turn; never intentionally plan >10 percentage points in one turn.
 4. If the user requests `economy`, use a <=3-point target and <=5-point ceiling.
-5. Exact account-side percentage enforcement is unavailable when the model cannot read a live usage meter. In that case enforce the proxy counters and stop-loss gates in the skill.
+5. Exact account-side percentage enforcement is unavailable when the model cannot read a live usage meter. In that case enforce proxy counters and stop-loss gates; never fabricate a usage percentage.
 6. Every nontrivial task must create a compact internal **Task Envelope** before substantial execution: goal, scope, risk, budget, work units, routing, limits, definition of done, and stop condition.
 7. Assess **risk separately from complexity**. Security/auth, secrets, billing, destructive operations, production infrastructure, migrations, and irreversible changes require stronger review even if the edit is small.
 8. **Single-writer rule:** at most one write-capable worker may modify the same working tree at a time. Parallel workers are read-only unless isolated worktrees/branches are explicitly created.
@@ -27,10 +27,12 @@ For every nontrivial engineering, agent-building, process-building, repository, 
 14. Stop after the configured retry limit, when architecture materially changes, when scope expands, or before a likely budget overrun. Report and ask the user before continuing.
 15. Keep Git as the source of truth. Preserve unrelated user changes, keep phases reversible, use focused commits, and make deployments traceable to commits.
 16. Worker handoffs must use the structured handoff schema and remain concise so the primary model does not reread large contexts.
-17. **Reliability gate:** before orchestrator promotion or global sync, run `node scripts/orchestrator-qa.mjs`. A failed check blocks promotion.
-18. **Drift gate:** GitHub is canonical. If the installed global skill/agents differ from the repository, report drift and sync before relying on the global copy.
-19. **Security gate:** orchestrator-managed files must pass the secret/sandbox/config checks before release.
-20. Medium/large orchestrator revisions must remain on a version branch until validation is green and the user explicitly approves promotion.
+17. **Observability is mandatory but lightweight:** each nontrivial task gets a task ID and a privacy-preserving local telemetry lifecycle. Never record prompts, source code, secrets, file contents, or raw conversation text.
+18. When the user supplies a weekly-usage checkpoint, record it as measured data. Distinguish measured usage from inferred/unknown usage.
+19. Telemetry failure must not trigger expensive reasoning. Attempt telemetry once; if it fails, classify it as tooling/environment and continue the user's task unless observability itself is the requested task.
+20. Before orchestrator promotion or global sync, run `node scripts/orchestrator-qa.mjs`. A failed check blocks promotion.
+21. GitHub is canonical. Global Codex copies are runtime mirrors; detect drift before relying on them.
+22. Medium/large orchestrator revisions remain on a version branch until validation is green and the user explicitly approves promotion.
 
 Detailed control-plane rules live in:
 `.agents/skills/usage-efficient-orchestrator/SKILL.md`.
