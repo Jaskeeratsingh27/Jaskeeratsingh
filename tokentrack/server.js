@@ -9,7 +9,7 @@ const OPENAI_ADMIN_KEY = process.env.OPENAI_ADMIN_KEY || "";
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || "";
 const CACHE_TTL_MS = Math.max(10_000, Number(process.env.CACHE_TTL_MS || 30_000));
 const UPSTREAM_TIMEOUT_MS = 15_000;
-const VERSION = "3.0.0";
+const VERSION = "4.0.0-p1";
 
 const CORE_SOURCES = [
   { key: "completions", path: "completions", groupBy: ["model", "project_id", "api_key_id", "user_id", "service_tier", "batch"], required: true },
