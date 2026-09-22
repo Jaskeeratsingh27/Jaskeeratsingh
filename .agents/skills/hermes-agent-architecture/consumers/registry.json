@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0.0",
+  "registry_scope": "active canonical consumers only",
+  "ignored_path_prefixes": [
+    ".claude/",
+    "migrations/",
+    ".agents/skills/hermes-agent-architecture/"
+  ],
+  "consumers": [
+    {
+      "id": "hermes-agent-creator",
+      "type": "skill",
+      "status": "active",
+      "criticality": "high",
+      "dependency_mode": "canonical_knowledge_dependency",
+      "paths": [
+        ".agents/skills/hermes-agent-creator/SKILL.md",
+        ".agents/skills/hermes-agent-creator/references/runtime-map.md",
+        ".agents/skills/hermes-agent-creator/references/recovered-hermes-runtime.md"
+      ],
+      "capability_ids": [
+        "profiles",
+        "bot_mode",
+        "delegation",
+        "structured_output",
+        "kanban",
+        "skills_context_soul",
+        "memory",
+        "tools_mcp",
+        "execute_code",
+        "model_routing",
+        "cron",
+        "security",
+        "observability"
+      ],
+      "rationale": "The skill explicitly delegates current Hermes runtime facts and primitive selection to hermes-agent-architecture and authors/reviews Hermes-specific agent designs."
+    },
+    {
+      "id": "kaizen-orchestrator",
+      "type": "skill",
+      "status": "active",
+      "criticality": "medium",
+      "dependency_mode": "hermes_adaptation",
+      "paths": [
+        ".agents/skills/kaizen-orchestrator/SKILL.md",
+        ".agents/skills/kaizen-orchestrator/references/kaizen-orchestrator-master-guide.md",
+        ".agents/skills/kaizen-orchestrator/references/universal-agent-portability-reference.md"
+      ],
+      "capability_ids": [
+        "profiles",
+        "delegation",
+        "tools_mcp",
+        "cron"
+      ],
+      "rationale": "The Hermes setup section specifies separate agent instances, delegate_task handoffs, Hermes web tools, and Cron-based automation."
+    }
+  ]
+}

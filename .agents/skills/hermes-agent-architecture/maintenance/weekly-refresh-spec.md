@@ -4,7 +4,7 @@ Status: ACTIVE MAINTENANCE CONTRACT. The canonical skill has an external ChatGPT
 
 ## Objective
 
-Keep the Hermes Agent architecture knowledge base synchronized with official releases/documentation while preserving historical evidence of what was checked, how fresh each capability is, and whether the knowledge base is drifting.
+Keep the Hermes Agent architecture knowledge base synchronized with official releases/documentation while preserving historical evidence of what was checked, how fresh each capability is, whether the knowledge base is drifting, and which active downstream consumers may be affected.
 
 ## Cadence
 
@@ -25,7 +25,9 @@ structured change event(s)
         ↓
 release-impact engine
         ↓
-smallest justified patch
+consumer-impact engine
+        ↓
+smallest justified knowledge patch
         ↓
 capability revalidation dates/status
         ↓
@@ -39,6 +41,14 @@ health-history snapshot
         ↓
 reviewed promotion when required
 ```
+
+## Consumer-impact policy
+
+`consumers/registry.json` is the authoritative list of active canonical repository consumers of Hermes capabilities. Historical migrations and runtime mirrors are not active consumers unless explicitly registered.
+
+For every material/ambiguous change event, run `maintenance/consumer_impact.py` after release-impact classification. Report affected consumers, canonical paths, matched capabilities, recommended review/migration action, and compatibility blockers.
+
+A Hermes knowledge refresh must not silently rewrite downstream consumers. Consumer migrations are separate reviewed work. A major/critical change affecting a high/critical registered consumer prevents declaring that consumer compatibility-cleared until its review completes.
 
 ## Historical audit policy
 
@@ -120,6 +130,7 @@ For material/ambiguous changes:
 - architecture regression validation
 - release-impact regression validation
 - health/drift regression validation
+- consumer-impact regression validation
 
 ## Promotion policy
 
@@ -145,4 +156,7 @@ A weekly refresh is complete only if:
 - health/drift delta was reported;
 - compatibility and upgrade state reflect verified knowledge;
 - all four deterministic validation suites pass;
+- affected downstream consumers were identified from the explicit registry;
+- consumer review/migration work was reported without silent unrelated edits;
+- all five deterministic validation suites pass;
 - required GitHub review/promotion rules were followed.

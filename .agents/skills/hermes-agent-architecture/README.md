@@ -13,6 +13,20 @@ When installed in Hermes, invoke with:
 Research date: 2026-09-21.  
 Latest stable release verified: Hermes Agent v0.21.3 (`v2026.9.14`).
 
+## v1.4 consumer-impact layer
+
+v1.4 adds downstream dependency intelligence on top of the v1.3 health/drift layer:
+
+- `consumers/registry.json` — explicit active canonical Hermes consumers.
+- `maintenance/consumer-registry.schema.json` — registry contract.
+- `maintenance/consumer_impact.py` — maps affected Hermes capabilities to real consumers.
+- `tests/consumer-impact-cases.json` and `tests/test_consumer_impact.py` — deterministic downstream-impact regressions.
+- `references/16-consumer-impact.md` — registration, review, and migration policy.
+
+The initial active registry contains `hermes-agent-creator` and the Hermes-specific adaptation in `kaizen-orchestrator`. Historical migrations and `.claude` mirrors are deliberately excluded from live dependency alerts.
+
+Consumer impact does not automatically rewrite downstream agents. It produces explicit advisory, targeted-review, compatibility-review, or migration-review work and can block compatibility clearance for high-criticality consumers.
+
 ## v1.3 historical health and drift layer
 
 v1.3 adds continuous knowledge-quality monitoring on top of the v1.2 release-impact engine:
@@ -61,6 +75,7 @@ python tests/validate_skill.py
 python tests/test_architecture_regressions.py
 python tests/test_release_impact.py
 python tests/test_health_drift.py
+python tests/test_consumer_impact.py
 ```
 
 Routine audit and health snapshots are historical operating evidence and can be committed without bumping the semantic skill version. Semantic version changes are reserved for knowledge or control-logic changes.
