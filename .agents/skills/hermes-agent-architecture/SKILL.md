@@ -1,7 +1,7 @@
 ---
 name: hermes-agent-architecture
 description: Design production Hermes agents and multi-agent systems
-version: 1.5.0
+version: 1.6.0
 metadata:
   hermes:
     tags: [hermes, agents, multi-agent, architecture, orchestration]
@@ -12,7 +12,7 @@ metadata:
 
 ## When to Use
 
-Load this skill whenever the task involves Hermes Agent architecture, profile/Bot design, subagents, Kanban orchestration, SOUL.md, AGENTS.md, skills, model/tool routing, MCP, memory, cron, agent-to-agent contracts, production hardening, observability, release compatibility, knowledge freshness, downstream consumer impact, consumer dependency drift, or creating instructions/files for Hermes agents.
+Load this skill whenever the task involves Hermes Agent architecture, profile/Bot design, subagents, Kanban orchestration, SOUL.md, AGENTS.md, skills, model/tool routing, MCP, memory, cron, agent-to-agent contracts, production hardening, observability, release compatibility, knowledge freshness, downstream consumer impact, consumer dependency drift, promotion/recovery control, or creating instructions/files for Hermes agents.
 
 ## Knowledge Baseline
 
@@ -67,6 +67,7 @@ Load this skill whenever the task involves Hermes Agent architecture, profile/Bo
 - `consumers/detection-rules.json` defines conservative evidence signatures for detecting registry drift.
 - `maintenance/consumer_drift.py` detects unregistered consumers, undeclared capabilities, and missing dependency evidence without auto-mutating the registry.
 - `research/consumer-drift/index.json` is the append-only dependency-drift history index.
+- `maintenance/promotion_gate.py` combines validation, impact, consumer, health, and registry-drift state into deterministic knowledge-promotion and ecosystem-compatibility decisions.
 - Routine weekly audit/health records do not require a semantic skill-version bump by themselves.
 
 ## Quality Gates
@@ -79,6 +80,7 @@ Before promoting a canonical knowledge/control change, run:
 - `python tests/test_health_drift.py`
 - `python tests/test_consumer_impact.py`
 - `python tests/test_consumer_drift.py`
+- `python tests/test_end_to_end_hardening.py`
 
 Do not clear `needs_revalidation` or refresh a capability's `last_verified_on` unless its required primary sources were actually checked sufficiently to reverify the claim.
 
@@ -132,6 +134,7 @@ When producing Hermes agent architecture or instruction files, include when rele
 - `references/15-knowledge-health-drift.md` — freshness, audit history, scoring, and drift
 - `references/16-consumer-impact.md` — active consumer dependency mapping and downstream review/migration policy
 - `references/17-consumer-dependency-drift.md` — evidence-backed registry drift detection and review policy
+- `references/18-promotion-recovery.md` — final promotion states, blockers, recovery sequence, and hardening simulations
 
 ## Templates
 
@@ -162,9 +165,11 @@ Use the templates under `templates/` rather than inventing incompatible handoff 
 - Do not infer active dependencies from keyword matches in archived migrations or mirrors; use the explicit consumer registry.
 - Do not silently rewrite downstream consumers during a Hermes knowledge refresh. Report and review consumer migration work separately.
 - Do not auto-register or auto-remove consumers from text matches. Dependency drift creates review findings; verified registry changes are explicit control-data updates.
+- Do not call the ecosystem compatibility-cleared merely because the knowledge patch is valid; consumer blockers must also be resolved.
+- Do not weaken a deterministic gate to obtain a passing release. Fix the defect, evidence, or modelled policy instead.
 
 ## Verification
 
 A Hermes architecture is ready to implement only when every agent has a persistent/ephemeral classification, every handoff has a contract, workflow state has an authoritative owner, permissions are explicit, failure paths terminate safely, artifacts are durable, version-sensitive guidance is fresh enough for its source priority, and the design names the pinned Hermes version it targets.
 
-For skill maintenance, promotion is allowed only when structural validation, architecture regression validation, release-impact regression validation, health/drift regression validation, and consumer-impact regression validation, and consumer-dependency-drift regression validation all pass. When a change affects registered consumers, the maintenance report must identify them before declaring the ecosystem compatibility-cleared.
+For skill maintenance, promotion is allowed only when structural validation, architecture regression validation, release-impact regression validation, health/drift regression validation, consumer-impact regression validation, consumer-dependency-drift regression validation, and end-to-end hardening validation all pass. When a change affects registered consumers, the maintenance report must identify them before declaring the ecosystem compatibility-cleared.

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.0 — 2026-09-21
+
+- Added a deterministic promotion gate that separates canonical knowledge-promotion status from downstream ecosystem-compatibility status.
+- Added explicit `allow`, `review_required`, and `blocked` decision semantics with concrete blockers/review reasons.
+- Added nine end-to-end hardening simulations covering clean operation, stable Hermes upgrade, critical security change, ambiguous documentation, unknown subsystem, stale audits, consumer-registry drift, CI failure, and successful recovery.
+- Added a seventh GitHub CI gate for end-to-end hardening.
+- Added final promotion/recovery guidance and a production-readiness report.
+- Corrected maintenance-spec documentation drift left from earlier versions, including obsolete v1.3/4-gate labels after the system had reached six gates.
+- Updated weekly maintenance to compute a final promotion bundle after audit, impact, consumer, health, dependency-drift, and validation work.
+- Established the post-v1.6 policy: stop speculative architecture expansion and make future semantic versions evidence-driven.
+
+
 ## 1.5.0 — 2026-09-21
 
 - Added evidence assertions to every active Hermes consumer in the canonical registry.
