@@ -26,12 +26,13 @@ Never store:
 
 Project identity is a truncated SHA-256 hash of the current working directory unless an explicit non-sensitive project ID is supplied.
 
-`task_kind` and adaptive-routing metadata are controlled enums/identifiers only; free-form routing rationale is intentionally excluded.
+`task_kind`, closed-loop control decisions, prediction/error numbers, and adaptive-routing metadata are controlled enums/identifiers/numbers only; free-form routing rationale is intentionally excluded.
 
 ## Event lifecycle
 
 Supported event types:
 - task_started
+- preflight_decision
 - routing_recommendation
 - route_selected
 - worker_finished
@@ -39,6 +40,7 @@ Supported event types:
 - usage_checkpoint
 - budget_stop
 - task_finished
+- post_task_evaluation
 
 Events are append-only JSON Lines.
 
@@ -58,12 +60,14 @@ If remaining percentage increases, classify the pair as reset/invalid rather tha
 
 Telemetry itself should be cheap:
 - one start event;
+- at most one closed-loop preflight decision event;
 - at most one adaptive routing recommendation event per preflight decision;
 - route events only for actual routed work;
 - one worker-finished event per completed/blocked worker;
 - validation events only for checks actually run;
 - checkpoints only when real measurements exist;
-- one finish or budget-stop event.
+- one finish or budget-stop event;
+- at most one post-task evaluation event.
 
 Do not narrate telemetry actions to the user unless relevant.
 
