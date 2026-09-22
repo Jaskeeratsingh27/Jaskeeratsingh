@@ -68,7 +68,7 @@ check("legacy-only sparse route evidence fails closed",["insufficient_data","ins
 check("minimum supported version documented",compatibility.minimum_supported_orchestrator_version==="1.3.0");
 check("telemetry schema remains compatible",compatibility.telemetry_schema_version==="1.0");
 check("migration is non-destructive",compatibility.migration_policy==="non_destructive_read_compatibility");
-check("rollback floor is v1.5.0",compatibility.rollback_minimum_version==="1.5.0");
+check("rollback floor is v1.9.0",compatibility.rollback_minimum_version==="1.9.0");
 
 const failed=checks.filter(c=>!c.ok);
 for(const c of checks) console.log((c.ok?"PASS":"FAIL")+" | "+c.name+(c.detail?" | "+c.detail:""));
