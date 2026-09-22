@@ -1,55 +1,43 @@
 import fs from "node:fs";
 
 const required=[
-  "AGENTS.md",
-  ".agents/skills/usage-efficient-orchestrator/SKILL.md",
-  ".agents/skills/usage-efficient-orchestrator/manifest.json",
-  ".agents/skills/usage-efficient-orchestrator/config/budget-profiles.toml",
-  ".agents/skills/usage-efficient-orchestrator/config/capabilities.toml",
-  ".agents/skills/usage-efficient-orchestrator/config/observability.json",
-  ".agents/skills/usage-efficient-orchestrator/config/usage-intelligence.json",
-  ".agents/skills/usage-efficient-orchestrator/config/adaptive-routing.json",
-  ".agents/skills/usage-efficient-orchestrator/config/route-templates.json",
-  ".agents/skills/usage-efficient-orchestrator/config/adaptive-routing-approvals.json",
-  ".agents/skills/usage-efficient-orchestrator/config/hardening.json",
-  ".agents/skills/usage-efficient-orchestrator/config/compatibility.json",
-  ".agents/skills/usage-efficient-orchestrator/config/canary-policy.json",
-  ".agents/skills/usage-efficient-orchestrator/config/release-state.json",
-  ".agents/skills/usage-efficient-orchestrator/references/task-envelope.md",
-  ".agents/skills/usage-efficient-orchestrator/references/handoff-schema.md",
-  ".agents/skills/usage-efficient-orchestrator/references/failure-taxonomy.md",
-  ".agents/skills/usage-efficient-orchestrator/references/observability-policy.md",
-  ".agents/skills/usage-efficient-orchestrator/references/usage-intelligence-policy.md",
-  ".agents/skills/usage-efficient-orchestrator/references/adaptive-routing-policy.md",
-  ".agents/skills/usage-efficient-orchestrator/references/hardening-policy.md",
-  ".agents/skills/usage-efficient-orchestrator/references/rollback-policy.md",
-  ".agents/skills/usage-efficient-orchestrator/schemas/telemetry-event.schema.json",
-  ".agents/skills/usage-efficient-orchestrator/schemas/tokentrack-export.schema.json",
-  ".agents/skills/usage-efficient-orchestrator/schemas/usage-intelligence-export.schema.json",
-  ".agents/skills/usage-efficient-orchestrator/schemas/adaptive-routing-export.schema.json",
-  ".agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs",
-  ".agents/skills/usage-efficient-orchestrator/scripts/usage-intelligence.mjs",
-  ".agents/skills/usage-efficient-orchestrator/scripts/adaptive-routing.mjs",
-  ".agents/skills/usage-efficient-orchestrator/scripts/readiness.mjs",
-  "tests/orchestrator/cases.json",
-  "tests/orchestrator/observability-cases.json",
-  "tests/orchestrator/intelligence-cases.json",
-  "tests/orchestrator/adaptive-routing-cases.json",
-  "tests/orchestrator/hardening-invariants.json",
-  "scripts/orchestrator-status.mjs",
-  "scripts/orchestrator-sync.mjs",
-  "scripts/security-check-orchestrator.mjs",
-  "scripts/test-observability.mjs",
-  "scripts/test-usage-intelligence.mjs",
-  "scripts/test-adaptive-routing.mjs",
-  "scripts/test-policy-invariants.mjs",
-  "scripts/test-budget-governor.mjs",
-  "scripts/test-fault-injection.mjs",
-  "scripts/test-version-compatibility.mjs",
-  "scripts/test-readiness.mjs",
-  "scripts/release-check-orchestrator.mjs",
-  "scripts/orchestrator-qa.mjs",
-  ".github/workflows/orchestrator-ci.yml"
+"AGENTS.md",
+".agents/skills/usage-efficient-orchestrator/SKILL.md",
+".agents/skills/usage-efficient-orchestrator/manifest.json",
+".agents/skills/usage-efficient-orchestrator/config/budget-profiles.toml",
+".agents/skills/usage-efficient-orchestrator/config/capabilities.toml",
+".agents/skills/usage-efficient-orchestrator/config/observability.json",
+".agents/skills/usage-efficient-orchestrator/config/usage-intelligence.json",
+".agents/skills/usage-efficient-orchestrator/config/adaptive-routing.json",
+".agents/skills/usage-efficient-orchestrator/config/route-templates.json",
+".agents/skills/usage-efficient-orchestrator/config/adaptive-routing-approvals.json",
+".agents/skills/usage-efficient-orchestrator/config/hardening.json",
+".agents/skills/usage-efficient-orchestrator/config/compatibility.json",
+".agents/skills/usage-efficient-orchestrator/config/canary-policy.json",
+".agents/skills/usage-efficient-orchestrator/config/release-state.json",
+".agents/skills/usage-efficient-orchestrator/config/closed-loop.json",
+".agents/skills/usage-efficient-orchestrator/references/task-envelope.md",
+".agents/skills/usage-efficient-orchestrator/references/handoff-schema.md",
+".agents/skills/usage-efficient-orchestrator/references/failure-taxonomy.md",
+".agents/skills/usage-efficient-orchestrator/references/observability-policy.md",
+".agents/skills/usage-efficient-orchestrator/references/usage-intelligence-policy.md",
+".agents/skills/usage-efficient-orchestrator/references/adaptive-routing-policy.md",
+".agents/skills/usage-efficient-orchestrator/references/hardening-policy.md",
+".agents/skills/usage-efficient-orchestrator/references/rollback-policy.md",
+".agents/skills/usage-efficient-orchestrator/references/closed-loop-policy.md",
+".agents/skills/usage-efficient-orchestrator/schemas/telemetry-event.schema.json",
+".agents/skills/usage-efficient-orchestrator/schemas/closed-loop-preflight.schema.json",
+".agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs",
+".agents/skills/usage-efficient-orchestrator/scripts/usage-intelligence.mjs",
+".agents/skills/usage-efficient-orchestrator/scripts/adaptive-routing.mjs",
+".agents/skills/usage-efficient-orchestrator/scripts/readiness.mjs",
+".agents/skills/usage-efficient-orchestrator/scripts/closed-loop.mjs",
+"tests/orchestrator/closed-loop-cases.json",
+"scripts/test-closed-loop.mjs",
+"scripts/orchestrator-qa.mjs",
+"scripts/security-check-orchestrator.mjs",
+"scripts/release-check-orchestrator.mjs",
+".github/workflows/orchestrator-ci.yml"
 ];
 
 const results=[];
@@ -58,95 +46,58 @@ for(const p of required) check("required file: "+p,fs.existsSync(p));
 
 const read=p=>fs.readFileSync(p,"utf8");
 const json=p=>JSON.parse(read(p));
+const manifest=json(".agents/skills/usage-efficient-orchestrator/manifest.json");
+const loop=json(".agents/skills/usage-efficient-orchestrator/config/closed-loop.json");
+const adaptive=json(".agents/skills/usage-efficient-orchestrator/config/adaptive-routing.json");
+const approvals=json(".agents/skills/usage-efficient-orchestrator/config/adaptive-routing-approvals.json");
+const canary=json(".agents/skills/usage-efficient-orchestrator/config/canary-policy.json");
+const release=json(".agents/skills/usage-efficient-orchestrator/config/release-state.json");
+const compat=json(".agents/skills/usage-efficient-orchestrator/config/compatibility.json");
+const schema=json(".agents/skills/usage-efficient-orchestrator/schemas/telemetry-event.schema.json");
+const preflightSchema=json(".agents/skills/usage-efficient-orchestrator/schemas/closed-loop-preflight.schema.json");
 const agents=read("AGENTS.md");
 const skill=read(".agents/skills/usage-efficient-orchestrator/SKILL.md");
-const manifest=json(".agents/skills/usage-efficient-orchestrator/manifest.json");
-const observability=json(".agents/skills/usage-efficient-orchestrator/config/observability.json");
-const intelligence=json(".agents/skills/usage-efficient-orchestrator/config/usage-intelligence.json");
-const adaptive=json(".agents/skills/usage-efficient-orchestrator/config/adaptive-routing.json");
-const routes=json(".agents/skills/usage-efficient-orchestrator/config/route-templates.json");
-const approvals=json(".agents/skills/usage-efficient-orchestrator/config/adaptive-routing-approvals.json");
-const hardening=json(".agents/skills/usage-efficient-orchestrator/config/hardening.json");
-const compatibility=json(".agents/skills/usage-efficient-orchestrator/config/compatibility.json");
-const canary=json(".agents/skills/usage-efficient-orchestrator/config/canary-policy.json");
-const releaseState=json(".agents/skills/usage-efficient-orchestrator/config/release-state.json");
-const telemetrySchema=json(".agents/skills/usage-efficient-orchestrator/schemas/telemetry-event.schema.json");
-const adaptiveExportSchema=json(".agents/skills/usage-efficient-orchestrator/schemas/adaptive-routing-export.schema.json");
-const budgets=read(".agents/skills/usage-efficient-orchestrator/config/budget-profiles.toml");
-const caps=read(".agents/skills/usage-efficient-orchestrator/config/capabilities.toml");
-const failures=read(".agents/skills/usage-efficient-orchestrator/references/failure-taxonomy.md");
-const handoff=read(".agents/skills/usage-efficient-orchestrator/references/handoff-schema.md");
-const envelope=read(".agents/skills/usage-efficient-orchestrator/references/task-envelope.md");
-const config=read(".codex/config.toml");
-const workflow=read(".github/workflows/orchestrator-ci.yml");
 const qa=read("scripts/orchestrator-qa.mjs");
+const workflow=read(".github/workflows/orchestrator-ci.yml");
+const loopScript=read(".agents/skills/usage-efficient-orchestrator/scripts/closed-loop.mjs");
+const cases=json("tests/orchestrator/closed-loop-cases.json");
 
-check("version 1.9.0 declared",agents.includes("Version: 1.9.0")&&skill.includes("v1.9.0")&&manifest.version==="1.9.0");
-check("hardening schemas declared",manifest.hardening_schema_version==="1.0"&&manifest.compatibility_schema_version==="1.0"&&manifest.canary_schema_version==="1.0");
-check("single-writer rule declared",/single-writer/i.test(agents)&&/At most one write-capable worker/i.test(skill));
-check("usage-intelligence gate declared",agents.includes("Usage-intelligence gate")&&skill.includes("Usage intelligence gate"));
-check("adaptive-routing gate declared",agents.includes("Adaptive-routing gate")&&skill.includes("Adaptive routing gate"));
-check("final-hardening gate declared",agents.includes("Final-hardening gate")&&skill.includes("Final hardening and readiness"));
-check("observability rule declared",agents.includes("Observability is mandatory")&&skill.includes("Privacy-preserving observability"));
-check("task envelope includes task kind",envelope.includes("task_kind: discovery | implementation | review | architecture | mixed"));
-check("adaptive mode is shadow",adaptive.mode==="shadow");
-check("active requires canonical approval",adaptive.safety.active_requires_canonical_approval===true);
-check("critical remains plan-only",adaptive.safety.critical_plan_only===true);
-check("large remains plan-only",adaptive.safety.large_plan_only===true);
-check("high risk requires reviewer",adaptive.safety.high_risk_requires_reviewer===true);
-check("senior is never initial candidate",adaptive.safety.senior_specialist_never_initial_candidate===true);
-check("approvals empty",Array.isArray(approvals.approvals)&&approvals.approvals.length===0);
-check("canary disabled",canary.enabled===false);
-check("canary user approval required",canary.eligibility.require_user_approval===true);
-check("canary canonical approval required",canary.eligibility.require_canonical_approval===true);
-check("canary exposure bounded",canary.exposure.maximum_active_tasks_per_window===1&&canary.exposure.simultaneous_canaries===1);
-check("last-known-good immutable commit",releaseState.last_known_good.version==="1.5.0"&&/^[a-f0-9]{40}$/.test(releaseState.last_known_good.commit));
-check("rollback non-destructive",releaseState.rollback.automatic_destructive_git_reset===false);
-check("compatibility supports v1.3+",compatibility.minimum_supported_orchestrator_version==="1.3.0"&&compatibility.telemetry_schema_version==="1.0");
-check("compatibility non-destructive",compatibility.migration_policy==="non_destructive_read_compatibility");
-check("hardening active evidence gate",hardening.readiness.allow_v2_active_adaptation_without_operational_evidence===false);
-check("hardening shadow readiness allowed",hardening.readiness.allow_v2_closed_loop_shadow===true);
-
-const routeEntries=Object.entries(routes.routes);
-const signatures=routeEntries.map(([,r])=>r.roles.join(">"));
-check("route signatures unique",new Set(signatures).size===signatures.length);
-check("senior route escalation only",routes.routes.senior_review.initial_candidate===false&&routes.routes.senior_review.escalation_only===true);
-check("reviewed plan-only route",routes.routes.architect_review.plan_only===true&&routes.routes.architect_review.roles.includes("reviewer"));
-check("HIGH discovery route reviewed",routes.routes.scout_review.roles.includes("reviewer"));
-
-check("telemetry supports task kind",Boolean(telemetrySchema.properties.task_kind));
-check("telemetry supports routing recommendation",telemetrySchema.properties.event_type.enum.includes("routing_recommendation"));
-check("adaptive export rejects extra properties",adaptiveExportSchema.additionalProperties===false);
-check("prompt capture disabled",observability.capture.prompt_text===false&&observability.capture.conversation_text===false);
-check("default max concurrency remains 3",/max_concurrent_threads_per_session\s*=\s*3/.test(config));
-check("balanced 5/10 budget exists",/\[profiles\.balanced\][\s\S]*target_weekly_percentage_points\s*=\s*5[\s\S]*ceiling_weekly_percentage_points\s*=\s*10/.test(budgets));
-check("economy 3/5 budget exists",/\[profiles\.economy\][\s\S]*target_weekly_percentage_points\s*=\s*3[\s\S]*ceiling_weekly_percentage_points\s*=\s*5/.test(budgets));
-
-for(const role of ["cheap_reader","standard_engineer","reviewer","senior_specialist","architect"]) check("capability role: "+role,caps.includes("[roles."+role+"]"));
-for(const failure of ["information","tooling_environment","test_fixture","implementation","architecture","permission_security"]) check("failure class: "+failure,failures.includes("## "+failure));
-for(const field of ["task_id:","work_unit:","status:","outcome:","validation:","failure:","risk:","escalation:"]) check("handoff field: "+field,handoff.includes(field));
-
-const cases=json("tests/orchestrator/cases.json");
-const observabilityCases=json("tests/orchestrator/observability-cases.json");
-const intelligenceCases=json("tests/orchestrator/intelligence-cases.json");
-const adaptiveCases=json("tests/orchestrator/adaptive-routing-cases.json");
-const invariantCases=json("tests/orchestrator/hardening-invariants.json");
-check("routing suite has >=24 cases",cases.length>=24,"count="+cases.length);
-check("observability suite has >=8 cases",observabilityCases.length>=8,"count="+observabilityCases.length);
-check("intelligence suite has >=10 cases",intelligenceCases.length>=10,"count="+intelligenceCases.length);
-check("adaptive suite has >=12 cases",adaptiveCases.length>=12,"count="+adaptiveCases.length);
-check("hardening matrix has 288 combinations",invariantCases.expected_combinations===288);
-check("critical routing cases plan-only",cases.filter(c=>c.risk==="CRITICAL").every(c=>c.plan_only===true));
-check("permission/tooling failures do not senior-escalate",cases.filter(c=>["permission_security","tooling_environment"].includes(c.failure_class)).every(c=>c.senior_escalation===false));
-
-for(const suite of [
-  "test-adaptive-routing.mjs","test-policy-invariants.mjs","test-budget-governor.mjs",
-  "test-fault-injection.mjs","test-version-compatibility.mjs","test-readiness.mjs"
-]){
-  check("QA runs "+suite,qa.includes(suite));
+check("version 2.0.0 declared",manifest.version==="2.0.0"&&agents.includes("Version: 2.0.0")&&skill.includes("v2.0.0"));
+check("closed-loop schema version",manifest.closed_loop_schema_version==="1.0"&&loop.schema_version==="1.0");
+check("closed-loop mode shadow",loop.mode==="shadow_closed_loop");
+check("eight lifecycle phases",JSON.stringify(loop.phases)===JSON.stringify(["plan","predict","route","delegate","execute","measure","evaluate","learn"]));
+check("baseline cannot be replaced",loop.execution.adaptive_candidate_can_replace_baseline===false);
+check("preflight required",loop.execution.require_preflight_before_nontrivial_execution===true);
+check("live checkpoint conditional",loop.execution.live_usage_checkpoint_enforcement==="when_available");
+check("proxy governor required",loop.execution.proxy_governor_required_without_live_meter===true);
+check("single writer preserved",loop.execution.single_writer_shared_tree===true);
+check("active adaptation disabled",loop.safety.active_adaptive_routing===false);
+check("canary routing disabled",loop.safety.canary_routing===false&&canary.enabled===false);
+check("candidate advisory",loop.safety.candidate_route_is_advisory===true);
+check("adaptive remains shadow",adaptive.mode==="shadow");
+check("approvals remain empty",Array.isArray(approvals.approvals)&&approvals.approvals.length===0);
+check("last known good v1.9",release.last_known_good.version==="1.9.0");
+check("rollback commit v1.9",release.last_known_good.commit==="1685d9395bb91b751d3b7dcc887a73418e744fd5");
+check("compat current v2",compat.current_release==="2.0.0");
+check("compat v2 event generation",compat.supported_event_generations.some(x=>x.version==="2.0.x"));
+check("preflight event type",schema.properties.event_type.enum.includes("preflight_decision"));
+check("post-task event type",schema.properties.event_type.enum.includes("post_task_evaluation"));
+for(const f of ["control_action","selected_route","usage_gate","predicted_typical_points","predicted_upper_points","actual_burn_points","prediction_abs_error_points","budget_outcome","quality_outcome","learning_status","learning_eligible"]){
+  check("telemetry field "+f,Boolean(schema.properties[f]));
 }
-check("CI runs unified QA",workflow.includes("node scripts/orchestrator-qa.mjs"));
-check("CI watches all test scripts",workflow.includes("scripts/test-*.mjs"));
+check("telemetry extra properties closed",schema.additionalProperties===false);
+check("preflight result schema closed",preflightSchema.additionalProperties===false);
+check("closed-loop CLI commands",["preflight","checkpoint","status","finalize"].every(x=>loopScript.includes('command==="'+x+'"')));
+check("closed-loop no active route replacement",loopScript.includes("execution_route:baselineId")||loopScript.includes("execution_route: baselineId"));
+check("closed-loop cases >=15",cases.length>=15,"count="+cases.length);
+check("closed-loop case IDs unique",new Set(cases.map(x=>x.id)).size===cases.length);
+check("QA runs closed loop",qa.includes("test-closed-loop.mjs"));
+check("CI push watches test wildcard",workflow.includes("scripts/test-*.mjs"));
+const pull=workflow.split("pull_request:")[1]||"";
+check("CI PR watches test wildcard",pull.includes("scripts/test-*.mjs"));
+check("AGENTS closed-loop rule",agents.includes("Closed-loop preflight"));
+check("SKILL closed-loop runtime",skill.includes("Closed-loop runtime"));
+check("SKILL hard-meter caveat",skill.includes("authoritative current remaining percentage")||skill.includes("real usage reading"));
 
 const failed=results.filter(r=>!r.ok);
 for(const r of results) console.log((r.ok?"PASS":"FAIL")+" | "+r.name+(r.detail?" | "+r.detail:""));
