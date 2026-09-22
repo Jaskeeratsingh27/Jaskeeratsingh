@@ -8,6 +8,7 @@ goal: <single outcome>
 definition_of_done:
   - <observable result>
 
+task_kind: discovery | implementation | review | architecture | mixed
 complexity: MICRO | SMALL | MEDIUM | LARGE
 risk: LOW | MEDIUM | HIGH | CRITICAL
 risk_reason: <why>
@@ -17,6 +18,13 @@ budget:
   baseline_remaining_pct: <number|null>
   target_delta_points: <from profile>
   ceiling_delta_points: <from profile>
+
+routing:
+  baseline_route: <route-id>
+  adaptive_mode: shadow | active
+  candidate_route: <route-id|null>
+  adaptive_decision: <decision-code|null>
+  active_route_change_approved: false
 
 scope:
   known_paths: []
@@ -58,7 +66,8 @@ stop_conditions:
 ```
 
 Rules:
-- Complexity and risk are independent.
+- Task kind, complexity, and risk are independent dimensions.
+- Adaptive routing may recommend a candidate route, but risk/quality/budget floors override it.
 - Exactly one shared-tree writer may be active at a time.
 - Unknown scope should trigger cheap discovery, not immediate senior escalation.
 - LARGE or CRITICAL work starts plan-only unless the user explicitly approves execution.
