@@ -14,6 +14,7 @@
     <div class="brand"><div class="logo">T</div><div><strong>TokenTrack</strong><span>AI FinOps & Observability</span></div></div>
     <nav>
       <button class="nav active" data-tab="chatgpt">ChatGPT Usage</button>
+      <button class="nav" data-tab="alerts">Alert Center</button>
       <button class="nav" data-tab="overview">API Overview</button>
       <button class="nav" data-tab="finops">API FinOps</button>
       <button class="nav" data-tab="attribution">Attribution</button>
@@ -35,6 +36,10 @@
 
     <div id="errorBanner" class="banner danger hidden"></div>
     <div id="warningBanner" class="banner warning hidden"></div>
+    <div id="attentionBar" class="attention-bar panel hidden">
+      <div><span id="attentionSeverity" class="attention-pill">ATTENTION</span><strong id="attentionTitle">Needs attention</strong><small id="attentionText"></small></div>
+      <button id="attentionOpen" class="button" type="button">Open Alert Center</button>
+    </div>
 
     <section id="chatgpt" class="page active">
       <div class="source-note panel">
@@ -152,6 +157,72 @@
           <div><strong>OpenAI API</strong><span>Server-side token, request and cost telemetry from your Admin API key.</span></div>
         </div>
       </article>
+    </section>
+
+    <section id="alerts" class="page">
+      <div class="sectiontitle"><div><h2>Alert Center</h2><p>Local monitoring rules for ChatGPT checkpoints and OpenAI API telemetry.</p></div><span id="alertCenterBadge" class="badge">0 active</span></div>
+
+      <div class="alert-summary-grid">
+        <article class="panel alert-summary-card"><span>Active alerts</span><strong id="activeAlertCount">0</strong><small id="activeAlertDetail">No active conditions</small></article>
+        <article class="panel alert-summary-card"><span>Critical</span><strong id="criticalAlertCount">0</strong><small>requires immediate attention</small></article>
+        <article class="panel alert-summary-card"><span>Warnings</span><strong id="warningAlertCount">0</strong><small>approaching a threshold</small></article>
+        <article class="panel alert-summary-card"><span>Browser notifications</span><strong id="notificationState">Off</strong><small id="notificationDetail">Permission not requested</small></article>
+      </div>
+
+      <div class="grid2">
+        <article class="panel padded">
+          <div class="head"><div><h2>ChatGPT alert rules</h2><p>Evaluated from your locally decrypted checkpoint history.</p></div></div>
+          <div class="alert-rule-grid">
+            <label>Usage warning at (%)
+              <input id="ruleChatWarn" class="control" type="number" min="1" max="100" step="1">
+            </label>
+            <label>Usage critical at (%)
+              <input id="ruleChatCritical" class="control" type="number" min="1" max="100" step="1">
+            </label>
+            <label>Checkpoint stale after (hours)
+              <input id="ruleChatStale" class="control" type="number" min="1" max="336" step="1">
+            </label>
+          </div>
+        </article>
+
+        <article class="panel padded">
+          <div class="head"><div><h2>API alert rules</h2><p>Evaluated after each live OpenAI telemetry refresh.</p></div></div>
+          <div class="alert-rule-grid">
+            <label>30-day cost forecast warning (USD)
+              <input id="ruleApiForecast" class="control" type="number" min="0" step="1">
+            </label>
+            <label>Token growth warning (%)
+              <input id="ruleApiTokenGrowth" class="control" type="number" min="1" step="1">
+            </label>
+            <label>Cost growth warning (%)
+              <input id="ruleApiCostGrowth" class="control" type="number" min="1" step="1">
+            </label>
+          </div>
+        </article>
+      </div>
+
+      <article class="panel padded notification-panel">
+        <div>
+          <h2>Browser notifications</h2>
+          <p>When enabled, TokenTrack can notify this browser when a rule becomes newly active while the dashboard is running.</p>
+        </div>
+        <div class="button-row">
+          <label class="switch">Enable alerts <input id="alertsEnabled" type="checkbox" checked></label>
+          <label class="switch">Browser notifications <input id="browserNotifications" type="checkbox"></label>
+          <button id="requestNotificationPermission" class="button" type="button">Request permission</button>
+        </div>
+      </article>
+
+      <div class="grid2">
+        <article class="panel padded">
+          <div class="head"><div><h2>Active conditions</h2><p>Current conditions matching your rules.</p></div></div>
+          <div id="activeAlerts" class="alert-list empty">No active alerts.</div>
+        </article>
+        <article class="panel padded">
+          <div class="head"><div><h2>Event timeline</h2><p>New and resolved conditions recorded in this browser.</p></div><button id="clearAlertEvents" class="button" type="button">Clear events</button></div>
+          <div id="alertEvents" class="alert-list empty">No alert events yet.</div>
+        </article>
+      </div>
     </section>
 
     <section id="overview" class="page">
