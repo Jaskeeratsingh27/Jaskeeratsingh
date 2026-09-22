@@ -88,47 +88,166 @@ function currentChatCycle(){
 }
 function chatMetrics(){
   const rows=currentChatCycle();
-  if(!rows.length)return{latest:null,rate:null,projected:null,resetFirst:false};
-  const latest=rows[rows.length-1];
-  let rate=null;
+  if(!rows.length)return{latest:null,recentRate:null,cycleRate:null,cycleChange:0,projected:null,resetFirst:false,hoursToReset:null,staleHours:null,pace:"No data",paceClass:""};
+  const latest=rows[rows.length-1],first=rows[0];
+  let recentRate=null,cycleRate=null;
   if(rows.length>=2){
     const a=rows[rows.length-2],b=latest;
-    const days=(new Date(b.recorded_at)-new Date(a.recorded_at))/86400000;
-    const change=num(b.used)-num(a.used);
-    if(days>0&&change>=0)rate=change/days;
+    const recentDays=(new Date(b.recorded_at)-new Date(a.recorded_at))/86400000;
+    const recentChange=num(b.used)-num(a.used);
+    if(recentDays>0&&recentChange>=0)recentRate=recentChange/recentDays;
+
+    const cycleDays=(new Date(latest.recorded_at)-new Date(first.recorded_at))/86400000;
+    const cycleChange=num(latest.used)-num(first.used);
+    if(cycleDays>0&&cycleChange>=0)cycleRate=cycleChange/cycleDays;
   }
-  let projected=null,resetFirst=false;
-  if(rate&&rate>0&&latest.used<100){
-    projected=new Date(new Date(latest.recorded_at).getTime()+((100-latest.used)/rate)*86400000);
-    if(latest.reset_at){
-      const reset=new Date(latest.reset_at);
-      if(Number.isFinite(reset.getTime())&&reset<projected)resetFirst=true;
-    }
+  const cycleChange=Math.max(0,num(latest.used)-num(first.used));
+  const trendRate=recentRate??cycleRate;
+  let projected=null,resetFirst=false,hoursToReset=null,resetAt=null;
+  if(latest.reset_at){
+    const r=new Date(latest.reset_at);
+    if(Number.isFinite(r.getTime())){resetAt=r;hoursToReset=(r-Date.now())/3600000}
   }
-  return{latest,rate,projected,resetFirst};
+  if(trendRate&&trendRate>0&&latest.used<100){
+    projected=new Date(new Date(latest.recorded_at).getTime()+((100-latest.used)/trendRate)*86400000);
+    if(resetAt&&resetAt<projected)resetFirst=true;
+  }
+  const staleHours=Math.max(0,(Date.now()-new Date(latest.recorded_at).getTime())/3600000);
+  let pace="Learning",paceClass="";
+  if(latest.used>=100){pace="Exhausted";paceClass="pace-danger"}
+  else if(resetAt&&hoursToReset!==null&&hoursToReset<=0){pace="Reset due";paceClass="pace-warn"}
+  else if(projected&&resetAt&&projected<resetAt){pace="At risk";paceClass="pace-danger"}
+  else if(projected&&resetAt&&projected>=resetAt){pace="On pace";paceClass="pace-good"}
+  else if(trendRate&&trendRate>0){pace="Trend only";paceClass="pace-warn"}
+  if(staleHours>24&&latest.used<100){pace="Stale data";paceClass="pace-warn"}
+  return{latest,recentRate,cycleRate,cycleChange,projected,resetFirst,hoursToReset,staleHours,pace,paceClass,trendRate};
 }
+
+function parseChatUsageText(raw){
+  const text=String(raw||"").replace(/\s+/g," ").trim();
+  if(!text)return{used:null,resetAt:null,message:"Nothing to parse."};
+  let used=null,remaining=null;
+
+  const usedPatterns=[
+    /(?:weekly\s+usage|usage(?:\s+consumed)?|used|current\s+usage)[^\d]{0,24}(\d{1,3}(?:\.\d+)?)\s*%/i,
+    /(\d{1,3}(?:\.\d+)?)\s*%\s*(?:used|usage)/i
+  ];
+  for(const p of usedPatterns){const m=text.match(p);if(m){used=num(m[1]);break}}
+  const remainingPatterns=[
+    /(?:remaining|left)[^\d]{0,24}(\d{1,3}(?:\.\d+)?)\s*%/i,
+    /(\d{1,3}(?:\.\d+)?)\s*%\s*(?:remaining|left)/i
+  ];
+  for(const p of remainingPatterns){const m=text.match(p);if(m){remaining=num(m[1]);break}}
+  if(used===null&&remaining!==null)used=100-remaining;
+  if(used===null){
+    const m=text.match(/(\d{1,3}(?:\.\d+)?)\s*%/);
+    if(m)used=num(m[1]);
+  }
+  if(used!==null&&(used<0||used>100))used=null;
+
+  let resetAt=null;
+  const rm=text.match(/reset(?:s|ting)?(?:\s+at|\s+on|\s*:)?\s+(.{4,70})/i);
+  if(rm){
+    let candidate=rm[1].split(/[|•·;]/)[0].trim().replace(/\bat\b/i," ");
+    const parsed=Date.parse(candidate);
+    if(Number.isFinite(parsed))resetAt=new Date(parsed);
+  }
+
+  const pieces=[];
+  if(used!==null)pieces.push("usage "+used.toFixed(1)+"%");
+  if(resetAt)pieces.push("reset "+resetAt.toLocaleString());
+  return{
+    used,
+    resetAt,
+    message:pieces.length?"Parsed "+pieces.join(" · ")+". Review before saving.":"Could not confidently find a usage percentage. Enter it manually."
+  };
+}
+
+function toLocalDateTimeInput(date){
+  if(!date||!Number.isFinite(date.getTime()))return"";
+  const pad=n=>String(n).padStart(2,"0");
+  return date.getFullYear()+"-"+pad(date.getMonth()+1)+"-"+pad(date.getDate())+"T"+pad(date.getHours())+":"+pad(date.getMinutes());
+}
+
+function importChatBackup(payload){
+  const source=Array.isArray(payload)?payload:payload?.snapshots;
+  if(!Array.isArray(source))throw new Error("Backup does not contain a snapshots array.");
+  const existing=new Set(state.chatSnapshots.map(x=>String(x.recorded_at)+"|"+Number(x.used).toFixed(3)));
+  let added=0;
+  for(const row of source){
+    const used=Number(row?.used),recorded=new Date(row?.recorded_at);
+    if(!Number.isFinite(used)||used<0||used>100||!Number.isFinite(recorded.getTime()))continue;
+    const key=recorded.toISOString()+"|"+used.toFixed(3);
+    if(existing.has(key))continue;
+    let resetAt=null;
+    if(row.reset_at){
+      const r=new Date(row.reset_at);
+      if(Number.isFinite(r.getTime()))resetAt=r.toISOString();
+    }
+    state.chatSnapshots.push({
+      id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()),
+      recorded_at:recorded.toISOString(),
+      used,
+      reset_at:resetAt,
+      note:String(row.note||"").slice(0,120)
+    });
+    existing.add(key);added++;
+  }
+  state.chatSnapshots.sort((a,b)=>new Date(a.recorded_at)-new Date(b.recorded_at));
+  saveChatSnapshots();renderChatGPT();return added;
+}
+
 function renderChatGPT(){
   const m=chatMetrics(),latest=m.latest;
   $("chatUsed").textContent=latest?num(latest.used).toFixed(1)+"%":"—";
   $("chatRemaining").textContent=latest?(100-num(latest.used)).toFixed(1)+"%":"—";
-  $("chatLastSeen").textContent=latest?"Recorded "+timeLabel(latest.recorded_at):"No checkpoint yet";
-  if(m.rate!==null){
-    $("chatBurnRate").textContent=m.rate.toFixed(1)+"% / day";
-    $("chatBurnDetail").textContent="Based on the two latest checkpoints in this reset cycle";
+  $("chatLastSeen").textContent=latest?"Recorded "+timeLabel(latest.recorded_at)+(m.staleHours>24?" · stale":""):"No checkpoint yet";
+
+  if(m.recentRate!==null){
+    $("chatBurnRate").textContent=m.recentRate.toFixed(1)+"% / day";
+    $("chatBurnDetail").textContent="Latest checkpoint-to-checkpoint pace";
   }else{
     $("chatBurnRate").textContent="—";
     $("chatBurnDetail").textContent=state.chatSnapshots.length>1?"Allowance reset detected or insufficient interval":"Needs 2 checkpoints";
   }
+
   if(m.projected){
     $("chatProjected").textContent=m.resetFirst?"Reset first":m.projected.toLocaleDateString(undefined,{month:"short",day:"numeric"});
-    $("chatProjectionDetail").textContent=m.resetFirst&&latest.reset_at?"Allowance resets "+timeLabel(latest.reset_at):"At the latest observed burn rate";
+    $("chatProjectionDetail").textContent=m.resetFirst&&latest.reset_at?"Reset occurs before projected exhaustion":"At latest observed pace";
   }else{
     $("chatProjected").textContent=latest&&latest.used>=100?"100%":"—";
     $("chatProjectionDetail").textContent=latest?.reset_at?"Reset "+timeLabel(latest.reset_at):"Based on recent observed pace";
   }
 
+  if(m.hoursToReset!==null){
+    if(m.hoursToReset<=0){
+      $("chatTimeToReset").textContent="Due";
+      $("chatResetDetail").textContent="Recorded reset time has passed";
+    }else if(m.hoursToReset<48){
+      $("chatTimeToReset").textContent=m.hoursToReset.toFixed(1)+"h";
+      $("chatResetDetail").textContent="Reset "+timeLabel(latest.reset_at);
+    }else{
+      $("chatTimeToReset").textContent=(m.hoursToReset/24).toFixed(1)+"d";
+      $("chatResetDetail").textContent="Reset "+timeLabel(latest.reset_at);
+    }
+  }else{
+    $("chatTimeToReset").textContent="—";$("chatResetDetail").textContent="Add a reset time";
+  }
+
+  $("chatCycleRate").textContent=m.cycleRate!==null?m.cycleRate.toFixed(1)+"% / day":"—";
+  $("chatCycleRateDetail").textContent=m.cycleRate!==null?"Average across current observed cycle":"Needs 2 checkpoints";
+  $("chatCycleChange").textContent=latest?m.cycleChange.toFixed(1)+"%":"—";
+  $("chatPaceStatus").textContent=m.pace;
+  $("chatPaceStatus").className=m.paceClass;
+  $("chatPaceDetail").textContent=m.staleHours>24
+    ?"Latest checkpoint is "+(m.staleHours/24).toFixed(1)+" days old"
+    :m.pace==="At risk"&&m.projected?"Projected exhaustion "+timeLabel(m.projected)
+    :m.pace==="On pace"&&latest?.reset_at?"Reset precedes projected exhaustion"
+    :m.pace==="Trend only"?"Add reset time for risk comparison"
+    :"Needs trend + reset";
+
   const rows=[...state.chatSnapshots].reverse();
-  $("chatHistory").innerHTML=rows.length?rows.map((r,idx)=>{
+  $("chatHistory").innerHTML=rows.length?rows.map(r=>{
     const chronological=state.chatSnapshots.findIndex(x=>x.id===r.id);
     const prev=chronological>0?state.chatSnapshots[chronological-1]:null;
     const sameCycle=prev&&num(r.used)>=num(prev.used)&&((r.reset_at||"")===(prev.reset_at||"")||!r.reset_at||!prev.reset_at);
@@ -158,7 +277,7 @@ function drawChatUsageChart(){
   rows.forEach((r,i)=>{if(i%every&&i!==rows.length-1)return;const x=p.l+(rows.length===1?cw/2:i*cw/(rows.length-1));ctx.fillText(dateLabel(r.recorded_at),x,h-9)});ctx.textAlign="start";
 }
 function exportChatSnapshots(){
-  const payload={source:"manual-chatgpt-subscription-checkpoints",exported_at:new Date().toISOString(),snapshots:state.chatSnapshots};
+  const payload={schema_version:2,source:"manual-chatgpt-subscription-checkpoints",exported_at:new Date().toISOString(),snapshots:state.chatSnapshots};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
   a.href=url;a.download="tokentrack-chatgpt-checkpoints.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -317,6 +436,23 @@ function countdown(){
 }
 
 qsa(".nav").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+$("chatParseText").onclick=()=>{
+  const parsed=parseChatUsageText($("chatPasteText").value);
+  const result=$("chatParseResult");
+  if(parsed.used!==null)$("chatUsagePercent").value=parsed.used.toFixed(1);
+  if(parsed.resetAt)$("chatResetAt").value=toLocalDateTimeInput(parsed.resetAt);
+  result.textContent=parsed.message;
+  result.className="parse-result "+(parsed.used!==null?"good":"warn");
+};
+$("chatImportFile").onchange=async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  try{
+    const payload=JSON.parse(await file.text());
+    const added=importChatBackup(payload);
+    toast("Imported "+added+" checkpoint"+(added===1?"":"s"));
+  }catch(err){toast("Import failed: "+err.message)}
+  e.target.value="";
+};
 $("chatCheckpointForm").onsubmit=e=>{
   e.preventDefault();
   const used=Number($("chatUsagePercent").value);
