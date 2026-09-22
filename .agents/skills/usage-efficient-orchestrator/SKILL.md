@@ -1,9 +1,9 @@
 ---
 name: usage-efficient-orchestrator
-description: Conserve Work/Codex weekly allowance by planning once, using a structured task envelope, routing bounded work to the cheapest capable roles, enforcing risk-aware review, single-writer execution, proxy usage counters, failure-aware escalation, and user checkpoints before expensive continuation. Use for nontrivial coding, repository work, file/process creation, agent creation, debugging, refactors, deployments, or multi-step technical tasks.
+description: Conserve Work/Codex weekly allowance by planning once, using a structured task envelope, routing bounded work to the cheapest capable roles, enforcing risk-aware review, single-writer execution, proxy usage counters, failure-aware escalation, reliability/CI gates, drift detection, and user checkpoints before expensive continuation. Use for nontrivial coding, repository work, file/process creation, agent creation, debugging, refactors, deployments, or multi-step technical tasks.
 ---
 
-# Usage-Efficient Orchestrator v1.1.0
+# Usage-Efficient Orchestrator v1.2.0
 
 ## Mission
 
@@ -26,7 +26,7 @@ It must define:
 - verification plan;
 - stop conditions.
 
-Do not produce a long planning essay unless the user asks. Planning itself must be cheap.
+Planning itself must be cheap.
 
 ## 2. Budget profiles
 
@@ -44,16 +44,14 @@ If a reliable live allowance reading is available, record the baseline and stop 
 
 Read `config/capabilities.toml`.
 
-The skill routes by logical capability role rather than embedding model names in every instruction:
+Route by logical capability role:
 - cheap_reader
 - standard_engineer
 - reviewer
 - senior_specialist
 - architect
 
-Use the cheapest capable role. The current model mapping is configuration, not policy.
-
-Do not use the architect/senior tier for mechanical work that lower-cost roles can reliably perform.
+The current role-to-model mapping is configuration, not policy. Use the cheapest capable role.
 
 ## 4. Risk-aware routing
 
@@ -78,18 +76,11 @@ At most one write-capable worker may modify the same working tree at a time.
 
 Parallelism is allowed for read-only scout/research/review work.
 
-Multiple writers are allowed only when:
-- isolated worktrees or branches are explicitly created;
-- file ownership boundaries are explicit;
-- an integration step is planned;
-- the additional coordination cost is justified.
-
-Default shared-tree flow:
-read-only discovery -> one writer -> read-only review -> architect integration.
+Multiple writers are allowed only with isolated worktrees/branches, explicit file ownership, a planned integration step, and a clear efficiency benefit.
 
 ## 6. Proxy usage counters
 
-When live allowance is unavailable, use the profile counters in `config/budget-profiles.toml`.
+When live allowance is unavailable, use `config/budget-profiles.toml`.
 
 Track:
 - agent spawns;
@@ -102,108 +93,122 @@ Track:
 - full-suite runs;
 - scope expansions.
 
-Crossing a hard proxy limit is a stop condition, not a suggestion.
+Crossing a hard proxy limit is a stop condition.
 
 ## 7. Failure-aware escalation
 
-Before escalating, classify the failure using `references/failure-taxonomy.md`.
+Before escalating, classify the failure with `references/failure-taxonomy.md`.
 
-Do not escalate model strength for:
-- missing information that a cheap reader can obtain;
-- tool/environment failures that reasoning cannot fix;
-- permission failures requiring user action;
-- flaky fixtures/tests that require evidence repair.
+Do not escalate model strength for missing information, environment/tool failures, permission failures, or bad/flaky fixtures unless evidence shows stronger reasoning is relevant.
 
-Escalate only when the failure class indicates stronger reasoning or broader integration ability is likely to help.
-
-Pass the failure summary upward. Never restart discovery from zero without evidence that the prior discovery is stale or incomplete.
+Pass a concise failure summary upward. Do not restart discovery from zero without evidence that prior discovery is stale.
 
 ## 8. Structured delegation and handoff
 
-Every delegated task must specify:
-- task_id;
-- goal;
-- scope/path;
-- access mode;
-- capability role;
-- expected output;
-- stop condition;
-- maximum useful detail.
+Every delegated task specifies task_id, goal, scope/path, access mode, capability role, expected output, stop condition, and maximum useful detail.
 
-Every worker returns the schema in `references/handoff-schema.md`.
-
-No raw transcript dumps.
+Workers return `references/handoff-schema.md`. No raw transcript dumps.
 
 ## 9. Context conservation
 
 - Reuse repository maps until relevant files change.
 - Prefer exact file/symbol references over large pasted contexts.
-- Pass workers only the context required for their assignment.
+- Pass workers only required context.
 - Stop research when evidence is sufficient.
-- Do not ask a stronger model to reread evidence already summarized unless verification is required.
+- Do not make a stronger model reread already-distilled evidence unless verification is required.
 
 ## 10. Test conservation
 
-Match test breadth to risk and change breadth:
-- tiny/local: targeted check;
-- bounded behavior: relevant unit/integration checks;
-- high-risk: targeted checks plus independent review;
-- cross-cutting release: broader suite only when justified.
+Match test breadth to risk and change breadth.
 
 Never rerun an unchanged passing suite for reassurance.
 
-## 11. Stop-loss gates
+## 11. Reliability control plane
 
-Stop and return control to the user when any of these occurs:
-- profile retry limit reached;
-- hard proxy counter reached;
+v1.2 adds mandatory reliability gates:
+
+### Canonical source
+GitHub repository content is canonical. Global Codex copies are runtime mirrors, not independent sources of truth.
+
+### QA gate
+Before orchestrator promotion, run:
+
+```bash
+node scripts/orchestrator-qa.mjs
+```
+
+All component checks must pass.
+
+### Drift gate
+Use:
+
+```bash
+node scripts/orchestrator-status.mjs
+```
+
+If global files are stale or missing, sync them before relying on the installed policy.
+
+### Safe sync
+Use:
+
+```bash
+node scripts/orchestrator-sync.mjs --dry-run
+node scripts/orchestrator-sync.mjs
+```
+
+The sync process backs up managed files before replacement and refuses to silently overwrite an unrecognized existing global `[agents]` configuration.
+
+### Security gate
+`scripts/security-check-orchestrator.mjs` rejects high-confidence credential material, unsafe sandbox expansion in managed worker roles, and policy/config violations.
+
+### CI gate
+Pull requests and orchestrator branches run the same deterministic QA in GitHub Actions. A red CI result blocks promotion.
+
+## 12. Stop-loss gates
+
+Stop and return control to the user when:
+- profile retry limit is reached;
+- a hard proxy counter is reached;
 - architecture materially changes;
 - scope expands outside the Task Envelope;
 - next step requires a higher-cost tier beyond the profile gate;
-- another full-repo scan or broad test cycle would be needed;
 - task is plausibly beyond the selected percentage target;
-- CRITICAL risk would move from planning to execution.
+- CRITICAL risk would move from planning to execution;
+- QA/security/drift status is unsafe for the requested promotion or sync.
 
-Report:
-- Completed
-- Remaining
-- Failure/risk state
-- Why stopped
-- Cheapest recommended next phase
-- Expected capability tier
-- Validation status
+## 13. Version-control and release policy
 
-## 12. Version-control policy
-
-For repository/file work:
 1. Inspect current Git state/history before edits.
 2. Preserve unrelated user changes.
 3. Keep phases scoped and reversible.
 4. Use focused commits.
 5. Do not rewrite history unless explicitly requested.
-6. Use a feature/release branch for medium/large orchestrator changes until approval.
-7. Update version/changelog for releases.
-8. Deployment/promotion must be traceable to a commit.
-9. Record last known-good commit before risky migrations.
+6. Use a version branch for medium/large orchestrator changes.
+7. Update manifest/version/changelog for releases.
+8. Promotion must be traceable to a PR/commit.
+9. Record last known-good release.
+10. Do not merge an orchestrator release candidate until QA is green and the user approves.
 
-## 13. Validation gate
+## 14. Validation accuracy
 
-Before approving an orchestrator version:
-- run `node scripts/validate-orchestrator.mjs`;
-- review all routing scenarios in `tests/orchestrator/cases.json`;
-- report pass/fail counts;
-- distinguish deterministic policy checks from real-world usage accuracy;
-- do not claim usage-prediction accuracy before telemetry exists.
+Deterministic policy/CI checks prove configuration consistency and policy invariants only.
+
+Do not claim:
+- exact weekly usage savings;
+- real-model routing accuracy;
+- predicted task burn accuracy;
+
+until the observability and feedback stages collect real telemetry.
 
 ## Default bounded-phase response
 
 Keep it compact:
 - version/phase;
 - what changed;
-- routing/control changes;
 - validation result;
+- security/drift state;
 - known limitations;
-- whether approval is requested.
+- approval required or not.
 
 Read supporting files only when needed:
 - `references/task-envelope.md`
