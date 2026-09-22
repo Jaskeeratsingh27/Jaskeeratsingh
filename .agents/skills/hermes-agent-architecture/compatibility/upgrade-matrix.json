@@ -33,13 +33,25 @@
     }
   ],
   "next_upgrade": {
-    "candidate_release": null,
-    "status": "none_detected",
-    "affected_capabilities": [],
-    "severity": "info",
-    "review_required": false,
+    "candidate_release": "v0.21.4",
+    "candidate_tag": "v2026.9.21",
+    "status": "review_required",
+    "affected_capabilities": [
+      "profiles",
+      "bot_mode",
+      "structured_output",
+      "skills_context_soul",
+      "memory",
+      "tools_mcp",
+      "cron",
+      "security",
+      "observability"
+    ],
+    "severity": "high",
+    "review_required": true,
     "recommended_regression_case_ids": [],
     "affected_consumer_ids": [],
-    "consumer_review_required": false
+    "consumer_review_required": true,
+    "notes": "Stable Hermes changed from v0.21.3/v2026.9.14 to v0.21.4/v2026.9.21. Official release notes describe a host-wide gateway singleton lock and Desktop rendezvous/attachment behavior, CLI --format stream-json structured JSONL output, skills.auto_load, gateway unauthorized-DM decline behavior, configurable MCP discovery concurrency, session_search bounds/recall changes, journal-mode controls, and a large set of profile/multiplex, cron, Kanban, Desktop, and state.db fixes. Full curated notes are deferred to v0.22.0, so promotion requires primary-source revalidation and deterministic gates."
   }
 }
