@@ -13,6 +13,13 @@ def fail(message: str) -> None:
     raise SystemExit(f"FAIL: {message}")
 
 
+def load_json(path: Path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        fail(f"invalid JSON in {path.relative_to(ROOT)}: {exc}")
+
+
 def main() -> None:
     skill = ROOT / "SKILL.md"
     if not skill.exists():
@@ -28,27 +35,51 @@ def main() -> None:
     if f"version: {version}" not in text:
         fail("SKILL.md version does not match VERSION")
 
-    json_files = list((ROOT / "templates").glob("*.json")) + [ROOT / "maintenance" / "source-manifest.json"]
-    for path in json_files:
-        try:
-            json.loads(path.read_text(encoding="utf-8"))
-        except Exception as exc:
-            fail(f"invalid JSON in {path.relative_to(ROOT)}: {exc}")
+    json_files = (
+        list((ROOT / "templates").glob("*.json"))
+        + list((ROOT / "compatibility").glob("*.json"))
+        + [ROOT / "maintenance" / "source-manifest.json", ROOT / "tests" / "architecture-cases.json"]
+    )
+    parsed = {path: load_json(path) for path in json_files}
 
-    manifest = json.loads((ROOT / "maintenance" / "source-manifest.json").read_text(encoding="utf-8"))
+    manifest_path = ROOT / "maintenance" / "source-manifest.json"
+    manifest = parsed[manifest_path]
     sources = manifest.get("sources", [])
     if not sources:
         fail("source manifest has no sources")
+
     ids = [s.get("id") for s in sources]
     if len(ids) != len(set(ids)):
         fail("source manifest contains duplicate IDs")
+    source_ids = set(ids)
+
     for source in sources:
         if source.get("priority") not in {"critical", "high", "medium", "low"}:
             fail(f"invalid source priority for {source.get('id')}")
         if not str(source.get("url", "")).startswith("https://"):
             fail(f"source URL is not HTTPS for {source.get('id')}")
 
-    candidates = re.findall(r"`((?:references|templates|maintenance|research|tests)/[^`]+|VERSION|CHANGELOG\.md|README\.md)`", text)
+    compatibility = parsed[ROOT / "compatibility" / "hermes-compatibility.json"]
+    if compatibility.get("skill_version") != version:
+        fail("compatibility/hermes-compatibility.json skill_version does not match VERSION")
+    if compatibility.get("hermes", {}).get("source_id") not in source_ids:
+        fail("compatibility Hermes release source_id is missing from source manifest")
+
+    for capability in compatibility.get("capabilities", []):
+        unknown = set(capability.get("source_ids", [])) - source_ids
+        if unknown:
+            fail(f"compatibility capability {capability.get('id')} uses unknown sources: {sorted(unknown)}")
+
+    routing = parsed[ROOT / "compatibility" / "primitive-routing.json"]
+    for rule in routing.get("rules", []):
+        reference = ROOT / rule.get("reference", "")
+        if not reference.exists():
+            fail(f"routing rule {rule.get('id')} points to missing reference")
+
+    candidates = re.findall(
+        r"`((?:references|templates|maintenance|research|tests|compatibility)/[^`]+|VERSION|CHANGELOG\.md|README\.md)`",
+        text,
+    )
     missing = [p for p in candidates if not (ROOT / p).exists()]
     if missing:
         fail("missing referenced paths: " + ", ".join(sorted(set(missing))))
@@ -61,6 +92,10 @@ def main() -> None:
         "maintenance/weekly-refresh-prompt.md",
         "maintenance/source-manifest.json",
         "research/HERMES_AGENT_RESEARCH_DOSSIER.md",
+        "compatibility/hermes-compatibility.json",
+        "compatibility/primitive-routing.json",
+        "tests/architecture-cases.json",
+        "tests/test_architecture_regressions.py",
     ]
     for rel in required:
         if not (ROOT / rel).exists():
@@ -69,6 +104,7 @@ def main() -> None:
     print(f"PASS: hermes-agent-architecture v{version}")
     print(f"PASS: {len(sources)} primary-source entries")
     print(f"PASS: {len(json_files)} JSON files parsed")
+    print("PASS: compatibility/source/reference cross-checks")
 
 
 if __name__ == "__main__":
