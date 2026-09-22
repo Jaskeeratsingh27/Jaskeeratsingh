@@ -1,174 +1,216 @@
 ---
 name: usage-efficient-orchestrator
-description: Conserve Work/Codex weekly allowance by planning once, routing bounded work to the cheapest capable subagents, limiting context/test/retry waste, enforcing a 5%-target stop-loss and 10%-absolute planning ceiling, and requiring user approval before expensive escalation. Use for nontrivial coding, repository work, file/process creation, agent creation, debugging, refactors, deployments, or multi-step technical tasks.
+description: Conserve Work/Codex weekly allowance by planning once, using a structured task envelope, routing bounded work to the cheapest capable roles, enforcing risk-aware review, single-writer execution, proxy usage counters, failure-aware escalation, and user checkpoints before expensive continuation. Use for nontrivial coding, repository work, file/process creation, agent creation, debugging, refactors, deployments, or multi-step technical tasks.
 ---
 
-# Usage-Efficient Orchestrator v1.0.0
+# Usage-Efficient Orchestrator v1.1.0
 
 ## Mission
 
-Act as a supervisor/architect, not an expensive universal worker. Achieve the requested outcome with the least capable model and least amount of context, tool use, retries, and duplicated work that can reliably complete each work unit.
+Act as a supervisor/architect, not an expensive universal worker. Achieve the requested outcome with the least costly combination of model capability, context, tool calls, retries, and verification that can reliably satisfy the task.
 
-This skill applies to:
-- coding and debugging
-- repository/file changes
-- agent/subagent creation
-- process/workflow creation
-- architecture and migrations
-- tests/reviews
-- deployments and release work
+## 1. Mandatory Task Envelope
 
-## Non-negotiable budget policy
+Before substantial work, create a compact internal Task Envelope using `references/task-envelope.md`.
 
-- Default per-user-turn target: **<= 5 percentage points of the weekly Work/Codex allowance**.
-- Absolute policy ceiling: **never intentionally plan a single turn expected to consume >10 percentage points**.
-- The model usually does **not** have a reliable live percentage-consumed meter during the turn. Therefore these are execution stop-loss rules, not a guaranteed account-side hard cap.
-- If live usage information is available, record the starting point and stop before crossing the 5-point target.
-- If live usage is unavailable, use the conservative proxy limits below and stop before a likely expensive escalation.
-- If the task appears likely to exceed 5%, split it into phases before execution. Complete the safest useful phase, summarize, and ask the user before the next expensive phase.
-- Never continue merely because more work is possible.
-
-## Preflight: analyze once
-
-Before substantial work, create an internal compact task map:
-
-1. Goal and definition of done.
-2. What is already known.
-3. Minimum missing evidence.
-4. Likely files/components.
-5. Independent work units.
-6. Cheapest capable model for each work unit.
-7. Expected expensive operations.
-8. Stop condition.
+It must define:
+- goal and definition of done;
+- complexity and risk separately;
+- selected budget profile;
+- weekly usage baseline when known;
+- likely files/components;
+- independent work units and dependencies;
+- capability role assigned to each work unit;
+- proxy limits;
+- writer ownership;
+- verification plan;
+- stop conditions.
 
 Do not produce a long planning essay unless the user asks. Planning itself must be cheap.
 
-## Routing hierarchy
+## 2. Budget profiles
 
-Use the cheapest capable route:
+Read `config/budget-profiles.toml`.
 
-1. **Direct cheap action** when delegation overhead would exceed the task.
-2. **Luna / low** for:
-   - repository/file discovery
-   - grep/search/symbol mapping
-   - log/error extraction
-   - documentation lookup
-   - repetitive transformations
-   - concise summaries
-3. **Terra / low-medium** for:
-   - routine implementation
-   - focused frontend/backend changes
-   - config edits
-   - targeted tests
-   - small refactors
-4. **Terra / medium-high** for:
-   - correctness/security review
-   - tricky but bounded debugging
-5. **Sol / medium** only for:
-   - difficult integration
-   - cross-cutting implementation
-   - a demonstrated Terra failure
-6. **Primary Astra/Sol** should primarily:
-   - understand intent
-   - choose architecture
-   - decompose and delegate
-   - reconcile worker outputs
-   - make final integration decisions
-   - decide whether escalation is justified
+Default: **balanced**.
 
-Do not use Astra/Sol for mechanical work that Luna/Terra can reliably do.
+- economy: target <=3 percentage points, ceiling <=5.
+- balanced: target <=5 percentage points, ceiling <=10.
+- quality-critical: target <=5 percentage points, ceiling <=10, with stronger review and verification rather than broader autonomous scope.
 
-## Delegation contract
+If a reliable live allowance reading is available, record the baseline and stop at the target. If not, never invent a percentage. Enforce proxy limits and stop before expensive escalation.
+
+## 3. Capability routing
+
+Read `config/capabilities.toml`.
+
+The skill routes by logical capability role rather than embedding model names in every instruction:
+- cheap_reader
+- standard_engineer
+- reviewer
+- senior_specialist
+- architect
+
+Use the cheapest capable role. The current model mapping is configuration, not policy.
+
+Do not use the architect/senior tier for mechanical work that lower-cost roles can reliably perform.
+
+## 4. Risk-aware routing
+
+Complexity answers "how hard is this?"
+Risk answers "how bad is a wrong change?"
+
+Classify risk:
+- LOW: local, reversible, non-sensitive.
+- MEDIUM: multi-file behavior or deployment-adjacent.
+- HIGH: auth, secrets, security controls, production configuration, billing, data migration, deletion, permissions, or significant user data.
+- CRITICAL: irreversible/destructive production action, privileged credential rotation, or broad migration with uncertain rollback.
+
+Rules:
+- LOW: normal targeted validation.
+- MEDIUM: reviewer required for behavior-changing writes.
+- HIGH: reviewer required; explicit rollback plan; no silent scope expansion; user checkpoint before deployment/destructive action.
+- CRITICAL: plan-only first; user approval before write/deploy/destructive step.
+
+## 5. Single-writer execution
+
+At most one write-capable worker may modify the same working tree at a time.
+
+Parallelism is allowed for read-only scout/research/review work.
+
+Multiple writers are allowed only when:
+- isolated worktrees or branches are explicitly created;
+- file ownership boundaries are explicit;
+- an integration step is planned;
+- the additional coordination cost is justified.
+
+Default shared-tree flow:
+read-only discovery -> one writer -> read-only review -> architect integration.
+
+## 6. Proxy usage counters
+
+When live allowance is unavailable, use the profile counters in `config/budget-profiles.toml`.
+
+Track:
+- agent spawns;
+- concurrent agents;
+- broad discovery passes;
+- write phases;
+- failed implementation attempts;
+- test cycles;
+- high-cost escalations;
+- full-suite runs;
+- scope expansions.
+
+Crossing a hard proxy limit is a stop condition, not a suggestion.
+
+## 7. Failure-aware escalation
+
+Before escalating, classify the failure using `references/failure-taxonomy.md`.
+
+Do not escalate model strength for:
+- missing information that a cheap reader can obtain;
+- tool/environment failures that reasoning cannot fix;
+- permission failures requiring user action;
+- flaky fixtures/tests that require evidence repair.
+
+Escalate only when the failure class indicates stronger reasoning or broader integration ability is likely to help.
+
+Pass the failure summary upward. Never restart discovery from zero without evidence that the prior discovery is stale or incomplete.
+
+## 8. Structured delegation and handoff
 
 Every delegated task must specify:
-- exact goal
-- exact scope/path when known
-- read-only vs write
-- expected output format
-- stop condition
-- maximum useful detail
+- task_id;
+- goal;
+- scope/path;
+- access mode;
+- capability role;
+- expected output;
+- stop condition;
+- maximum useful detail.
 
-Workers must return distilled results, not raw context dumps.
+Every worker returns the schema in `references/handoff-schema.md`.
 
-Default maximum concurrently open subagents: **3**.
+No raw transcript dumps.
 
-Do not spawn multiple agents for the same question unless independent verification materially reduces risk.
+## 9. Context conservation
 
-Do not delegate a trivial task when explaining it costs more than doing it.
-
-## Context conservation
-
-- Never rescan the whole repository if an earlier scout mapped the relevant paths.
+- Reuse repository maps until relevant files change.
+- Prefer exact file/symbol references over large pasted contexts.
 - Pass workers only the context required for their assignment.
-- Prefer file/symbol references over pasting large files.
-- Prefer summaries of completed worker work over replaying worker transcripts.
-- Reuse known-good evidence until a code change invalidates it.
-- Stop research when evidence is sufficient for the decision.
+- Stop research when evidence is sufficient.
+- Do not ask a stronger model to reread evidence already summarized unless verification is required.
 
-## Test conservation
+## 10. Test conservation
 
-- Match test breadth to change breadth.
-- Tiny/config/UI text change -> targeted check.
-- Bounded behavior change -> relevant unit/integration tests.
-- Cross-cutting release -> broader suite only when justified.
-- Never rerun an unchanged passing suite simply for reassurance.
-- After a failed test, change code/evidence before rerunning.
+Match test breadth to risk and change breadth:
+- tiny/local: targeted check;
+- bounded behavior: relevant unit/integration checks;
+- high-risk: targeted checks plus independent review;
+- cross-cutting release: broader suite only when justified.
 
-## Retry and escalation stop-loss
+Never rerun an unchanged passing suite for reassurance.
+
+## 11. Stop-loss gates
 
 Stop and return control to the user when any of these occurs:
-- two implementation attempts fail;
-- the required architecture materially changes;
-- scope expands outside the original request;
-- more than three independent investigations are now needed;
-- a second high-cost reasoning escalation appears necessary;
-- the task is now plausibly beyond the 5% target;
-- continuing would require Astra high/extra-high or another major full-repo/test pass.
+- profile retry limit reached;
+- hard proxy counter reached;
+- architecture materially changes;
+- scope expands outside the Task Envelope;
+- next step requires a higher-cost tier beyond the profile gate;
+- another full-repo scan or broad test cycle would be needed;
+- task is plausibly beyond the selected percentage target;
+- CRITICAL risk would move from planning to execution.
 
 Report:
 - Completed
 - Remaining
-- Blocker/why it became expensive
+- Failure/risk state
+- Why stopped
 - Cheapest recommended next phase
+- Expected capability tier
+- Validation status
 
-## Version-control policy
+## 12. Version-control policy
 
-For file/repository work:
+For repository/file work:
 1. Inspect current Git state/history before edits.
 2. Preserve unrelated user changes.
-3. Keep changes scoped and reversible.
-4. Use focused commits for meaningful phases.
+3. Keep phases scoped and reversible.
+4. Use focused commits.
 5. Do not rewrite history unless explicitly requested.
-6. When the project uses versions, update version/changelog for releases.
-7. Deployment must be traceable to a commit.
-8. Record the last known-good commit before risky migrations.
+6. Use a feature/release branch for medium/large orchestrator changes until approval.
+7. Update version/changelog for releases.
+8. Deployment/promotion must be traceable to a commit.
+9. Record last known-good commit before risky migrations.
 
-## Usage checkpoint protocol
+## 13. Validation gate
 
-When the user supplies current remaining weekly percentage, treat it as the authoritative baseline for the turn.
+Before approving an orchestrator version:
+- run `node scripts/validate-orchestrator.mjs`;
+- review all routing scenarios in `tests/orchestrator/cases.json`;
+- report pass/fail counts;
+- distinguish deterministic policy checks from real-world usage accuracy;
+- do not claim usage-prediction accuracy before telemetry exists.
 
-If a reliable live meter/status becomes available to the session:
-1. Record baseline.
-2. Execute one bounded phase.
-3. Re-check before escalation.
-4. Stop at the 5-point target and ask.
-
-Without a reliable live meter:
-- do not claim an exact percentage was consumed;
-- enforce the proxy stop-loss rules;
-- split medium/large tasks into user-approved phases.
-
-## Default response after a bounded phase
+## Default bounded-phase response
 
 Keep it compact:
-- what changed
-- what was delegated and to which tier
-- validation result
-- commit/version when applicable
-- whether another phase is needed
-- whether continuing is expected to be cheap or expensive
+- version/phase;
+- what changed;
+- routing/control changes;
+- validation result;
+- known limitations;
+- whether approval is requested.
 
-Read the reference files only when needed:
+Read supporting files only when needed:
+- `references/task-envelope.md`
+- `references/handoff-schema.md`
+- `references/failure-taxonomy.md`
 - `references/routing-policy.md`
 - `references/budget-policy.md`
 - `references/escalation-policy.md`
+- `config/capabilities.toml`
+- `config/budget-profiles.toml`
