@@ -14,7 +14,7 @@
     {
       "id":"cron-patch",
       "impact":{"change_id":"cron-patch","severity":"patch","affected_capabilities":["cron"],"unknown_source_ids":[],"unknown_capability_ids":[]},
-      "expected":{"consumer_ids":["hermes-agent-creator","kaizen-orchestrator"],"requires_consumer_review":false,"blocking_consumer_ids":[]}
+      "expected":{"consumer_ids":["hermes-agent-creator","kaizen-orchestrator"],"requires_consumer_review":true,"blocking_consumer_ids":[]}
     },
     {
       "id":"security-critical",
