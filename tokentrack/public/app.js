@@ -683,7 +683,7 @@ $("chatClear").onclick=()=>{
   if(!state.chatSnapshots.length)return;
   if(confirm("Clear all locally saved ChatGPT usage checkpoints? If encrypted sync is enabled, the cloud copy will also be replaced with an empty history.")){
     state.chatSnapshots=[];saveChatSnapshots();renderChatGPT();toast("Checkpoint history cleared");
-    if(state.chatSyncKey&&state.chatAutoSync)void syncPushLocal();
+    if(state.chatSyncKey)void syncPushLocal();
   }
 };
 qsa(".chip").forEach(b=>b.onclick=()=>{state.attr=b.dataset.attr;qsa(".chip").forEach(x=>x.classList.toggle("active",x===b));renderAttribution()});
