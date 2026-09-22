@@ -96,6 +96,44 @@
         </article>
       </div>
 
+      <article class="panel padded sync-panel">
+        <div class="head">
+          <div><h2>Encrypted device sync</h2><p>Synchronize ChatGPT checkpoints across browsers without storing readable usage history on the server.</p></div>
+          <span id="chatSyncBadge" class="badge">Local only</span>
+        </div>
+        <div class="sync-grid">
+          <div class="sync-card">
+            <strong>This device</strong>
+            <span id="chatSyncStatus">No sync key configured.</span>
+            <div class="button-row">
+              <button id="chatSyncCreate" class="button primary" type="button">Enable encrypted sync</button>
+              <button id="chatSyncCopy" class="button hidden" type="button">Copy sync code</button>
+              <button id="chatSyncDisable" class="button hidden" type="button">Disable on this device</button>
+            </div>
+            <label id="chatSyncCodeWrap" class="hidden">Sync code
+              <input id="chatSyncCode" class="control mono" type="password" readonly>
+            </label>
+            <small class="sync-warning">Treat the sync code like a password. Anyone with it can decrypt the synced checkpoints.</small>
+          </div>
+          <div class="sync-card">
+            <strong>Pair another device</strong>
+            <label>Existing sync code
+              <input id="chatSyncPairCode" class="control mono" autocomplete="off" placeholder="Paste sync code">
+            </label>
+            <div class="button-row">
+              <button id="chatSyncPair" class="button" type="button">Pair & merge</button>
+              <button id="chatSyncPull" class="button hidden" type="button">Pull & merge</button>
+              <button id="chatSyncPush" class="button hidden" type="button">Push local</button>
+            </div>
+          </div>
+        </div>
+        <div class="sync-footer">
+          <label class="switch">Auto-sync additions <input id="chatAutoSync" type="checkbox" checked></label>
+          <span id="chatSyncLast">Never synced</span>
+          <button id="chatSyncDeleteRemote" class="button danger-button hidden" type="button">Delete encrypted cloud copy</button>
+        </div>
+      </article>
+
       <article class="panel tablepanel">
         <div class="head padded-head">
           <div><h2>Checkpoint history</h2><p>Your locally recorded ChatGPT usage observations.</p></div>
