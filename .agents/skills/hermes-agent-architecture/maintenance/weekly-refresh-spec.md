@@ -14,7 +14,7 @@ Weekly. The external scheduler runs Tuesday at 02:00 America/Winnipeg using regu
 
 Use `maintenance/source-manifest.json` as the machine-readable source inventory and `references/13-source-index.md` as the human-readable index.
 
-## v1.3 control flow
+## v1.6 control flow
 
 ```text
 prior health + freshness state
@@ -39,7 +39,7 @@ knowledge-health engine
         ↓
 health-history snapshot
         ↓
-4 deterministic CI gates
+7 deterministic CI gates
         ↓
 reviewed promotion when required
 ```
@@ -145,6 +145,19 @@ For material/ambiguous changes:
 - consumer-impact regression validation
 - consumer dependency drift regression validation
 
+## Final promotion decision
+
+After all audit, impact, consumer, health, dependency-drift, and validation state is final, compose a maintenance decision bundle and run `maintenance/promotion_gate.py`.
+
+The gate returns two separate decisions:
+
+- `knowledge_promotion` — whether canonical Hermes knowledge/control changes may be promoted;
+- `ecosystem_compatibility` — whether registered downstream consumers may be declared compatible.
+
+The combined `overall_state` is `allow`, `review_required`, or `blocked`.
+
+A valid knowledge patch does not automatically clear downstream consumers. Conversely, a consumer migration blocker does not make verified Hermes knowledge false; it blocks ecosystem clearance until the consumer review is resolved.
+
 ## Promotion policy
 
 Branch/PR review is mandatory for:
@@ -168,9 +181,9 @@ A weekly refresh is complete only if:
 - a health report was appended;
 - health/drift delta was reported;
 - compatibility and upgrade state reflect verified knowledge;
-- all four deterministic validation suites pass;
+- all seven deterministic validation suites pass;
 - consumer dependency drift was scanned and recorded;
 - affected downstream consumers were identified from the explicit registry;
 - consumer review/migration work was reported without silent unrelated edits;
-- all six deterministic validation suites pass;
+- all seven deterministic validation suites pass;
 - required GitHub review/promotion rules were followed.

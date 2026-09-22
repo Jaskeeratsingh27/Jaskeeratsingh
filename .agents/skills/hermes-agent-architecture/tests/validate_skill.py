@@ -59,6 +59,7 @@ def main() -> None:
             ROOT / "consumers" / "detection-rules.json",
             ROOT / "maintenance" / "consumer-drift-snapshot.schema.json",
             ROOT / "research" / "consumer-drift" / "index.json",
+            ROOT / "tests" / "hardening-scenarios.json",
             ROOT / "research" / "audits" / "index.json",
             ROOT / "research" / "health" / "index.json",
         ]
@@ -196,6 +197,13 @@ def main() -> None:
     if not consumer_cases:
         fail("consumer-impact regression fixtures are missing")
 
+    hardening_scenarios = parsed[ROOT / "tests" / "hardening-scenarios.json"].get("scenarios", [])
+    if not hardening_scenarios:
+        fail("end-to-end hardening scenarios are missing")
+    hardening_ids = [item.get("id") for item in hardening_scenarios]
+    if len(hardening_ids) != len(set(hardening_ids)):
+        fail("end-to-end hardening scenarios contain duplicate IDs")
+
     detection_rules = parsed[ROOT / "consumers" / "detection-rules.json"]
     pattern_capabilities = set(detection_rules.get("capability_patterns", {}))
     if pattern_capabilities != capability_ids:
@@ -320,6 +328,11 @@ def main() -> None:
         "research/consumer-drift/index.json",
         "references/17-consumer-dependency-drift.md",
         "tests/test_consumer_drift.py",
+        "maintenance/promotion_gate.py",
+        "references/18-promotion-recovery.md",
+        "research/PRODUCTION_READINESS.md",
+        "tests/hardening-scenarios.json",
+        "tests/test_end_to_end_hardening.py",
     ]
     for rel in required:
         if not (ROOT / rel).exists():
@@ -334,6 +347,7 @@ def main() -> None:
     print(f"PASS: {len(release_cases)} release-impact, {len(health_cases)} health/drift, and {len(consumer_cases)} consumer-impact fixtures structurally valid")
     print(f"PASS: {len(consumers)} active Hermes consumer(s) structurally valid")
     print(f"PASS: {len(drift_paths)} consumer dependency drift snapshot(s)")
+    print(f"PASS: {len(hardening_scenarios)} end-to-end hardening scenario(s) structurally valid")
 
 
 if __name__ == "__main__":
