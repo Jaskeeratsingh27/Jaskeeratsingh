@@ -62,7 +62,7 @@ const m=config.match(/max_concurrent_threads_per_session\s*=\s*(\d+)/);
 if(m && Number(m[1])<=3) pass("max concurrency safety",m[1]); else fail("max concurrency safety",m?.[1]??"missing");
 
 const skill=fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/SKILL.md"),"utf8");
-for(const gate of ["Reliability control plane","Security gate","Drift gate","CI gate","Privacy-preserving observability","Usage intelligence gate"]){
+for(const gate of ["Reliability control plane","Security gate","Drift gate","CI gate","Privacy-preserving observability","Usage intelligence gate","Adaptive routing gate"]){
   (skill.includes(gate)?pass:fail)(`skill gate: ${gate}`);
 }
 
@@ -82,6 +82,22 @@ const intelligenceOk=intelligence?.policy?.approval_when_upper_exceeds_target===
 (intelligenceOk?pass:fail)("usage intelligence config");
 const intelligenceScript=fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/scripts/usage-intelligence.mjs"),"utf8");
 (!intelligenceScript.includes("prompt_text") && !intelligenceScript.includes("source_code") ? pass : fail)("usage intelligence privacy boundary");
+
+const adaptive=JSON.parse(fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/config/adaptive-routing.json"),"utf8"));
+const routes=JSON.parse(fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/config/route-templates.json"),"utf8"));
+const approvals=JSON.parse(fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/config/adaptive-routing-approvals.json"),"utf8"));
+const adaptiveOk=adaptive.mode==="shadow" &&
+  adaptive.safety?.critical_plan_only===true &&
+  adaptive.safety?.large_plan_only===true &&
+  adaptive.safety?.high_risk_requires_reviewer===true &&
+  adaptive.safety?.senior_specialist_never_initial_candidate===true &&
+  adaptive.safety?.active_requires_canonical_approval===true;
+(adaptiveOk?pass:fail)("adaptive routing config");
+(Array.isArray(approvals.approvals) && approvals.approvals.length===0 ? pass : fail)("adaptive approvals default empty");
+const seniorRoute=routes.routes?.senior_review;
+(seniorRoute?.initial_candidate===false && seniorRoute?.escalation_only===true ? pass : fail)("senior route escalation-only");
+const adaptiveScript=fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/scripts/adaptive-routing.mjs"),"utf8");
+(!adaptiveScript.includes("prompt_text") && !adaptiveScript.includes("source_code") && !adaptiveScript.includes("file_contents") ? pass : fail)("adaptive routing privacy boundary");
 
 const failed=results.filter(r=>!r.ok);
 for(const r of results) console.log(`${r.ok?"PASS":"FAIL"} | ${r.name}${r.detail?" | "+r.detail:""}`);
