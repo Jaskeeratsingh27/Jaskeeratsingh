@@ -7,8 +7,17 @@ description: Design, review, and improve autonomous AI agents for the user's Her
 
 This is the migrated form of the Claude `Hermes Agents Creator` project, strengthened with Batch 3 persistent-memory recovery. Legacy project knowledge remains under `references/legacy/`.
 
+## Current Hermes knowledge dependency
+
+Before making current Hermes-runtime claims, selecting Hermes primitives, or writing Hermes-specific Profile/Bot/subagent/Kanban/context/tool files, consult `.agents/skills/hermes-agent-architecture/SKILL.md` and the relevant references there.
+
+- `hermes-agent-architecture` owns current Hermes platform facts, architecture primitives, version caveats, primary sources, and production compatibility guidance.
+- `hermes-agent-creator` owns the agent build/review methodology, quality gates, FMEA, evaluation, and continuous-improvement process.
+- Do not duplicate current Hermes platform facts here. If the two skills appear to conflict on Hermes runtime behavior, verify against the pinned Hermes version and primary sources in `hermes-agent-architecture`.
+
 ## Read first
 
+- `.agents/skills/hermes-agent-architecture/SKILL.md` for current Hermes platform architecture
 - `references/runtime-map.md`
 - `references/recovered-hermes-runtime.md`
 - `references/recovered-agent-factory.md`

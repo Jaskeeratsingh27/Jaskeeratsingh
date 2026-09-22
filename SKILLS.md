@@ -40,12 +40,21 @@ Use for full Lean Six Sigma DMAIC / continuous-improvement pipelines, blueprint 
 
 ### hermes-agent-creator
 
-Use to design, review, and improve autonomous agents for Hermes and the broader agent stack with explicit contracts, tool/state boundaries, validation, failure paths, evaluation, FMEA, and control plans.
+Use to design, review, and improve autonomous agents for Hermes and the broader agent stack with explicit contracts, tool/state boundaries, validation, failure paths, evaluation, FMEA, and control plans. It consults `hermes-agent-architecture` for current Hermes runtime/platform facts.
 
 - Codex: `$hermes-agent-creator`
 - Claude Code: `/hermes-agent-creator`
 - Canonical source: `.agents/skills/hermes-agent-creator/SKILL.md`
 - Claude mirror: `.claude/skills/hermes-agent-creator/SKILL.md`
+
+### hermes-agent-architecture
+
+Use for current Hermes Agent platform knowledge and architecture: Profiles/Bots, delegated subagents, Kanban, skills/context/SOUL, memory, tools/MCP, model routing, Cron, security, observability, structured I/O contracts, production hardening, and Hermes-version compatibility.
+
+- Codex: `$hermes-agent-architecture`
+- Claude Code: `/hermes-agent-architecture`
+- Canonical source: `.agents/skills/hermes-agent-architecture/SKILL.md`
+- Claude mirror: `.claude/skills/hermes-agent-architecture/SKILL.md`
 
 ### secondbrain-curator
 
