@@ -17,10 +17,11 @@ function run(args, expect=0){
   return r;
 }
 
-const start=run(["start","--profile","balanced","--complexity","MEDIUM","--risk","MEDIUM","--baseline","64","--source","user","--cycle","W1"]);
+const start=run(["start","--profile","balanced","--task-kind","implementation","--complexity","MEDIUM","--risk","MEDIUM","--baseline","64","--source","user","--cycle","W1"]);
 const taskId=start.stdout.trim();
 check("generated task id",/^uo_[A-Za-z0-9_]+$/.test(taskId),taskId);
 
+run(["recommendation","--task-id",taskId,"--baseline-route","standard_review","--candidate-route","scout_standard_review","--decision-mode","shadow","--decision","candidate_lower_burn","--evidence-samples","8","--estimated-savings-p90","1.2"]);
 run(["route","--task-id",taskId,"--work-unit","W1","--role","cheap_reader","--model","gpt-5.6-luna","--reasoning","low","--access","read-only"]);
 run(["worker","--task-id",taskId,"--work-unit","W1","--role","cheap_reader","--model","gpt-5.6-luna","--reasoning","low","--access","read-only","--status","complete","--duration-ms","1200","--files-inspected","4"]);
 run(["route","--task-id",taskId,"--work-unit","W2","--role","standard_engineer","--model","gpt-5.6-terra","--reasoning","medium","--access","workspace-write"]);
@@ -62,7 +63,9 @@ check("aggregate export schema",exported.schema_version==="1.0" && exported.summ
 const ledger=path.join(env.ORCHESTRATOR_DATA_DIR,"events.jsonl");
 const lines=fs.readFileSync(ledger,"utf8").trim().split("\n").map(JSON.parse);
 check("project id hashed",lines.every(e=>/^[a-f0-9]{20}$/.test(e.project_id)));
-check("orchestrator version stamped",lines.every(e=>e.orchestrator_version==="1.4.0"));
+check("orchestrator version stamped",lines.every(e=>e.orchestrator_version==="1.5.0"));
+check("task kind captured",lines.some(e=>e.event_type==="task_started" && e.task_id===taskId && e.task_kind==="implementation"));
+check("adaptive recommendation captured",lines.some(e=>e.event_type==="routing_recommendation" && e.task_id===taskId && e.baseline_route==="standard_review" && e.candidate_route==="scout_standard_review" && e.route_decision==="candidate_lower_burn"));
 check("ledger contains no cwd",!fs.readFileSync(ledger,"utf8").includes(ROOT));
 check("ledger contains no prompt/source fields",lines.every(e=>!("prompt" in e)&&!("source_code" in e)&&!("file_contents" in e)&&!("raw_tool_output" in e)));
 
