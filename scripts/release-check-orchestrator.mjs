@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
 const read=p=>fs.readFileSync(path.join(ROOT,p),"utf8");
 const manifest=JSON.parse(read(".agents/skills/usage-efficient-orchestrator/manifest.json"));
+const observability=JSON.parse(read(".agents/skills/usage-efficient-orchestrator/config/observability.json"));
 const v=manifest.version;
 const checks=[];
 const add=(name,ok)=>checks.push({name,ok});
@@ -14,7 +15,10 @@ add("SKILL version",read(".agents/skills/usage-efficient-orchestrator/SKILL.md")
 add("CHANGELOG version",read(".agents/skills/usage-efficient-orchestrator/CHANGELOG.md").includes(`## ${v} `));
 add("docs version",read("docs/codex-usage-orchestrator.md").includes(`Version: ${v}`));
 add("manifest canonical repo",manifest.canonical_repository==="Jaskeeratsingh27/Jaskeeratsingh");
-add("manifest QA commands",Array.isArray(manifest.qa_commands)&&manifest.qa_commands.length>=4);
+add("manifest QA commands",Array.isArray(manifest.qa_commands)&&manifest.qa_commands.length>=5);
+add("telemetry schema version matches",manifest.telemetry_schema_version===observability.schema_version);
+add("observability forbids prompt capture",observability.capture?.prompt_text===false&&observability.capture?.conversation_text===false);
+add("TokenTrack export aggregate-only",observability.export?.aggregate_only===true&&observability.export?.include_task_ids===false);
 
 const ref=process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || "";
 if(ref.startsWith("orchestrator-v")) add("branch version matches manifest",ref===`orchestrator-v${v}`);
