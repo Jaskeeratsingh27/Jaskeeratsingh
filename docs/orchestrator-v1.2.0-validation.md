@@ -42,3 +42,6 @@ node scripts/orchestrator-qa.mjs
 ```
 
 returns all suites green and CI on the release-candidate PR is green.
+
+
+CI trigger: release-candidate QA after PR creation.
