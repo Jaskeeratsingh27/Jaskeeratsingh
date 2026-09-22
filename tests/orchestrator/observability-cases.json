@@ -1,0 +1,52 @@
+[
+  {
+    "id": "O01",
+    "name": "task lifecycle with measured 3-point burn",
+    "baseline": 64,
+    "final": 61,
+    "expected_burn": 3
+  },
+  {
+    "id": "O02",
+    "name": "task without checkpoints remains unmeasured",
+    "baseline": null,
+    "final": null,
+    "expected_measured": false
+  },
+  {
+    "id": "O03",
+    "name": "percentage increase is reset-or-invalid, not negative burn",
+    "baseline": 20,
+    "final": 100,
+    "expected_reset_or_invalid": true
+  },
+  {
+    "id": "O04",
+    "name": "different usage-cycle ids are not compared",
+    "baseline": 70,
+    "final": 68,
+    "baseline_cycle": "A",
+    "final_cycle": "B",
+    "expected_measured": false
+  },
+  {
+    "id": "O05",
+    "name": "aggregate export omits task ids",
+    "expected_private_export": true
+  },
+  {
+    "id": "O06",
+    "name": "project identity is hashed, not a full path",
+    "expected_hashed_project": true
+  },
+  {
+    "id": "O07",
+    "name": "unknown/free-text telemetry arguments are rejected",
+    "expected_reject_unknown": true
+  },
+  {
+    "id": "O08",
+    "name": "retention prune removes old events",
+    "expected_prune": true
+  }
+]
