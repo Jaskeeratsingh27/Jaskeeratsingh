@@ -33,7 +33,8 @@
         "validation",
         "usage_checkpoint",
         "budget_stop",
-        "task_finished"
+        "task_finished",
+        "routing_recommendation"
       ]
     },
     "task_id": {
@@ -184,6 +185,52 @@
     "orchestrator_version": {
       "type": "string",
       "pattern": "^[0-9]+\\\\.[0-9]+\\\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$"
+    },
+    "task_kind": {
+      "enum": [
+        "discovery",
+        "implementation",
+        "review",
+        "architecture",
+        "mixed",
+        "unknown"
+      ]
+    },
+    "baseline_route": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,100}$"
+    },
+    "candidate_route": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,100}$"
+    },
+    "decision_mode": {
+      "enum": [
+        "shadow",
+        "active"
+      ]
+    },
+    "route_decision": {
+      "enum": [
+        "keep_baseline",
+        "candidate_lower_burn",
+        "insufficient_data",
+        "insufficient_baseline",
+        "no_qualified_candidate",
+        "quality_floor",
+        "risk_floor",
+        "drift_suppressed",
+        "calibration_suppressed",
+        "manual_approval_required"
+      ]
+    },
+    "evidence_samples": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "estimated_savings_p90": {
+      "type": "number",
+      "minimum": 0
     }
   }
 }

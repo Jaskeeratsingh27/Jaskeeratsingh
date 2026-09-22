@@ -1,0 +1,178 @@
+{
+  "schema_version": "1.0",
+  "routes": {
+    "discovery": {
+      "roles": [
+        "cheap_reader"
+      ],
+      "task_kinds": [
+        "discovery"
+      ],
+      "initial_candidate": true,
+      "notes": "Read-only targeted discovery."
+    },
+    "direct_standard": {
+      "roles": [
+        "standard_engineer"
+      ],
+      "task_kinds": [
+        "implementation"
+      ],
+      "initial_candidate": true,
+      "notes": "Bounded routine implementation with no separate discovery/review role."
+    },
+    "scout_standard": {
+      "roles": [
+        "cheap_reader",
+        "standard_engineer"
+      ],
+      "task_kinds": [
+        "implementation",
+        "mixed"
+      ],
+      "initial_candidate": true,
+      "notes": "Cheap discovery followed by one writer."
+    },
+    "standard_review": {
+      "roles": [
+        "standard_engineer",
+        "reviewer"
+      ],
+      "task_kinds": [
+        "implementation",
+        "mixed"
+      ],
+      "initial_candidate": true,
+      "notes": "One writer plus independent read-only review."
+    },
+    "scout_standard_review": {
+      "roles": [
+        "cheap_reader",
+        "standard_engineer",
+        "reviewer"
+      ],
+      "task_kinds": [
+        "implementation",
+        "mixed"
+      ],
+      "initial_candidate": true,
+      "notes": "Discovery, one writer, independent review."
+    },
+    "reviewer_only": {
+      "roles": [
+        "reviewer"
+      ],
+      "task_kinds": [
+        "review"
+      ],
+      "initial_candidate": true,
+      "notes": "Focused independent review."
+    },
+    "architect_plan": {
+      "roles": [
+        "architect"
+      ],
+      "task_kinds": [
+        "architecture",
+        "mixed"
+      ],
+      "initial_candidate": true,
+      "plan_only": true,
+      "notes": "Architecture/planning without implementation."
+    },
+    "scout_architect_plan": {
+      "roles": [
+        "cheap_reader",
+        "architect"
+      ],
+      "task_kinds": [
+        "architecture",
+        "mixed"
+      ],
+      "initial_candidate": true,
+      "plan_only": true,
+      "notes": "Read-only discovery followed by architecture/planning."
+    },
+    "senior_review": {
+      "roles": [
+        "senior_specialist",
+        "reviewer"
+      ],
+      "task_kinds": [
+        "implementation",
+        "mixed"
+      ],
+      "initial_candidate": false,
+      "escalation_only": true,
+      "notes": "Escalation route; never selected as a cheaper initial route."
+    }
+  },
+  "baseline_rules": [
+    {
+      "task_kind": "discovery",
+      "route": "discovery"
+    },
+    {
+      "task_kind": "review",
+      "route": "reviewer_only"
+    },
+    {
+      "task_kind": "architecture",
+      "route": "architect_plan"
+    },
+    {
+      "risk": "CRITICAL",
+      "route": "architect_plan"
+    },
+    {
+      "complexity": "LARGE",
+      "route": "architect_plan"
+    },
+    {
+      "task_kind": "implementation",
+      "risk": "HIGH",
+      "route": "standard_review"
+    },
+    {
+      "task_kind": "implementation",
+      "complexity": "MEDIUM",
+      "risk": "MEDIUM",
+      "route": "standard_review"
+    },
+    {
+      "task_kind": "implementation",
+      "complexity": "MEDIUM",
+      "risk": "LOW",
+      "route": "scout_standard"
+    },
+    {
+      "task_kind": "implementation",
+      "complexity": "MICRO",
+      "risk": "LOW",
+      "route": "direct_standard"
+    },
+    {
+      "task_kind": "implementation",
+      "complexity": "SMALL",
+      "risk": "LOW",
+      "route": "direct_standard"
+    },
+    {
+      "task_kind": "mixed",
+      "risk": "HIGH",
+      "route": "scout_standard_review"
+    },
+    {
+      "task_kind": "mixed",
+      "complexity": "MEDIUM",
+      "route": "scout_standard_review"
+    },
+    {
+      "task_kind": "mixed",
+      "route": "scout_standard"
+    },
+    {
+      "route": "scout_standard_review"
+    }
+  ]
+}

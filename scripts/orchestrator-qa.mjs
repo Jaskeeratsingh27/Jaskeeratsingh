@@ -9,6 +9,7 @@ const checks=[
   "security-check-orchestrator.mjs",
   "test-observability.mjs",
   "test-usage-intelligence.mjs",
+  "test-adaptive-routing.mjs",
   "release-check-orchestrator.mjs"
 ];
 

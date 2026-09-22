@@ -13,6 +13,7 @@ on:
       - 'scripts/*orchestrator*'
       - 'scripts/test-observability.mjs'
       - 'scripts/test-usage-intelligence.mjs'
+      - 'scripts/test-adaptive-routing.mjs'
       - 'docs/codex-usage-orchestrator.md'
       - 'docs/orchestrator-v*.md'
       - '.github/workflows/orchestrator-ci.yml'

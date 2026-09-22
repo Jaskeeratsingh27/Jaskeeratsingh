@@ -26,10 +26,13 @@ Never store:
 
 Project identity is a truncated SHA-256 hash of the current working directory unless an explicit non-sensitive project ID is supplied.
 
+`task_kind` and adaptive-routing metadata are controlled enums/identifiers only; free-form routing rationale is intentionally excluded.
+
 ## Event lifecycle
 
 Supported event types:
 - task_started
+- routing_recommendation
 - route_selected
 - worker_finished
 - validation
@@ -55,6 +58,7 @@ If remaining percentage increases, classify the pair as reset/invalid rather tha
 
 Telemetry itself should be cheap:
 - one start event;
+- at most one adaptive routing recommendation event per preflight decision;
 - route events only for actual routed work;
 - one worker-finished event per completed/blocked worker;
 - validation events only for checks actually run;

@@ -175,6 +175,7 @@ function reconstructTasks(events, days = CONFIG.history_days) {
       timestamp:t.start.timestamp,
       orchestrator_version:t.start.orchestrator_version || null,
       profile:t.start.profile,
+      task_kind:t.start.task_kind || "unknown",
       complexity:t.start.complexity,
       risk:t.start.risk,
       outcome:t.finish?.status || "unfinished",
@@ -192,6 +193,8 @@ function reconstructTasks(events, days = CONFIG.history_days) {
         ? t.finish.duration_ms
         : t.workers.reduce((sum,w)=>sum+(Number.isInteger(w.duration_ms)?w.duration_ms:0),0),
       budget_stops:t.budget_stops.length,
+      validation_passes:t.validations.filter(v=>v.status==="passed").length,
+      validation_failures:t.validations.filter(v=>v.status==="failed").length,
       measurement
     });
   }
