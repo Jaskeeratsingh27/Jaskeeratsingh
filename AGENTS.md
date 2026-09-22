@@ -1,6 +1,6 @@
 # Usage-Efficient Codex Policy
 
-Version: 1.1.0
+Version: 1.2.0
 
 For every nontrivial engineering, agent-building, process-building, repository, or file-generation task in this repository, apply the `usage-efficient-orchestrator` skill before substantial work.
 
@@ -27,7 +27,10 @@ For every nontrivial engineering, agent-building, process-building, repository, 
 14. Stop after the configured retry limit, when architecture materially changes, when scope expands, or before a likely budget overrun. Report and ask the user before continuing.
 15. Keep Git as the source of truth. Preserve unrelated user changes, keep phases reversible, use focused commits, and make deployments traceable to commits.
 16. Worker handoffs must use the structured handoff schema and remain concise so the primary model does not reread large contexts.
-17. Before release or promotion, run the orchestrator validation suite and include a TL;DR validation report.
+17. **Reliability gate:** before orchestrator promotion or global sync, run `node scripts/orchestrator-qa.mjs`. A failed check blocks promotion.
+18. **Drift gate:** GitHub is canonical. If the installed global skill/agents differ from the repository, report drift and sync before relying on the global copy.
+19. **Security gate:** orchestrator-managed files must pass the secret/sandbox/config checks before release.
+20. Medium/large orchestrator revisions must remain on a version branch until validation is green and the user explicitly approves promotion.
 
 Detailed control-plane rules live in:
 `.agents/skills/usage-efficient-orchestrator/SKILL.md`.

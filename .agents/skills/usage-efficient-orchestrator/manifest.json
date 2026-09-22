@@ -1,0 +1,26 @@
+{
+  "name": "usage-efficient-orchestrator",
+  "version": "1.2.0",
+  "canonical_repository": "Jaskeeratsingh27/Jaskeeratsingh",
+  "canonical_branch": "main",
+  "managed_agents": [
+    "luna-scout.toml",
+    "luna-researcher.toml",
+    "terra-implementer.toml",
+    "terra-reviewer.toml",
+    "sol-specialist.toml"
+  ],
+  "global_sync": {
+    "agents_instructions": "~/.codex/AGENTS.md",
+    "skill": "~/.agents/skills/usage-efficient-orchestrator",
+    "agents_dir": "~/.codex/agents",
+    "config": "~/.codex/config.toml",
+    "config_candidate": "~/.codex/usage-efficient-orchestrator.config.toml"
+  },
+  "qa_commands": [
+    "node scripts/validate-orchestrator.mjs",
+    "node scripts/evaluate-routing-policy.mjs",
+    "node scripts/security-check-orchestrator.mjs",
+    "node scripts/release-check-orchestrator.mjs"
+  ]
+}

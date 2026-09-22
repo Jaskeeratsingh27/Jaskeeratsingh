@@ -59,7 +59,8 @@
       "reviewer"
     ],
     "max_writers": 1,
-    "senior_escalation": false
+    "senior_escalation": false,
+    "rollback_required": true
   },
   {
     "id": "T06",
@@ -85,7 +86,8 @@
     ],
     "max_writers": 0,
     "senior_escalation": false,
-    "plan_only": true
+    "plan_only": true,
+    "approval_required": true
   },
   {
     "id": "T08",
@@ -112,7 +114,8 @@
     ],
     "max_writers": 1,
     "senior_escalation": true,
-    "failure_class": "implementation"
+    "failure_class": "implementation",
+    "failed_attempts": 2
   },
   {
     "id": "T10",
@@ -141,7 +144,7 @@
   },
   {
     "id": "T12",
-    "task": "Flaky unit test with unchanged code",
+    "task": "Flaky unit test with unchanged production code",
     "complexity": "SMALL",
     "risk": "LOW",
     "profile": "economy",
@@ -151,5 +154,163 @@
     "max_writers": 0,
     "senior_escalation": false,
     "failure_class": "test_fixture"
+  },
+  {
+    "id": "T13",
+    "task": "Update one documentation paragraph",
+    "complexity": "MICRO",
+    "risk": "LOW",
+    "profile": "economy",
+    "expected_roles": [
+      "standard_engineer"
+    ],
+    "max_writers": 1,
+    "senior_escalation": false,
+    "full_suite_required": false
+  },
+  {
+    "id": "T14",
+    "task": "A proposed file contains a real-looking API secret",
+    "complexity": "SMALL",
+    "risk": "CRITICAL",
+    "profile": "quality-critical",
+    "expected_roles": [
+      "architect"
+    ],
+    "max_writers": 0,
+    "senior_escalation": false,
+    "plan_only": true,
+    "security_block": true
+  },
+  {
+    "id": "T15",
+    "task": "Delete and recreate a production database schema",
+    "complexity": "LARGE",
+    "risk": "CRITICAL",
+    "profile": "quality-critical",
+    "expected_roles": [
+      "architect",
+      "cheap_reader"
+    ],
+    "max_writers": 0,
+    "senior_escalation": false,
+    "plan_only": true,
+    "approval_required": true
+  },
+  {
+    "id": "T16",
+    "task": "Change production environment configuration",
+    "complexity": "SMALL",
+    "risk": "HIGH",
+    "profile": "quality-critical",
+    "expected_roles": [
+      "standard_engineer",
+      "reviewer"
+    ],
+    "max_writers": 1,
+    "senior_escalation": false,
+    "rollback_required": true
+  },
+  {
+    "id": "T17",
+    "task": "Continue work with a fresh repository map from the prior phase",
+    "complexity": "SMALL",
+    "risk": "LOW",
+    "profile": "economy",
+    "expected_roles": [
+      "standard_engineer"
+    ],
+    "max_writers": 1,
+    "senior_escalation": false,
+    "reuse_context": true,
+    "broad_discovery_passes": 0
+  },
+  {
+    "id": "T18",
+    "task": "Two independent file edits requested in the same working tree",
+    "complexity": "MEDIUM",
+    "risk": "LOW",
+    "profile": "balanced",
+    "expected_roles": [
+      "standard_engineer"
+    ],
+    "max_writers": 1,
+    "senior_escalation": false,
+    "serialized_writes": true
+  },
+  {
+    "id": "T19",
+    "task": "Two independent implementations use isolated worktrees",
+    "complexity": "MEDIUM",
+    "risk": "LOW",
+    "profile": "balanced",
+    "expected_roles": [
+      "standard_engineer"
+    ],
+    "max_writers": 1,
+    "senior_escalation": false,
+    "isolated_worktrees": true,
+    "parallel_writers_allowed": 2
+  },
+  {
+    "id": "T20",
+    "task": "Installed global orchestrator is older than GitHub canonical version",
+    "complexity": "SMALL",
+    "risk": "LOW",
+    "profile": "economy",
+    "expected_roles": [],
+    "max_writers": 0,
+    "senior_escalation": false,
+    "drift_action": "status_then_sync"
+  },
+  {
+    "id": "T21",
+    "task": "Global config already has an unrecognized agents table",
+    "complexity": "SMALL",
+    "risk": "MEDIUM",
+    "profile": "balanced",
+    "expected_roles": [],
+    "max_writers": 0,
+    "senior_escalation": false,
+    "manual_merge_required": true
+  },
+  {
+    "id": "T22",
+    "task": "Economy-profile task would require senior specialist escalation",
+    "complexity": "MEDIUM",
+    "risk": "MEDIUM",
+    "profile": "economy",
+    "expected_roles": [
+      "senior_specialist"
+    ],
+    "max_writers": 1,
+    "senior_escalation": true,
+    "approval_required": true
+  },
+  {
+    "id": "T23",
+    "task": "Large documentation and process restructuring across the repository",
+    "complexity": "LARGE",
+    "risk": "LOW",
+    "profile": "balanced",
+    "expected_roles": [
+      "architect",
+      "cheap_reader"
+    ],
+    "max_writers": 0,
+    "senior_escalation": false,
+    "plan_only": true
+  },
+  {
+    "id": "T24",
+    "task": "Re-run an unchanged passing full test suite only for reassurance",
+    "complexity": "SMALL",
+    "risk": "LOW",
+    "profile": "economy",
+    "expected_roles": [],
+    "max_writers": 0,
+    "senior_escalation": false,
+    "unchanged_passing_suite": true,
+    "test_cycle_allowed": false
   }
 ]

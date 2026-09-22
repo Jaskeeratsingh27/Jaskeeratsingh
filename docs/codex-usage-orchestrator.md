@@ -1,60 +1,63 @@
 # Usage-Efficient Codex Orchestrator
 
-Version: 1.0.0
+Version: 1.2.0
 
-This repository contains a version-controlled Codex architecture for conserving Work/Codex allowance while still using strong models for architecture and integration.
+This repository contains the canonical, version-controlled Codex architecture for conserving Work/Codex allowance while preserving engineering quality.
 
 ## Architecture
 
 Primary supervisor (for example Astra at Light/Low)
--> Luna scouts/researchers for read-heavy work
--> Terra implementer/reviewer for routine engineering
--> Sol specialist only when justified
--> primary supervisor integrates and decides whether another phase is worth the budget
+-> cheap read-only discovery
+-> standard implementation
+-> independent review when risk requires it
+-> senior escalation only when evidence justifies it
+-> primary supervisor integrates and enforces budget/risk gates
 
-The project-level implementation is:
-- `AGENTS.md`: always-on policy for this repository.
-- `.agents/skills/usage-efficient-orchestrator/`: detailed skill and references.
-- `.codex/config.toml`: project subagent defaults and role declarations.
-- `.codex/agents/*.toml`: narrow model-specific workers.
+## Reliability model
 
-## Why the 5% limit is a stop-loss rather than an account hard cap
+GitHub is the canonical source of truth. Global Codex files are runtime mirrors.
 
-OpenAI exposes current Work/Codex allowance in Settings -> Usage and `/status` in an active Codex CLI session, but the model is not guaranteed a continuously queryable percentage meter during every turn. Therefore this system never claims it can technically prevent an exact account-side percentage crossing when no live usage reading is available.
+Before promotion:
 
-Instead it enforces:
-- <=5 percentage-point target per turn;
-- >10 percentage-point work is never intentionally planned as one turn;
-- bounded phase sizes;
-- three subagents maximum by default;
-- no duplicate scans/tests;
-- two-failure stop rule;
-- user approval before expensive escalation.
+```bash
+node scripts/orchestrator-qa.mjs
+```
 
-If a live usage reading is available, use the start percentage as a real checkpoint and stop at the configured target.
+Check installed/global drift:
 
-## Make it global across all repositories
+```bash
+node scripts/orchestrator-status.mjs
+```
 
-Codex supports user-level instructions at `~/.codex/AGENTS.md` and user-level skills at `~/.agents/skills`.
+Preview a global update:
 
-To make this policy apply everywhere:
-1. Copy this repository's `AGENTS.md` to `~/.codex/AGENTS.md` (merge it if you already have global instructions).
-2. Copy `.agents/skills/usage-efficient-orchestrator` to `~/.agents/skills/usage-efficient-orchestrator`.
-3. Copy the custom agent TOMLs to `~/.codex/agents/`.
-4. Merge the `[agents]` settings and role declarations from `.codex/config.toml` into `~/.codex/config.toml`.
-5. Restart Codex if the skill does not immediately appear.
+```bash
+node scripts/orchestrator-sync.mjs --dry-run
+```
 
-Keep this GitHub repository as the canonical source. Update here first, then sync the global copies.
+Apply a global update:
 
-## Recommended primary setting
+```bash
+node scripts/orchestrator-sync.mjs
+```
 
-For expensive architectural work, use the strong primary model at its lowest practical reasoning/intelligence level and let the skill explicitly delegate bounded work. Raise reasoning only when the escalation policy justifies it.
+The sync process backs up managed files and will not silently overwrite an unrecognized existing global `[agents]` configuration.
+
+## Usage budget model
+
+The default balanced profile targets <=5 percentage points of weekly allowance and never intentionally plans >10 percentage points in a single turn.
+
+This is an account-side target, not a guaranteed meter when live usage is unavailable. Proxy counters are the enforceable fallback.
 
 ## Version control
 
-Changes to this orchestration policy should use semantic versions:
-- patch: wording/routing refinements;
-- minor: new worker role or new budget behavior;
-- major: changed orchestration contract.
+Orchestrator versions are built on isolated version branches, validated, reviewed, and only promoted after explicit approval.
 
-Record every deployed/installed revision by Git commit so it can be rolled back.
+Release progression:
+- v1.0 foundation
+- v1.1 control plane
+- v1.2 reliability
+- v1.3 observability
+- v1.4 usage intelligence
+- v1.5 adaptive routing
+- v2.0 closed-loop orchestrator
