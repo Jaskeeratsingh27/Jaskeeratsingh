@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0.0",
+  "skill_version": "1.1.0",
+  "verified_on": "2026-09-21",
+  "hermes": {
+    "stable_release": "v0.21.3",
+    "stable_tag": "v2026.9.14",
+    "release_date": "2026-09-14",
+    "source_id": "releases",
+    "version_policy": "Pin a stable release or commit for production; do not treat current docs/main as identical to the pinned release."
+  },
+  "capabilities": [
+    {
+      "id": "profiles",
+      "status": "verified",
+      "source_ids": ["profiles"],
+      "summary": "Use Profiles for persistent specialist identity/state. Profile isolation is not an OS security sandbox."
+    },
+    {
+      "id": "bot_mode",
+      "status": "verified",
+      "source_ids": ["bot-mode", "profiles"],
+      "summary": "Use Bots as persistent named Profile-based collaborators; do not use chat messages as authoritative workflow state."
+    },
+    {
+      "id": "delegation",
+      "status": "verified",
+      "source_ids": ["delegation"],
+      "summary": "Use delegate_task for short isolated fork/join work with explicit context and bounded child execution."
+    },
+    {
+      "id": "structured_output",
+      "status": "verified",
+      "source_ids": ["delegation"],
+      "summary": "Use output_schema for machine-consumed delegated results while keeping schemas intentionally forgiving."
+    },
+    {
+      "id": "kanban",
+      "status": "verified",
+      "source_ids": ["kanban", "kanban-worker-lanes"],
+      "summary": "Use Kanban for durable cross-agent workflow, dependencies, review, blocking, restart recovery, and auditability."
+    },
+    {
+      "id": "skills_context_soul",
+      "status": "verified",
+      "source_ids": ["skills", "context-files"],
+      "summary": "Keep reusable procedures in Skills, project rules in project context files, and persistent identity in SOUL.md."
+    },
+    {
+      "id": "memory",
+      "status": "verified",
+      "source_ids": ["memory", "memory-providers"],
+      "summary": "Use memory for bounded durable facts, not as the primary large architecture knowledge base."
+    },
+    {
+      "id": "tools_mcp",
+      "status": "verified",
+      "source_ids": ["tools", "mcp"],
+      "summary": "Enforce least privilege through toolsets/MCP filtering rather than relying only on prose restrictions."
+    },
+    {
+      "id": "execute_code",
+      "status": "verified",
+      "source_ids": ["code-execution"],
+      "summary": "Use execute_code for deterministic multi-tool processing/branching where intermediate results need not enter model context."
+    },
+    {
+      "id": "model_routing",
+      "status": "verified",
+      "source_ids": ["models", "fallback-providers", "provider-routing"],
+      "summary": "Select models per role and configure explicit provider/fallback behavior; revalidate routing details on upgrades."
+    },
+    {
+      "id": "cron",
+      "status": "verified",
+      "source_ids": ["cron"],
+      "summary": "Use Cron for durable scheduled triggers/execution, not as the authoritative cross-agent workflow state store."
+    },
+    {
+      "id": "security",
+      "status": "verified",
+      "source_ids": ["security"],
+      "summary": "Use sandbox/container execution and capability restriction for production isolation; Profiles alone are insufficient."
+    },
+    {
+      "id": "observability",
+      "status": "verified",
+      "source_ids": ["observer-hooks", "plugins"],
+      "summary": "Correlate workflow, session, turn, API, tool, and child-agent identifiers for end-to-end traces."
+    }
+  ],
+  "needs_revalidation": [],
+  "refresh_policy": {
+    "revalidate_on_stable_release_change": true,
+    "revalidate_on_material_doc_change": true,
+    "material_changes_require_review": true,
+    "ambiguous_changes_must_not_auto_promote": true
+  }
+}
