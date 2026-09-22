@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "job_id": "job-example-001",
+  "created_at": "2026-09-21T23:30:00-05:00",
+  "submitted_by": "chatgpt",
+  "input": "Inspect the target project and return a concise implementation report.",
+  "instructions": "Use Hermes tools and subagents when useful. Report changed files, validation, and risks.",
+  "session_id": "hcp-example-001",
+  "model": null,
+  "provider": null,
+  "model_options": {},
+  "timeout_seconds": 1800,
+  "poll_seconds": 5,
+  "metadata": {
+    "project": "example"
+  }
+}
