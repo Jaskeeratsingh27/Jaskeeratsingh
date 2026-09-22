@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Usage Intelligence Aggregate Export",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generated_at",
+    "window_days",
+    "measurement",
+    "backtest",
+    "by_complexity",
+    "by_profile",
+    "by_route_signature"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "window_days": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3650
+    },
+    "measurement": {
+      "type": "object",
+      "required": [
+        "eligible_measured_tasks",
+        "excluded_unmeasured_or_invalid"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "eligible_measured_tasks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "excluded_unmeasured_or_invalid": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "backtest": {
+      "type": "object",
+      "required": [
+        "status",
+        "predictions"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "status": {
+          "enum": [
+            "insufficient",
+            "acceptable",
+            "weak"
+          ]
+        },
+        "predictions": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "by_complexity": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object"
+      }
+    },
+    "by_profile": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object"
+      }
+    },
+    "by_route_signature": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object"
+      }
+    }
+  }
+}
