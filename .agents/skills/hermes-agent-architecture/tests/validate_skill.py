@@ -53,6 +53,9 @@ def main() -> None:
             ROOT / "tests" / "architecture-cases.json",
             ROOT / "tests" / "release-impact-cases.json",
             ROOT / "tests" / "health-drift-cases.json",
+            ROOT / "maintenance" / "consumer-registry.schema.json",
+            ROOT / "consumers" / "registry.json",
+            ROOT / "tests" / "consumer-impact-cases.json",
             ROOT / "research" / "audits" / "index.json",
             ROOT / "research" / "health" / "index.json",
         ]
@@ -170,6 +173,26 @@ def main() -> None:
     if not health_cases:
         fail("health/drift regression fixtures are missing")
 
+    consumer_registry = parsed[ROOT / "consumers" / "registry.json"]
+    consumers = consumer_registry.get("consumers", [])
+    consumer_ids = [item.get("id") for item in consumers]
+    if len(consumer_ids) != len(set(consumer_ids)):
+        fail("consumer registry contains duplicate consumer IDs")
+    ignored_prefixes = tuple(consumer_registry.get("ignored_path_prefixes", []))
+    for consumer in consumers:
+        unknown_capabilities = set(consumer.get("capability_ids", [])) - capability_ids
+        if unknown_capabilities:
+            fail(f"consumer {consumer.get('id')} uses unknown capability IDs: {sorted(unknown_capabilities)}")
+        for rel in consumer.get("paths", []):
+            if ignored_prefixes and rel.startswith(ignored_prefixes):
+                fail(f"active consumer {consumer.get('id')} uses ignored/archive path: {rel}")
+            if not (ROOT.parents[2] / rel).exists():
+                fail(f"consumer {consumer.get('id')} points to missing canonical path: {rel}")
+
+    consumer_cases = parsed[ROOT / "tests" / "consumer-impact-cases.json"].get("cases", [])
+    if not consumer_cases:
+        fail("consumer-impact regression fixtures are missing")
+
     audit_index = parsed[ROOT / "research" / "audits" / "index.json"]
     parse_date(audit_index.get("latest_audit_date", ""), "audit_index.latest_audit_date")
     latest_snapshot_rel = audit_index.get("latest_snapshot")
@@ -244,6 +267,12 @@ def main() -> None:
         "tests/test_release_impact.py",
         "tests/health-drift-cases.json",
         "tests/test_health_drift.py",
+        "consumers/registry.json",
+        "maintenance/consumer-registry.schema.json",
+        "maintenance/consumer_impact.py",
+        "references/16-consumer-impact.md",
+        "tests/consumer-impact-cases.json",
+        "tests/test_consumer_impact.py",
     ]
     for rel in required:
         if not (ROOT / rel).exists():
@@ -255,7 +284,8 @@ def main() -> None:
     print(f"PASS: {len(capability_ids)} compatibility/impact/freshness capabilities cross-checked")
     print(f"PASS: {len(audit_paths)} historical audit snapshot(s)")
     print(f"PASS: {len(health_paths)} historical health report(s)")
-    print(f"PASS: {len(release_cases)} release-impact and {len(health_cases)} health/drift fixtures structurally valid")
+    print(f"PASS: {len(release_cases)} release-impact, {len(health_cases)} health/drift, and {len(consumer_cases)} consumer-impact fixtures structurally valid")
+    print(f"PASS: {len(consumers)} active Hermes consumer(s) structurally valid")
 
 
 if __name__ == "__main__":

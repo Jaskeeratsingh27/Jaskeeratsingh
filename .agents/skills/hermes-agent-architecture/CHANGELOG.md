@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.0 — 2026-09-21
+
+- Added an explicit registry of active canonical repository consumers that depend on Hermes capabilities.
+- Seeded evidence-backed consumer mappings for `hermes-agent-creator` and the Hermes adaptation of `kaizen-orchestrator`.
+- Added deterministic consumer-impact analysis that maps affected Hermes capabilities to real downstream skills/projects and their canonical paths.
+- Added review actions: advisory, targeted review, compatibility review, and migration review.
+- Added blocking consumer-compatibility clearance for major/critical impacts affecting high/critical consumers.
+- Added consumer-registry schema and structural validation that rejects missing paths, unknown capability IDs, duplicate consumers, and archived/mirror paths as active canonical dependencies.
+- Added consumer-impact regression fixtures covering delegation, Kanban, Cron, security, and unknown-subsystem coverage gaps.
+- Added a fifth GitHub CI gate for consumer-impact regressions.
+- Updated weekly maintenance to run consumer-impact analysis after Hermes release-impact classification and report downstream migration/review work without silently editing unrelated consumers.
+
 ## 1.3.0 — 2026-09-21
 
 - Added per-capability verification dates and source-priority freshness thresholds.
@@ -15,26 +27,12 @@
 
 ## 1.2.0 — 2026-09-21
 
-- Added a deterministic release-impact engine that classifies Hermes changes by severity and computes their blast radius.
-- Added capability-to-source, knowledge-file, primitive-routing, and regression-case impact mapping.
-- Added a machine-readable upgrade matrix for the pinned Hermes baseline and future release transitions.
-- Added a strict change-event JSON Schema for scheduled audit findings.
-- Added targeted regression selection so affected capabilities identify the architecture cases that matter most.
-- Added release-impact regression fixtures covering documentation changes, stable behavior changes, breaking Kanban changes, security changes, ambiguous evidence, and unknown future subsystems.
-- Expanded structural validation to cross-check compatibility, impact mapping, source IDs, routing IDs, knowledge files, upgrade baseline, and impact fixtures.
-- Extended GitHub CI with release-impact regression tests.
-- Updated the weekly maintenance contract to classify change events before patching the knowledge base.
+- Added deterministic release-impact classification, capability blast-radius mapping, stable-release upgrade tracking, structured change events, targeted regression selection, and release-impact CI.
 
 ## 1.1.0 — 2026-09-21
 
-- Added machine-readable Hermes compatibility manifest tied to the skill version and official source IDs.
-- Added machine-readable primitive-routing decision table for core Hermes architecture choices.
-- Added deterministic architecture regression fixtures and runner.
-- Extended structural validation and GitHub Actions CI.
-- Updated the weekly refresh contract to refresh compatibility state and run deterministic validation before promotion.
+- Added machine-readable compatibility state, primitive-routing decisions, architecture regressions, and dedicated GitHub CI.
 
 ## 1.0.0 — 2026-09-21
 
-- Initial Hermes Agent architecture knowledge-base skill.
-- Verified stable release baseline v0.21.3 / v2026.9.14.
-- Added references, task/result contracts, maintenance source manifest, weekly refresh prompt, and deterministic structural validation.
+- Initial Hermes Agent architecture knowledge-base skill with primary-source research, templates, maintenance contract, and deterministic structural validation.

@@ -1,7 +1,7 @@
 ---
 name: hermes-agent-architecture
 description: Design production Hermes agents and multi-agent systems
-version: 1.3.0
+version: 1.4.0
 metadata:
   hermes:
     tags: [hermes, agents, multi-agent, architecture, orchestration]
@@ -12,7 +12,7 @@ metadata:
 
 ## When to Use
 
-Load this skill whenever the task involves Hermes Agent architecture, profile/Bot design, subagents, Kanban orchestration, SOUL.md, AGENTS.md, skills, model/tool routing, MCP, memory, cron, agent-to-agent contracts, production hardening, observability, release compatibility, knowledge freshness, or creating instructions/files for Hermes agents.
+Load this skill whenever the task involves Hermes Agent architecture, profile/Bot design, subagents, Kanban orchestration, SOUL.md, AGENTS.md, skills, model/tool routing, MCP, memory, cron, agent-to-agent contracts, production hardening, observability, release compatibility, knowledge freshness, downstream consumer impact, or creating instructions/files for Hermes agents.
 
 ## Knowledge Baseline
 
@@ -62,6 +62,8 @@ Load this skill whenever the task involves Hermes Agent architecture, profile/Bo
 - `maintenance/health_engine.py` computes per-capability freshness, audit freshness, health score, and drift signals.
 - `research/audits/index.json` is the append-only audit-history index.
 - `research/health/index.json` is the knowledge-health history index.
+- `consumers/registry.json` declares active canonical agents/skills/projects that depend on Hermes capabilities.
+- `maintenance/consumer_impact.py` maps release-impact results to affected real consumers, review actions, and compatibility blockers.
 - Routine weekly audit/health records do not require a semantic skill-version bump by themselves.
 
 ## Quality Gates
@@ -72,6 +74,7 @@ Before promoting a canonical knowledge/control change, run:
 - `python tests/test_architecture_regressions.py`
 - `python tests/test_release_impact.py`
 - `python tests/test_health_drift.py`
+- `python tests/test_consumer_impact.py`
 
 Do not clear `needs_revalidation` or refresh a capability's `last_verified_on` unless its required primary sources were actually checked sufficiently to reverify the claim.
 
@@ -123,6 +126,7 @@ When producing Hermes agent architecture or instruction files, include when rele
 - `references/13-source-index.md` — primary-source links
 - `references/14-release-impact-engine.md` — release/change classification and blast-radius workflow
 - `references/15-knowledge-health-drift.md` — freshness, audit history, scoring, and drift
+- `references/16-consumer-impact.md` — active consumer dependency mapping and downstream review/migration policy
 
 ## Templates
 
@@ -150,9 +154,11 @@ Use the templates under `templates/` rather than inventing incompatible handoff 
 - Do not auto-promote an unknown source, ambiguous change, security change, breaking change, or stable-version transition.
 - Do not refresh verification dates just because an audit ran; refresh them only for capabilities actually reverified.
 - Do not interpret the health score as a probability that claims are correct.
+- Do not infer active dependencies from keyword matches in archived migrations or mirrors; use the explicit consumer registry.
+- Do not silently rewrite downstream consumers during a Hermes knowledge refresh. Report and review consumer migration work separately.
 
 ## Verification
 
 A Hermes architecture is ready to implement only when every agent has a persistent/ephemeral classification, every handoff has a contract, workflow state has an authoritative owner, permissions are explicit, failure paths terminate safely, artifacts are durable, version-sensitive guidance is fresh enough for its source priority, and the design names the pinned Hermes version it targets.
 
-For skill maintenance, promotion is allowed only when structural validation, architecture regression validation, release-impact regression validation, and health/drift regression validation all pass.
+For skill maintenance, promotion is allowed only when structural validation, architecture regression validation, release-impact regression validation, health/drift regression validation, and consumer-impact regression validation all pass. When a change affects registered consumers, the maintenance report must identify them before declaring the ecosystem compatibility-cleared.
