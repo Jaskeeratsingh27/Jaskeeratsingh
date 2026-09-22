@@ -100,10 +100,11 @@ function renderFinops(){
   renderCostTable("apiKeyCostTable",d.distribution?.api_keys||[],true);
 }
 function renderCostTable(id,rows,isKey){
+  const keyCostSupported=Boolean(state.data.coverage?.api_key_cost_attribution);
   $(id).innerHTML=rows.length?rows.map(r=>{
     const cache=r.input_tokens?r.cached_input_tokens/r.input_tokens:0;
     return isKey
-      ?'<tr><td title="'+esc(r.name)+'">'+esc(shortId(r.name))+'</td><td>'+fmt(r.total_tokens)+'</td><td>'+count(r.requests)+'</td><td>'+money(r.cost)+'</td><td>'+percent(r.token_share)+'</td><td>'+percent(cache)+'</td></tr>'
+      ?'<tr><td title="'+esc(r.name)+'">'+esc(shortId(r.name))+'</td><td>'+fmt(r.total_tokens)+'</td><td>'+count(r.requests)+'</td><td>'+(keyCostSupported?money(r.cost):'Unavailable')+'</td><td>'+percent(r.token_share)+'</td><td>'+percent(cache)+'</td></tr>'
       :'<tr><td title="'+esc(r.name)+'">'+esc(shortId(r.name))+'</td><td>'+fmt(r.total_tokens)+'</td><td>'+count(r.requests)+'</td><td>'+money(r.cost)+'</td><td>'+money(r.requests?r.cost/r.requests:0)+'</td><td>'+percent(cache)+'</td></tr>'
   }).join(""):'<tr><td colspan="6">No attributed usage.</td></tr>';
 }
@@ -113,7 +114,8 @@ function renderAttribution(){
   const rows=state.data.distribution?.[state.attr]||[];$("attrTitle").textContent=attrLabels[state.attr]||state.attr;
   $("attrTable").innerHTML=rows.length?rows.map(r=>{
     const cache=r.input_tokens?r.cached_input_tokens/r.input_tokens:0;
-    return'<tr><td title="'+esc(r.name)+'">'+esc(shortId(r.name))+'</td><td>'+fmt(r.total_tokens)+'</td><td>'+percent(r.token_share)+'</td><td>'+fmt(r.input_tokens)+'</td><td>'+fmt(r.output_tokens)+'</td><td>'+fmt(r.cached_input_tokens)+'</td><td>'+percent(cache)+'</td><td>'+count(r.requests)+'</td><td>'+fmt(r.avg_tokens_per_request)+'</td><td>'+((state.attr==="projects"||state.attr==="api_keys")?money(r.cost):"—")+'</td></tr>'
+    const costCell=state.attr==="projects"?money(r.cost):state.attr==="api_keys"?(state.data.coverage?.api_key_cost_attribution?money(r.cost):"Unavailable"):"—";
+    return'<tr><td title="'+esc(r.name)+'">'+esc(shortId(r.name))+'</td><td>'+fmt(r.total_tokens)+'</td><td>'+percent(r.token_share)+'</td><td>'+fmt(r.input_tokens)+'</td><td>'+fmt(r.output_tokens)+'</td><td>'+fmt(r.cached_input_tokens)+'</td><td>'+percent(cache)+'</td><td>'+count(r.requests)+'</td><td>'+fmt(r.avg_tokens_per_request)+'</td><td>'+costCell+'</td></tr>'
   }).join(""):'<tr><td colspan="10">No data.</td></tr>';
 }
 
@@ -159,7 +161,7 @@ function renderDiagnostics(){
   const d=state.data,h=state.health||{},items=[
     ["Service",h.ok?"Healthy":"Unknown"],["Version",h.version||d.version||"—"],["API key",h.key_configured?"Configured":"Missing"],["Uptime",formatDuration(h.uptime_seconds)],
     ["Data state",d.stale?"Stale fallback":"Live"],["Cache",d.cache_status||"—"],["Warnings",count((d.warnings||[]).length)],["Tool sources",count((d.resources||[]).length)],
-    ["Models",count((d.distribution?.models||[]).length)],["Projects",count((d.distribution?.projects||[]).length)],["API keys",count((d.distribution?.api_keys||[]).length)],["Password",h.password_protected?"Enabled":"Off"]
+    ["Models",count((d.distribution?.models||[]).length)],["Projects",count((d.distribution?.projects||[]).length)],["API keys",count((d.distribution?.api_keys||[]).length)],["Key-level cost",d.coverage?.api_key_cost_attribution?"Available":"Unavailable"],["Spend limit",d.coverage?.spend_limit||"unknown"],["Spend alerts",d.coverage?.spend_alerts||"unknown"],["Password",h.password_protected?"Enabled":"Off"]
   ];
   $("diagnostics").innerHTML=items.map(([a,b])=>'<div class="diag"><span>'+esc(a)+'</span><strong>'+esc(b)+'</strong></div>').join("");
 }
