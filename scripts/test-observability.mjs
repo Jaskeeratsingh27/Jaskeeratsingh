@@ -63,7 +63,7 @@ check("aggregate export schema",exported.schema_version==="1.0" && exported.summ
 const ledger=path.join(env.ORCHESTRATOR_DATA_DIR,"events.jsonl");
 const lines=fs.readFileSync(ledger,"utf8").trim().split("\n").map(JSON.parse);
 check("project id hashed",lines.every(e=>/^[a-f0-9]{20}$/.test(e.project_id)));
-check("orchestrator version stamped",lines.every(e=>e.orchestrator_version==="1.9.0"));
+check("orchestrator version stamped",lines.every(e=>e.orchestrator_version==="2.0.0"));
 check("task kind captured",lines.some(e=>e.event_type==="task_started" && e.task_id===taskId && e.task_kind==="implementation"));
 check("adaptive recommendation captured",lines.some(e=>e.event_type==="routing_recommendation" && e.task_id===taskId && e.baseline_route==="standard_review" && e.candidate_route==="scout_standard_review" && e.route_decision==="candidate_lower_burn"));
 check("ledger contains no cwd",!fs.readFileSync(ledger,"utf8").includes(ROOT));
