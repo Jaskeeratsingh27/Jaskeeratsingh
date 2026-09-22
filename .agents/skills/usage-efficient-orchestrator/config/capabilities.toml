@@ -1,0 +1,29 @@
+[roles.cheap_reader]
+model = "gpt-5.6-luna"
+reasoning = "low"
+write_allowed = false
+purpose = "Targeted discovery, extraction, logs, docs, repetitive read-heavy work."
+
+[roles.standard_engineer]
+model = "gpt-5.6-terra"
+reasoning = "medium"
+write_allowed = true
+purpose = "Routine implementation, targeted fixes, bounded refactors, focused tests."
+
+[roles.reviewer]
+model = "gpt-5.6-terra"
+reasoning = "medium"
+write_allowed = false
+purpose = "Independent correctness, security, regression, and test review."
+
+[roles.senior_specialist]
+model = "gpt-5.6-sol"
+reasoning = "medium"
+write_allowed = true
+purpose = "Escalation-only difficult implementation and integration."
+
+[roles.architect]
+model = "primary"
+reasoning = "low"
+write_allowed = false
+purpose = "Architecture, decomposition, routing, integration decisions, and budget supervision."

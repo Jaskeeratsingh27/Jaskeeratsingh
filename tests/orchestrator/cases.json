@@ -1,0 +1,155 @@
+[
+  {
+    "id": "T01",
+    "task": "Change one button label",
+    "complexity": "MICRO",
+    "risk": "LOW",
+    "profile": "economy",
+    "expected_roles": [
+      "standard_engineer"
+    ],
+    "max_writers": 1,
+    "senior_escalation": false
+  },
+  {
+    "id": "T02",
+    "task": "Find where API usage is fetched",
+    "complexity": "SMALL",
+    "risk": "LOW",
+    "profile": "economy",
+    "expected_roles": [
+      "cheap_reader"
+    ],
+    "max_writers": 0,
+    "senior_escalation": false
+  },
+  {
+    "id": "T03",
+    "task": "Add bounded CSS layout change",
+    "complexity": "SMALL",
+    "risk": "LOW",
+    "profile": "economy",
+    "expected_roles": [
+      "standard_engineer"
+    ],
+    "max_writers": 1,
+    "senior_escalation": false
+  },
+  {
+    "id": "T04",
+    "task": "Fix routine backend validation bug",
+    "complexity": "SMALL",
+    "risk": "MEDIUM",
+    "profile": "balanced",
+    "expected_roles": [
+      "standard_engineer",
+      "reviewer"
+    ],
+    "max_writers": 1,
+    "senior_escalation": false
+  },
+  {
+    "id": "T05",
+    "task": "Change authentication authorization condition",
+    "complexity": "SMALL",
+    "risk": "HIGH",
+    "profile": "quality-critical",
+    "expected_roles": [
+      "standard_engineer",
+      "reviewer"
+    ],
+    "max_writers": 1,
+    "senior_escalation": false
+  },
+  {
+    "id": "T06",
+    "task": "Inspect failing CI caused by missing package",
+    "complexity": "SMALL",
+    "risk": "LOW",
+    "profile": "balanced",
+    "expected_roles": [
+      "cheap_reader"
+    ],
+    "max_writers": 0,
+    "senior_escalation": false,
+    "failure_class": "tooling_environment"
+  },
+  {
+    "id": "T07",
+    "task": "Rotate production credential",
+    "complexity": "SMALL",
+    "risk": "CRITICAL",
+    "profile": "quality-critical",
+    "expected_roles": [
+      "architect"
+    ],
+    "max_writers": 0,
+    "senior_escalation": false,
+    "plan_only": true
+  },
+  {
+    "id": "T08",
+    "task": "Implement multi-file feature with known architecture",
+    "complexity": "MEDIUM",
+    "risk": "MEDIUM",
+    "profile": "balanced",
+    "expected_roles": [
+      "cheap_reader",
+      "standard_engineer",
+      "reviewer"
+    ],
+    "max_writers": 1,
+    "senior_escalation": false
+  },
+  {
+    "id": "T09",
+    "task": "Standard implementation fails twice on integration boundary",
+    "complexity": "MEDIUM",
+    "risk": "MEDIUM",
+    "profile": "balanced",
+    "expected_roles": [
+      "senior_specialist"
+    ],
+    "max_writers": 1,
+    "senior_escalation": true,
+    "failure_class": "implementation"
+  },
+  {
+    "id": "T10",
+    "task": "Repository-wide migration with uncertain rollback",
+    "complexity": "LARGE",
+    "risk": "HIGH",
+    "profile": "quality-critical",
+    "expected_roles": [
+      "architect",
+      "cheap_reader"
+    ],
+    "max_writers": 0,
+    "senior_escalation": false,
+    "plan_only": true
+  },
+  {
+    "id": "T11",
+    "task": "Permission denied while deploying",
+    "complexity": "SMALL",
+    "risk": "HIGH",
+    "profile": "balanced",
+    "expected_roles": [],
+    "max_writers": 0,
+    "senior_escalation": false,
+    "failure_class": "permission_security"
+  },
+  {
+    "id": "T12",
+    "task": "Flaky unit test with unchanged code",
+    "complexity": "SMALL",
+    "risk": "LOW",
+    "profile": "economy",
+    "expected_roles": [
+      "cheap_reader"
+    ],
+    "max_writers": 0,
+    "senior_escalation": false,
+    "failure_class": "test_fixture"
+  }
+]

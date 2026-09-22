@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.1.0 - 2026-09-21
+
+Control-plane hardening release candidate.
+
+- Added mandatory structured Task Envelope.
+- Added budget profiles: economy, balanced, quality-critical.
+- Added enforceable proxy counters for sessions without live usage data.
+- Added risk classification independent of task complexity.
+- Added single-writer rule for shared working trees.
+- Added capability-role registry so policy is separated from model names.
+- Added failure taxonomy to prevent unnecessary model escalation.
+- Added structured worker handoff contract.
+- Added deterministic validation suite and routing scenarios.
+- Added approval-first branch workflow for medium/large orchestrator changes.
+
 ## 1.0.0 - 2026-09-21
 
 Initial version-controlled release of the usage-efficient Codex orchestration policy.

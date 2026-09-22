@@ -1,28 +1,33 @@
 # Usage-Efficient Codex Policy
 
+Version: 1.1.0
+
 For every nontrivial engineering, agent-building, process-building, repository, or file-generation task in this repository, apply the `usage-efficient-orchestrator` skill before substantial work.
 
-## Always-on rules
+## Always-on control-plane rules
 
 1. Optimize for the user's included Work/Codex allowance, not maximum autonomous activity.
-2. Treat the primary model as supervisor/architect first. Delegate bounded work to the cheapest capable subagent.
-3. Default task budget target: **<= 5 percentage points of weekly allowance per user turn**.
-4. Absolute policy ceiling: **never intentionally plan a single turn expected to consume > 10 percentage points**.
-5. Codex does not expose a reliable live percent-consumed meter to the model during every turn. Therefore the 5% rule is a conservative stop-loss policy, not a guaranteed billing meter. If live usage is unavailable, stop before expensive escalation or scope expansion rather than guessing.
-6. If a task is plausibly >5%, split it into phases and ask the user before the next expensive phase.
-7. Default delegation:
-   - Luna/low: repository mapping, search, extraction, repetitive/read-heavy work.
-   - Terra/low-medium: routine implementation, targeted fixes, focused tests.
-   - Terra/medium-high: review, security/correctness checks.
-   - Sol/medium: difficult implementation/integration after lower-cost workers are insufficient.
-   - Primary Astra/Sol: architecture, decomposition, integration decisions, escalation only.
-8. Never delegate for its own sake. If delegation overhead exceeds the work, do it directly with the cheapest capable model.
-9. Avoid duplicate discovery, full-repository rescans, repeated passing tests, broad refactors, and multiple agents doing the same job unless independent verification is necessary.
-10. Maximum 3 concurrent subagents by default.
-11. Stop after two failed implementation attempts or when the architecture materially changes; summarize and ask before continuing.
-12. Keep Git as the source of truth. Before edits, inspect status/history. Keep changes scoped and reviewable. Do not overwrite unrelated user changes.
-13. For meaningful work, use focused commits. Preserve rollback points. Releases require a version/changelog/QA step when the project uses versioning.
-14. Return concise progress summaries so the primary agent does not re-read large worker contexts.
+2. Treat the primary model as supervisor/architect first. Delegate bounded work to the cheapest capable role.
+3. Default budget profile is **balanced**: target <=5 percentage points of weekly allowance per user turn; never intentionally plan >10 percentage points in one turn.
+4. If the user requests `economy`, use a <=3-point target and <=5-point ceiling.
+5. Exact account-side percentage enforcement is unavailable when the model cannot read a live usage meter. In that case enforce the proxy counters and stop-loss gates in the skill.
+6. Every nontrivial task must create a compact internal **Task Envelope** before substantial execution: goal, scope, risk, budget, work units, routing, limits, definition of done, and stop condition.
+7. Assess **risk separately from complexity**. Security/auth, secrets, billing, destructive operations, production infrastructure, migrations, and irreversible changes require stronger review even if the edit is small.
+8. **Single-writer rule:** at most one write-capable worker may modify the same working tree at a time. Parallel workers are read-only unless isolated worktrees/branches are explicitly created.
+9. Default delegation roles:
+   - cheap_reader: repository mapping, search, extraction, repetitive/read-heavy work.
+   - standard_engineer: routine implementation, targeted fixes, focused tests.
+   - reviewer: correctness/security/regression review.
+   - senior_specialist: difficult implementation/integration after lower-cost workers are insufficient.
+   - architect: architecture, decomposition, integration decisions, escalation only.
+10. Never delegate for its own sake. If delegation overhead exceeds the work, perform it directly with the cheapest capable role.
+11. Avoid duplicate discovery, full-repository rescans, repeated passing tests, broad refactors, and multiple agents solving the same problem unless independent verification materially reduces risk.
+12. Maximum 3 concurrent subagents by default. Only one may be a writer in a shared working tree.
+13. Classify failures before escalation: information, tooling/environment, test/fixture, implementation, architecture, or permission/security. Escalate only when stronger reasoning can plausibly solve the classified failure.
+14. Stop after the configured retry limit, when architecture materially changes, when scope expands, or before a likely budget overrun. Report and ask the user before continuing.
+15. Keep Git as the source of truth. Preserve unrelated user changes, keep phases reversible, use focused commits, and make deployments traceable to commits.
+16. Worker handoffs must use the structured handoff schema and remain concise so the primary model does not reread large contexts.
+17. Before release or promotion, run the orchestrator validation suite and include a TL;DR validation report.
 
-The detailed routing, budget, escalation, and stop-loss rules are in:
+Detailed control-plane rules live in:
 `.agents/skills/usage-efficient-orchestrator/SKILL.md`.
