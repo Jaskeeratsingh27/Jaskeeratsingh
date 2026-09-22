@@ -237,16 +237,32 @@ function normalizeUsage(source, buckets) {
 }
 
 async function fetchCosts(start, end) {
-  const params = [
-    ["start_time", String(start)],
-    ["end_time", String(end)],
-    ["bucket_width", "1d"],
-    ["limit", "180"],
-    ["group_by", "project_id"],
-    ["group_by", "api_key_id"],
-    ["group_by", "line_item"]
-  ];
-  const buckets = await fetchPaged("https://api.openai.com/v1/organization/costs", params);
+  const makeParams = includeApiKey => {
+    const params = [
+      ["start_time", String(start)],
+      ["end_time", String(end)],
+      ["bucket_width", "1d"],
+      ["limit", "180"],
+      ["group_by", "project_id"],
+      ["group_by", "line_item"]
+    ];
+    if (includeApiKey) params.push(["group_by", "api_key_id"]);
+    return params;
+  };
+
+  let buckets;
+  let apiKeyAttributionSupported = true;
+  try {
+    buckets = await fetchPaged("https://api.openai.com/v1/organization/costs", makeParams(true));
+  } catch (error) {
+    if (/api_key_id.*unavailable|group_by=api_key_id.*unavailable/i.test(error?.message || "")) {
+      apiKeyAttributionSupported = false;
+      buckets = await fetchPaged("https://api.openai.com/v1/organization/costs", makeParams(false));
+    } else {
+      throw error;
+    }
+  }
+
   const rows = [];
   for (const bucket of buckets) {
     for (const result of bucket.results || []) {
@@ -255,14 +271,14 @@ async function fetchCosts(start, end) {
         start_time: num(bucket.start_time),
         end_time: num(bucket.end_time),
         project_id: result.project_id || "unassigned",
-        api_key_id: result.api_key_id || "unassigned",
+        api_key_id: apiKeyAttributionSupported ? (result.api_key_id || "unassigned") : null,
         line_item: result.line_item || "Uncategorized",
         amount: num(result.amount?.value),
         currency: result.amount?.currency || "usd"
       });
     }
   }
-  return rows;
+  return { rows, apiKeyAttributionSupported };
 }
 
 function summarizeUsage(rows, costs) {
@@ -525,6 +541,12 @@ async function fetchGovernance() {
       .then(data => ({ ok: true, data }))
       .catch(error => ({ ok: false, error }))
   ]);
+
+  const limitMessage = limitResult.ok ? "" : (limitResult.error?.message || "");
+  const alertsMessage = alertsResult.ok ? "" : (alertsResult.error?.message || "");
+  const limitBenign = /no organization spend limit is configured/i.test(limitMessage);
+  const alertsBenign = /paid plan.*budget alerts|paid plan.*spend alerts/i.test(alertsMessage);
+
   return {
     spend_limit: limitResult.ok ? {
       threshold_usd: num(limitResult.data.threshold_amount) / 100,
@@ -540,9 +562,13 @@ async function fetchGovernance() {
       channel: a.notification_channel?.type || "unknown",
       recipient_count: (a.notification_channel?.recipients || []).length
     })) : [],
+    availability: {
+      spend_limit: limitResult.ok ? "available" : limitBenign ? "not_configured" : "unavailable",
+      spend_alerts: alertsResult.ok ? "available" : alertsBenign ? "plan_unavailable" : "unavailable"
+    },
     warnings: [
-      ...(limitResult.ok ? [] : ["spend_limit: " + limitResult.error.message]),
-      ...(alertsResult.ok ? [] : ["spend_alerts: " + alertsResult.error.message])
+      ...(!limitResult.ok && !limitBenign ? ["spend_limit: " + limitMessage] : []),
+      ...(!alertsResult.ok && !alertsBenign ? ["spend_alerts: " + alertsMessage] : [])
     ]
   };
 }
@@ -558,7 +584,7 @@ function buildMovers(currentRows, previousRows, keyName) {
   }).sort((a,b) => Math.abs(b.delta_tokens) - Math.abs(a.delta_tokens)).slice(0,12);
 }
 
-function buildAnalytics(days, start, previousStart, end, tokenRows, resourceRows, costRows, warnings, governance) {
+function buildAnalytics(days, start, previousStart, end, tokenRows, resourceRows, costRows, warnings, governance, coverage) {
   const currentRows = tokenRows.filter(r => r.start_time >= start && r.start_time < end);
   const previousRows = tokenRows.filter(r => r.start_time >= previousStart && r.start_time < start);
   const currentCosts = costRows.filter(r => r.start_time >= start && r.start_time < end);
@@ -569,7 +595,7 @@ function buildAnalytics(days, start, previousStart, end, tokenRows, resourceRows
   const models = buildBreakdown(currentRows, [], "model");
   const projects = buildBreakdown(currentRows, currentCosts, "project_id");
   const sources = buildBreakdown(currentRows, [], "source");
-  const apiKeys = buildBreakdown(currentRows, currentCosts, "api_key_id");
+  const apiKeys = buildBreakdown(currentRows, coverage.api_key_cost_attribution ? currentCosts : [], "api_key_id");
   const users = buildBreakdown(currentRows, [], "user_id");
   const serviceTiers = buildBreakdown(currentRows, [], "service_tier");
   const batchModes = buildBreakdown(currentRows, [], "batch");
@@ -637,6 +663,7 @@ function buildAnalytics(days, start, previousStart, end, tokenRows, resourceRows
     insights,
     movers: { models: modelMovers, projects: projectMovers },
     governance,
+    coverage,
     resources: resourceSummary(resourceRows),
     raw: {
       usage: currentRows,
@@ -669,7 +696,7 @@ async function computeAnalytics(days) {
       .catch(error => ({ ok: false, key: def.key, error }))
   );
   const costPromise = fetchCosts(previousStart, end)
-    .then(rows => ({ ok: true, rows }))
+    .then(result => ({ ok: true, ...result }))
     .catch(error => ({ ok: false, error }));
   const governancePromise = fetchGovernance();
 
@@ -697,7 +724,13 @@ async function computeAnalytics(days) {
   if (!costResult.ok) warnings.push("costs: " + costResult.error.message);
   warnings.push(...(governance.warnings || []));
 
-  return buildAnalytics(days, start, previousStart, end, tokenRows, resourceRows, costRows, warnings, governance);
+  const coverage = {
+    api_key_cost_attribution: Boolean(costResult.ok && costResult.apiKeyAttributionSupported),
+    spend_limit: governance.availability?.spend_limit || "unknown",
+    spend_alerts: governance.availability?.spend_alerts || "unknown"
+  };
+
+  return buildAnalytics(days, start, previousStart, end, tokenRows, resourceRows, costRows, warnings, governance, coverage);
 }
 
 async function loadAnalytics(days) {
