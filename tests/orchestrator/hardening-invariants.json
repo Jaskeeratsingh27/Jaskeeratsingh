@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "dimensions": {
+    "task_kind": [
+      "discovery",
+      "implementation",
+      "review",
+      "architecture",
+      "mixed",
+      "unknown"
+    ],
+    "complexity": [
+      "MICRO",
+      "SMALL",
+      "MEDIUM",
+      "LARGE"
+    ],
+    "risk": [
+      "LOW",
+      "MEDIUM",
+      "HIGH",
+      "CRITICAL"
+    ],
+    "profile": [
+      "economy",
+      "balanced",
+      "quality-critical"
+    ]
+  },
+  "expected_combinations": 288,
+  "invariants": [
+    "baseline route always resolves",
+    "CRITICAL is plan-only",
+    "LARGE is plan-only",
+    "HIGH retains reviewer coverage",
+    "senior_specialist is never an initial baseline route",
+    "adaptive mode remains shadow",
+    "canary remains disabled and bounded"
+  ]
+}
