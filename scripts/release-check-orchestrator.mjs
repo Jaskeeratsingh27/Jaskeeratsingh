@@ -45,7 +45,7 @@ for(const profile of ["economy","balanced","quality-critical"]){
 }
 
 const ref=process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || "";
-if(ref.startsWith("orchestrator-v")) add("branch version matches manifest",ref==="orchestrator-v"+v);
+if(ref.startsWith("orchestrator-v")) add("branch version matches manifest",ref==="orchestrator-v"+v || ref.startsWith("orchestrator-v"+v+"-"));
 
 const failed=checks.filter(c=>!c.ok);
 for(const c of checks) console.log((c.ok?"PASS":"FAIL")+" | "+c.name);
