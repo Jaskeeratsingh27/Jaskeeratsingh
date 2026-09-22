@@ -35,9 +35,11 @@ const replaceManagedBlock = (existing, canonical) => {
   return existing.trimEnd()+"\n\n"+block+"\n";
 };
 
-fs.mkdirSync(CODEX_HOME,{recursive:true});
-fs.mkdirSync(path.join(CODEX_HOME,"agents"),{recursive:true});
-fs.mkdirSync(SKILLS_ROOT,{recursive:true});
+if (!dryRun) {
+  fs.mkdirSync(CODEX_HOME,{recursive:true});
+  fs.mkdirSync(path.join(CODEX_HOME,"agents"),{recursive:true});
+  fs.mkdirSync(SKILLS_ROOT,{recursive:true});
+}
 
 // Skill tree: canonical replacement with backup.
 if (fs.existsSync(SKILL_HOME)) {
