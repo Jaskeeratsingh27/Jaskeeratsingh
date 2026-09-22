@@ -1,0 +1,15 @@
+{
+  "schema_version":"1.0.0",
+  "latest_health_date":"2026-09-21",
+  "latest_report":"research/health/2026-09-21.json",
+  "reports":[
+    {
+      "as_of":"2026-09-21",
+      "path":"research/health/2026-09-21.json",
+      "skill_version":"1.3.0",
+      "hermes_baseline":"v0.21.3",
+      "overall_score":100.0,
+      "health_state":"healthy"
+    }
+  ]
+}

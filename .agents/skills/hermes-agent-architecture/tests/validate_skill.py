@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +19,13 @@ def load_json(path: Path):
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:
         fail(f"invalid JSON in {path.relative_to(ROOT)}: {exc}")
+
+
+def parse_date(value: str, label: str) -> None:
+    try:
+        date.fromisoformat(value)
+    except Exception as exc:
+        fail(f"invalid date for {label}: {value!r}: {exc}")
 
 
 def main() -> None:
@@ -41,8 +49,12 @@ def main() -> None:
         + [
             ROOT / "maintenance" / "source-manifest.json",
             ROOT / "maintenance" / "change-event.schema.json",
+            ROOT / "maintenance" / "audit-snapshot.schema.json",
             ROOT / "tests" / "architecture-cases.json",
             ROOT / "tests" / "release-impact-cases.json",
+            ROOT / "tests" / "health-drift-cases.json",
+            ROOT / "research" / "audits" / "index.json",
+            ROOT / "research" / "health" / "index.json",
         ]
     )
     parsed = {path: load_json(path) for path in json_files}
@@ -57,10 +69,13 @@ def main() -> None:
     if len(ids) != len(set(ids)):
         fail("source manifest contains duplicate IDs")
     source_ids = set(ids)
+    source_priorities = {}
 
     for source in sources:
-        if source.get("priority") not in {"critical", "high", "medium", "low"}:
+        priority = source.get("priority")
+        if priority not in {"critical", "high", "medium", "low"}:
             fail(f"invalid source priority for {source.get('id')}")
+        source_priorities[source["id"]] = priority
         if not str(source.get("url", "")).startswith("https://"):
             fail(f"source URL is not HTTPS for {source.get('id')}")
 
@@ -70,14 +85,21 @@ def main() -> None:
     if compatibility.get("hermes", {}).get("source_id") not in source_ids:
         fail("compatibility Hermes release source_id is missing from source manifest")
 
-    capability_ids = {item.get("id") for item in compatibility.get("capabilities", [])}
+    capability_list = compatibility.get("capabilities", [])
+    capability_ids = {item.get("id") for item in capability_list}
     if None in capability_ids:
         fail("compatibility capability missing ID")
+    if len(capability_ids) != len(capability_list):
+        fail("duplicate compatibility capability IDs")
 
-    for capability in compatibility.get("capabilities", []):
+    for capability in capability_list:
         unknown = set(capability.get("source_ids", [])) - source_ids
         if unknown:
             fail(f"compatibility capability {capability.get('id')} uses unknown sources: {sorted(unknown)}")
+        verified_on = capability.get("last_verified_on")
+        if not verified_on:
+            fail(f"capability {capability.get('id')} is missing last_verified_on")
+        parse_date(verified_on, f"{capability.get('id')}.last_verified_on")
 
     routing = parsed[ROOT / "compatibility" / "primitive-routing.json"]
     routing_rule_ids = {rule.get("id") for rule in routing.get("rules", [])}
@@ -116,6 +138,25 @@ def main() -> None:
     if upgrade.get("current_baseline", {}).get("hermes_release") != compatibility.get("hermes", {}).get("stable_release"):
         fail("upgrade matrix Hermes release does not match compatibility baseline")
 
+    freshness = parsed[ROOT / "compatibility" / "freshness-policy.json"]
+    priority_names = {"critical", "high", "medium", "low"}
+    if set(freshness.get("priority_max_age_days", {})) != priority_names:
+        fail("freshness policy priority_max_age_days must define critical/high/medium/low")
+    if set(freshness.get("priority_weights", {})) != priority_names:
+        fail("freshness policy priority_weights must define critical/high/medium/low")
+    due_ratio = freshness.get("due_soon_ratio")
+    if not isinstance(due_ratio, (int, float)) or not (0 < due_ratio < 1):
+        fail("freshness due_soon_ratio must be between 0 and 1")
+
+    thresholds = freshness.get("health_thresholds", {})
+    if not (
+        thresholds.get("healthy_min", 0)
+        > thresholds.get("watch_min", 0)
+        > thresholds.get("degraded_min", 0)
+        >= 0
+    ):
+        fail("health thresholds must descend healthy > watch > degraded")
+
     release_cases = parsed[ROOT / "tests" / "release-impact-cases.json"].get("cases", [])
     if not release_cases:
         fail("release-impact regression fixtures are missing")
@@ -124,6 +165,49 @@ def main() -> None:
         unknown_explicit = explicit - capability_ids
         if unknown_explicit:
             fail(f"release-impact case {case.get('id')} uses unknown explicit capabilities: {sorted(unknown_explicit)}")
+
+    health_cases = parsed[ROOT / "tests" / "health-drift-cases.json"].get("cases", [])
+    if not health_cases:
+        fail("health/drift regression fixtures are missing")
+
+    audit_index = parsed[ROOT / "research" / "audits" / "index.json"]
+    parse_date(audit_index.get("latest_audit_date", ""), "audit_index.latest_audit_date")
+    latest_snapshot_rel = audit_index.get("latest_snapshot")
+    if not latest_snapshot_rel or not (ROOT / latest_snapshot_rel).exists():
+        fail("audit index latest_snapshot is missing")
+    latest_snapshot = load_json(ROOT / latest_snapshot_rel)
+    if latest_snapshot.get("audit_date") != audit_index.get("latest_audit_date"):
+        fail("audit index latest_audit_date does not match latest snapshot")
+    snapshot_ids = {item.get("id") for item in latest_snapshot.get("capability_results", [])}
+    if snapshot_ids != capability_ids:
+        fail("latest audit snapshot capability IDs do not match compatibility capability IDs")
+
+    audit_paths = []
+    for entry in audit_index.get("snapshots", []):
+        rel = entry.get("path")
+        if not rel or not (ROOT / rel).exists():
+            fail(f"audit history points to missing snapshot: {rel}")
+        audit_paths.append(rel)
+    if len(audit_paths) != len(set(audit_paths)):
+        fail("audit history contains duplicate snapshot paths")
+
+    health_index = parsed[ROOT / "research" / "health" / "index.json"]
+    parse_date(health_index.get("latest_health_date", ""), "health_index.latest_health_date")
+    latest_health_rel = health_index.get("latest_report")
+    if not latest_health_rel or not (ROOT / latest_health_rel).exists():
+        fail("health index latest_report is missing")
+    latest_health = load_json(ROOT / latest_health_rel)
+    if latest_health.get("as_of") != health_index.get("latest_health_date"):
+        fail("health index latest_health_date does not match latest report")
+
+    health_paths = []
+    for entry in health_index.get("reports", []):
+        rel = entry.get("path")
+        if not rel or not (ROOT / rel).exists():
+            fail(f"health history points to missing report: {rel}")
+        health_paths.append(rel)
+    if len(health_paths) != len(set(health_paths)):
+        fail("health history contains duplicate report paths")
 
     candidates = re.findall(
         r"`((?:references|templates|maintenance|research|tests|compatibility)/[^`]+|VERSION|CHANGELOG\.md|README\.md)`",
@@ -137,20 +221,29 @@ def main() -> None:
         "references/00-architecture-map.md",
         "references/11-production-checklist.md",
         "references/13-source-index.md",
+        "references/14-release-impact-engine.md",
+        "references/15-knowledge-health-drift.md",
         "maintenance/weekly-refresh-spec.md",
         "maintenance/weekly-refresh-prompt.md",
         "maintenance/source-manifest.json",
         "maintenance/change-event.schema.json",
+        "maintenance/audit-snapshot.schema.json",
         "maintenance/impact_engine.py",
+        "maintenance/health_engine.py",
         "research/HERMES_AGENT_RESEARCH_DOSSIER.md",
+        "research/audits/index.json",
+        "research/health/index.json",
         "compatibility/hermes-compatibility.json",
         "compatibility/primitive-routing.json",
         "compatibility/impact-map.json",
         "compatibility/upgrade-matrix.json",
+        "compatibility/freshness-policy.json",
         "tests/architecture-cases.json",
         "tests/test_architecture_regressions.py",
         "tests/release-impact-cases.json",
         "tests/test_release_impact.py",
+        "tests/health-drift-cases.json",
+        "tests/test_health_drift.py",
     ]
     for rel in required:
         if not (ROOT / rel).exists():
@@ -158,9 +251,11 @@ def main() -> None:
 
     print(f"PASS: hermes-agent-architecture v{version}")
     print(f"PASS: {len(sources)} primary-source entries")
-    print(f"PASS: {len(json_files)} JSON files parsed")
-    print(f"PASS: {len(capability_ids)} compatibility/impact capabilities cross-checked")
-    print(f"PASS: {len(release_cases)} release-impact fixtures structurally valid")
+    print(f"PASS: {len(json_files)} control JSON files parsed")
+    print(f"PASS: {len(capability_ids)} compatibility/impact/freshness capabilities cross-checked")
+    print(f"PASS: {len(audit_paths)} historical audit snapshot(s)")
+    print(f"PASS: {len(health_paths)} historical health report(s)")
+    print(f"PASS: {len(release_cases)} release-impact and {len(health_cases)} health/drift fixtures structurally valid")
 
 
 if __name__ == "__main__":

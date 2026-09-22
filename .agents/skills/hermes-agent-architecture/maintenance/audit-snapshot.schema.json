@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/hermes/audit-snapshot.schema.json",
+  "title": "Hermes Knowledge Audit Snapshot",
+  "type": "object",
+  "properties": {
+    "schema_version": {"type":"string"},
+    "audit_date": {"type":"string","format":"date"},
+    "skill_version": {"type":"string"},
+    "observed_hermes_release": {"type":"string"},
+    "observed_hermes_tag": {"type":"string"},
+    "sources_checked": {"type":"array","items":{"type":"string"},"uniqueItems":true},
+    "change_event_ids": {"type":"array","items":{"type":"string"},"uniqueItems":true},
+    "highest_severity": {"type":"string","enum":["info","patch","minor","major","critical"]},
+    "capability_results": {
+      "type":"array",
+      "items":{
+        "type":"object",
+        "properties":{
+          "id":{"type":"string"},
+          "status":{"type":"string","enum":["verified","partial","needs_revalidation","unsupported"]},
+          "verified_on":{"type":["string","null"],"format":"date"}
+        },
+        "required":["id","status","verified_on"],
+        "additionalProperties":false
+      }
+    },
+    "validation": {
+      "type":"object",
+      "properties":{
+        "structural":{"type":"string","enum":["passed","failed","not_run"]},
+        "architecture":{"type":"string","enum":["passed","failed","not_run"]},
+        "release_impact":{"type":"string","enum":["passed","failed","not_run"]},
+        "health_drift":{"type":"string","enum":["passed","failed","not_run"]}
+      },
+      "required":["structural","architecture","release_impact","health_drift"],
+      "additionalProperties":false
+    },
+    "notes":{"type":"array","items":{"type":"string"}}
+  },
+  "required":["schema_version","audit_date","skill_version","observed_hermes_release","observed_hermes_tag","sources_checked","change_event_ids","highest_severity","capability_results","validation"],
+  "additionalProperties":false
+}

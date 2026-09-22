@@ -1,7 +1,7 @@
 ---
 name: hermes-agent-architecture
 description: Design production Hermes agents and multi-agent systems
-version: 1.2.0
+version: 1.3.0
 metadata:
   hermes:
     tags: [hermes, agents, multi-agent, architecture, orchestration]
@@ -12,7 +12,7 @@ metadata:
 
 ## When to Use
 
-Load this skill whenever the task involves Hermes Agent architecture, profile/Bot design, subagents, Kanban orchestration, SOUL.md, AGENTS.md, skills, model/tool routing, MCP, memory, cron, agent-to-agent contracts, production hardening, observability, release compatibility, or creating instructions/files for Hermes agents.
+Load this skill whenever the task involves Hermes Agent architecture, profile/Bot design, subagents, Kanban orchestration, SOUL.md, AGENTS.md, skills, model/tool routing, MCP, memory, cron, agent-to-agent contracts, production hardening, observability, release compatibility, knowledge freshness, or creating instructions/files for Hermes agents.
 
 ## Knowledge Baseline
 
@@ -20,7 +20,9 @@ Load this skill whenever the task involves Hermes Agent architecture, profile/Bo
 - Stable release verified during research: Hermes Agent v0.21.3 (`v2026.9.14`).
 - Hermes documentation can describe behavior ahead of the latest stable tag. Treat docs/current-main behavior and pinned-release behavior as separate claims.
 - For production work, pin a Hermes release/commit and validate generated config against that target.
-- Before making version-sensitive claims, consult `compatibility/hermes-compatibility.json`; if a capability is marked `needs_revalidation`, verify it against primary sources before relying on it.
+- Before making version-sensitive claims, consult `compatibility/hermes-compatibility.json`.
+- Before relying on an old capability claim, consult the latest health state under `research/health/` or run `python maintenance/health_engine.py --as-of YYYY-MM-DD`.
+- If a capability is stale or marked `needs_revalidation`, verify it against primary sources before relying on it for production design.
 
 ## Operating Procedure
 
@@ -45,20 +47,35 @@ Load this skill whenever the task involves Hermes Agent architecture, profile/Bo
 10. Design failure behavior explicitly: retries, timeouts, blocked state, human escalation, idempotency, partial results, provider fallback, and verification evidence.
 11. Build observability around Hermes correlation IDs so sessions, turns, API requests, tools, and child agents can be stitched into one trace.
 12. Before finalizing production architecture, consult `references/11-production-checklist.md`.
+13. For long-lived knowledge use, check capability freshness rather than assuming a previously verified claim is still current.
 
-## Compatibility and Control Layer
+## Compatibility, Impact, and Health Control Layer
 
-- `compatibility/hermes-compatibility.json` records the skill version, pinned stable Hermes baseline, verified capability status, source IDs, and revalidation flags.
+- `compatibility/hermes-compatibility.json` records the skill version, pinned stable Hermes baseline, capability verification status, source IDs, and `last_verified_on`.
 - `compatibility/primitive-routing.json` is the machine-readable canonical decision table for choosing core Hermes primitives.
 - `compatibility/impact-map.json` maps Hermes source/capability changes to affected knowledge files, routing rules, and targeted regression cases.
-- `compatibility/upgrade-matrix.json` records the verified Hermes baseline and future upgrade transitions.
+- `compatibility/upgrade-matrix.json` records the verified Hermes baseline and stable-release transitions.
+- `compatibility/freshness-policy.json` defines verification-age thresholds and health-control parameters.
 - `maintenance/change-event.schema.json` defines the machine-readable input contract for detected Hermes changes.
-- `maintenance/impact_engine.py` classifies severity and computes blast radius before edits are made.
-- `tests/architecture-cases.json` protects stable primitive-selection decisions.
-- `tests/release-impact-cases.json` protects release-impact classification and targeted test selection.
-- Run `python tests/validate_skill.py`, `python tests/test_architecture_regressions.py`, and `python tests/test_release_impact.py` before promoting a knowledge-base update.
-- Do not clear `needs_revalidation` entries until the affected capability has been checked against official primary sources for the intended Hermes version.
-- Any stable Hermes release transition must go through a reviewed branch/PR.
+- `maintenance/impact_engine.py` classifies change severity and blast radius.
+- `maintenance/audit-snapshot.schema.json` defines the historical weekly audit record.
+- `maintenance/health_engine.py` computes per-capability freshness, audit freshness, health score, and drift signals.
+- `research/audits/index.json` is the append-only audit-history index.
+- `research/health/index.json` is the knowledge-health history index.
+- Routine weekly audit/health records do not require a semantic skill-version bump by themselves.
+
+## Quality Gates
+
+Before promoting a canonical knowledge/control change, run:
+
+- `python tests/validate_skill.py`
+- `python tests/test_architecture_regressions.py`
+- `python tests/test_release_impact.py`
+- `python tests/test_health_drift.py`
+
+Do not clear `needs_revalidation` or refresh a capability's `last_verified_on` unless its required primary sources were actually checked sufficiently to reverify the claim.
+
+Any stable Hermes release transition must go through a reviewed branch/PR.
 
 ## Architecture Defaults
 
@@ -73,6 +90,7 @@ Treat Bot-to-Bot messaging as collaboration, not authoritative workflow state. T
 When producing Hermes agent architecture or instruction files, include when relevant:
 
 - target Hermes version/commit
+- knowledge freshness/revalidation caveats for version-sensitive claims
 - profiles and role boundaries
 - toolsets and permission boundaries
 - model/provider per role
@@ -104,6 +122,7 @@ When producing Hermes agent architecture or instruction files, include when rele
 - `references/12-versioning-known-caveats.md` — release pinning and compatibility caveats
 - `references/13-source-index.md` — primary-source links
 - `references/14-release-impact-engine.md` — release/change classification and blast-radius workflow
+- `references/15-knowledge-health-drift.md` — freshness, audit history, scoring, and drift
 
 ## Templates
 
@@ -129,9 +148,11 @@ Use the templates under `templates/` rather than inventing incompatible handoff 
 - Do not mark a task complete without verification evidence when verification is part of the contract.
 - Do not update every reference file when the impact engine identifies a narrower affected set.
 - Do not auto-promote an unknown source, ambiguous change, security change, breaking change, or stable-version transition.
+- Do not refresh verification dates just because an audit ran; refresh them only for capabilities actually reverified.
+- Do not interpret the health score as a probability that claims are correct.
 
 ## Verification
 
-A Hermes architecture is ready to implement only when every agent has a persistent/ephemeral classification, every handoff has a contract, workflow state has an authoritative owner, permissions are explicit, failure paths terminate safely, artifacts are durable, and the design names the pinned Hermes version it targets.
+A Hermes architecture is ready to implement only when every agent has a persistent/ephemeral classification, every handoff has a contract, workflow state has an authoritative owner, permissions are explicit, failure paths terminate safely, artifacts are durable, version-sensitive guidance is fresh enough for its source priority, and the design names the pinned Hermes version it targets.
 
-For skill maintenance, promotion is allowed only when structural validation, architecture regression validation, and release-impact regression validation pass; compatibility/upgrade state must also be consistent with the pinned Hermes baseline.
+For skill maintenance, promotion is allowed only when structural validation, architecture regression validation, release-impact regression validation, and health/drift regression validation all pass.

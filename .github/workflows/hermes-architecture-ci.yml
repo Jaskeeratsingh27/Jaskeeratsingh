@@ -38,3 +38,5 @@ jobs:
         run: python .agents/skills/hermes-agent-architecture/tests/test_architecture_regressions.py
       - name: Run Hermes release-impact regressions
         run: python .agents/skills/hermes-agent-architecture/tests/test_release_impact.py
+      - name: Run Hermes health and drift regressions
+        run: python .agents/skills/hermes-agent-architecture/tests/test_health_drift.py
