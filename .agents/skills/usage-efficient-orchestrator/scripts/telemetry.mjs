@@ -14,6 +14,9 @@ const SCHEMA_VERSION = CONFIG.schema_version;
 
 const ENUMS = {
   profile: new Set(["economy","balanced","quality-critical"]),
+  task_kind: new Set(["discovery","implementation","review","architecture","mixed","unknown"]),
+  decision_mode: new Set(["shadow","active"]),
+  route_decision: new Set(["keep_baseline","candidate_lower_burn","insufficient_data","insufficient_baseline","no_qualified_candidate","quality_floor","risk_floor","drift_suppressed","calibration_suppressed","manual_approval_required"]),
   complexity: new Set(["MICRO","SMALL","MEDIUM","LARGE"]),
   risk: new Set(["LOW","MEDIUM","HIGH","CRITICAL"]),
   role: new Set(["cheap_reader","standard_engineer","reviewer","senior_specialist","architect"]),
@@ -26,8 +29,9 @@ const ENUMS = {
 };
 
 const COMMAND_KEYS = {
-  start: new Set(["task-id","profile","complexity","risk","baseline","source","cycle","project-id"]),
+  start: new Set(["task-id","profile","task-kind","complexity","risk","baseline","source","cycle","project-id"]),
   route: new Set(["task-id","work-unit","role","model","reasoning","access","project-id"]),
+  recommendation: new Set(["task-id","baseline-route","candidate-route","decision-mode","decision","evidence-samples","estimated-savings-p90","project-id"]),
   worker: new Set(["task-id","work-unit","role","model","reasoning","access","status","failure-class","duration-ms","files-inspected","files-touched","tests-run","retries","project-id"]),
   validate: new Set(["task-id","status","check-count","failed-count","project-id"]),
   checkpoint: new Set(["task-id","remaining","source","cycle","project-id"]),
@@ -93,6 +97,13 @@ function optionalInt(args, key) {
   return n;
 }
 
+function optionalNumber(args, key) {
+  if (args[key] === undefined) return undefined;
+  const n = Number(args[key]);
+  if (!Number.isFinite(n) || n < 0) die(`--${key} must be a non-negative number`);
+  return Number(n.toFixed(4));
+}
+
 function optionalPct(args, key) {
   if (args[key] === undefined) return undefined;
   const n = Number(args[key]);
@@ -102,6 +113,11 @@ function optionalPct(args, key) {
 
 function safeId(value, name, max = 80) {
   if (!new RegExp(`^[A-Za-z0-9._:-]{1,${max}}$`).test(value)) die(`invalid ${name}`);
+  return value;
+}
+
+function safeRoute(value, name = "route") {
+  if (!/^[A-Za-z0-9._:-]{1,100}$/.test(value)) die(`invalid ${name}`);
   return value;
 }
 
@@ -362,7 +378,7 @@ function printReport(report, asJson) {
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const command = args._[0];
-  if (!command) die("command required: start|route|worker|validate|checkpoint|stop|finish|report|export|prune");
+  if (!command) die("command required: start|route|recommendation|worker|validate|checkpoint|stop|finish|report|export|prune");
   ensureAllowed(command, args);
 
   if (command === "start") {
@@ -374,8 +390,9 @@ function main() {
     const baseline = optionalPct(args,"baseline");
     const source = baseline !== undefined ? (optionalEnum(args,"source",ENUMS.usage_source) || "user") : undefined;
     const cycle = cycleId(args);
+    const taskKind = optionalEnum(args,"task-kind",ENUMS.task_kind) || "unknown";
     emit("task_started", id, pid, {
-      status:"started", profile, complexity, risk,
+      status:"started", profile, task_kind:taskKind, complexity, risk,
       remaining_pct:baseline, usage_source:source, usage_cycle_id:cycle
     });
     console.log(id);
@@ -416,6 +433,23 @@ function main() {
       role, model,
       reasoning: optionalEnum(args,"reasoning",ENUMS.reasoning),
       access: optionalEnum(args,"access",ENUMS.access)
+    });
+    return;
+  }
+
+  if (command === "recommendation") {
+    const baselineRoute = safeRoute(requireArg(args,"baseline-route"), "baseline route");
+    const candidateRoute = args["candidate-route"] === undefined ? undefined : safeRoute(String(args["candidate-route"]), "candidate route");
+    const decisionMode = optionalEnum(args,"decision-mode",ENUMS.decision_mode) || "shadow";
+    const decision = optionalEnum(args,"decision",ENUMS.route_decision);
+    if (!decision) die("--decision is required");
+    emit("routing_recommendation", id, pid, {
+      baseline_route: baselineRoute,
+      candidate_route: candidateRoute,
+      decision_mode: decisionMode,
+      route_decision: decision,
+      evidence_samples: optionalInt(args,"evidence-samples"),
+      estimated_savings_p90: optionalNumber(args,"estimated-savings-p90")
     });
     return;
   }
