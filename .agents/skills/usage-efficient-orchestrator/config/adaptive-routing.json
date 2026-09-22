@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "mode": "shadow",
+  "history_days": 56,
+  "candidate_hierarchy": [
+    {
+      "name": "exact",
+      "fields": [
+        "task_kind",
+        "complexity",
+        "risk",
+        "profile"
+      ],
+      "min_tasks_per_route": 6,
+      "min_measured_per_route": 5
+    },
+    {
+      "name": "kind_complexity_profile",
+      "fields": [
+        "task_kind",
+        "complexity",
+        "profile"
+      ],
+      "min_tasks_per_route": 8,
+      "min_measured_per_route": 6
+    },
+    {
+      "name": "complexity_profile",
+      "fields": [
+        "complexity",
+        "profile"
+      ],
+      "min_tasks_per_route": 10,
+      "min_measured_per_route": 8
+    }
+  ],
+  "quality_floor": {
+    "minimum_success_rate": 0.9,
+    "minimum_validation_pass_rate": 0.95,
+    "maximum_success_rate_drop": 0.02,
+    "maximum_validation_pass_rate_drop": 0.02
+  },
+  "efficiency": {
+    "minimum_absolute_p90_improvement_points": 0.5,
+    "minimum_relative_p90_improvement": 0.1,
+    "tiebreaker": "median_burn_then_duration"
+  },
+  "stability": {
+    "suppress_on_drift": true,
+    "require_acceptable_usage_calibration_for_active": true,
+    "cooldown_tasks_after_policy_change": 10,
+    "minimum_evidence_margin_tasks": 2
+  },
+  "safety": {
+    "critical_plan_only": true,
+    "large_plan_only": true,
+    "high_risk_requires_reviewer": true,
+    "quality_critical_active_change_requires_user_approval": true,
+    "senior_specialist_never_initial_candidate": true,
+    "low_confidence_shadow_only": true,
+    "active_requires_canonical_approval": true
+  },
+  "decision_modes": [
+    "shadow",
+    "active"
+  ]
+}
