@@ -7,6 +7,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "cloudflare:dev": "npx wrangler@4 dev",
+    "cloudflare:deploy": "npx wrangler@4 deploy"
   }
 }

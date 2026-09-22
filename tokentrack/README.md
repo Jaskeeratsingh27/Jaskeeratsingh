@@ -2,39 +2,73 @@
 
 GitHub is the canonical source of truth for this dashboard.
 
-## Architecture
+## Cloudflare runtime
 
-- **Source:** this `tokentrack/` directory
-- **Host:** Railway
-- **Frontend:** `public/index.html`
-- **API:** `server.js`
-- **Live endpoint:** `GET /api/usage?days=30`
-- **Health endpoint:** `GET /health`
-- **Refresh policy:** browser refresh every 60 seconds, manual refresh, and refresh on tab focus
-- **Server behavior:** no application sleep; restart policy is ALWAYS
+TokenTrack has been migrated from an always-running Railway Node server to a Cloudflare Worker with static assets.
+
+- **Repository:** `Jaskeeratsingh27/Jaskeeratsingh`
+- **Cloudflare project root:** `tokentrack`
+- **Frontend:** `public/`
+- **Worker:** `worker.js`
+- **Configuration:** `wrangler.jsonc`
+- **Health:** `GET /health`
+- **Analytics:** `GET /api/analytics?days=30`
+- **Usage:** `GET /api/usage?days=30`
+- **CSV export:** `GET /api/export`
+- **Background monitor:** `GET /api/server-monitor`
+
+The old `server.js` remains as Railway/reference code. Cloudflare does not run it.
 
 ## Required secret
 
-Railway must have:
+In Cloudflare, add this under **Variables and Secrets** as a secret:
 
 ```
 OPENAI_ADMIN_KEY=sk-admin-...
 ```
 
-Do **not** commit the key to GitHub.
+Do not commit the key to GitHub.
 
-The OpenAI organization Usage and Costs APIs require an organization Admin API key. Once the variable is present, TokenTrack reads current usage directly from OpenAI; it does not rely on a static snapshot.
+Optional variables:
 
-## Deployment
+```
+DASHBOARD_PASSWORD=<password>
+CACHE_TTL_MS=30000
+```
 
-Railway is connected to:
+## Optional persistent KV
 
-- Repository: `Jaskeeratsingh27/Jaskeeratsingh`
-- Branch: `main`
-- Root directory: `/tokentrack`
+TokenTrack v4 previously stored encrypted checkpoint sync and background-monitor state on Railway's persistent filesystem.
 
-Commits under this app can trigger a new deployment.
+Cloudflare Workers do not provide that filesystem, so the Worker now supports one Cloudflare KV binding named:
 
-## Important scope
+```
+TOKENTRACK_KV
+```
 
-This dashboard tracks **OpenAI API organization usage** exposed by the OpenAI Usage/Costs APIs. It does not expose private ChatGPT Plus internal token accounting.
+If you add that KV binding:
+- encrypted ChatGPT checkpoint sync is persistent
+- background monitor rules/events are persistent
+
+Without the binding:
+- the OpenAI usage dashboard still works
+- the background monitor can run but its state is ephemeral
+- encrypted cross-device checkpoint sync returns a setup message instead of writing to disk
+
+## Automatic monitoring
+
+`wrangler.jsonc` configures a Cloudflare Cron Trigger every 5 minutes. This replaces Railway's always-running interval loop.
+
+## Cloudflare deployment
+
+For Git deployment, use:
+
+```
+Root directory: tokentrack
+```
+
+The Worker serves the files in `public/` through Cloudflare's static-assets binding and executes API routes serverlessly.
+
+## Scope
+
+TokenTrack tracks **OpenAI API organization usage** exposed by OpenAI's Usage/Costs APIs. It does not expose private ChatGPT Plus internal token accounting.
