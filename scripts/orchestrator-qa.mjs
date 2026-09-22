@@ -7,6 +7,7 @@ const checks=[
   "validate-orchestrator.mjs",
   "evaluate-routing-policy.mjs",
   "security-check-orchestrator.mjs",
+  "test-observability.mjs",
   "release-check-orchestrator.mjs"
 ];
 
