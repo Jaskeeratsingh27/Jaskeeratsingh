@@ -34,6 +34,7 @@ Audit the canonical `hermes-agent-architecture` skill against current official H
     - `python tests/test_health_drift.py`
     - `python tests/test_consumer_impact.py`
     - `python tests/test_consumer_drift.py`
+    - `python tests/test_end_to_end_hardening.py`
 23. Run `python maintenance/health_engine.py --as-of YYYY-MM-DD --output research/health/YYYY-MM-DD.json` after the final compatibility/audit state is written.
 24. Append the generated health report to `research/health/index.json` and move `latest_health_date/latest_report` to the new report.
 25. Compare the new health result with the previous health report and explicitly report:
@@ -43,10 +44,12 @@ Audit the canonical `hermes-agent-architecture` skill against current official H
     - recovered/reverified capabilities
     - new/resolved drift signals
 26. Run `python tests/validate_skill.py` again after writing the audit and health indexes so history consistency is verified.
-27. Do not promote a semantic update if any gate fails.
-28. Branch/PR review is mandatory for stable-release transitions, ambiguous evidence, unknown source/capability mappings, breaking/architecture changes, and security changes.
-29. A small verified documentation-only correction may be committed directly only when repository maintenance policy explicitly permits it and all gates pass.
-30. Report a concise TL;DR containing: audit status, current stable Hermes version, semantic skill version, whether canonical knowledge changed, highest impact severity, health score/state and delta, stale/due/recovered capabilities, drift signals, compatibility/upgrade state, affected consumers and required review/migration actions, consumer compatibility blockers, dependency-drift findings and registry changes, files changed, validation results, commit/PR details, and anything requiring human review.
+27. Compose a final maintenance decision bundle containing the release-impact result(s), aggregated consumer impact, final health report, consumer-dependency-drift result, and all seven deterministic validation statuses. Run `python maintenance/promotion_gate.py <bundle.json> --pretty`.
+28. Treat `knowledge_promotion` and `ecosystem_compatibility` as separate outcomes. Do not declare the ecosystem compatibility-cleared while registered consumer blockers remain.
+29. Do not promote a semantic update if any gate fails.
+30. Branch/PR review is mandatory for stable-release transitions, ambiguous evidence, unknown source/capability mappings, breaking/architecture changes, and security changes.
+31. A small verified documentation-only correction may be committed directly only when repository maintenance policy explicitly permits it and all gates pass.
+32. Report a concise TL;DR containing: audit status, current stable Hermes version, semantic skill version, whether canonical knowledge changed, highest impact severity, health score/state and delta, stale/due/recovered capabilities, drift signals, compatibility/upgrade state, affected consumers and required review/migration actions, consumer compatibility blockers, dependency-drift findings and registry changes, final promotion-gate knowledge/ecosystem states and blockers, files changed, validation results, commit/PR details, and anything requiring human review.
 
 ## Safety / quality gates
 

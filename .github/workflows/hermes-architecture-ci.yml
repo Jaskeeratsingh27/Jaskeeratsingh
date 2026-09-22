@@ -44,3 +44,5 @@ jobs:
         run: python .agents/skills/hermes-agent-architecture/tests/test_consumer_impact.py
       - name: Run Hermes consumer dependency drift regressions
         run: python .agents/skills/hermes-agent-architecture/tests/test_consumer_drift.py
+      - name: Run Hermes end-to-end hardening simulations
+        run: python .agents/skills/hermes-agent-architecture/tests/test_end_to_end_hardening.py

@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.3.0",
-  "skill_version": "1.5.0",
+  "schema_version": "1.4.0",
+  "skill_version": "1.6.0",
   "current_baseline": {
     "hermes_release": "v0.21.3",
     "hermes_tag": "v2026.9.14",
@@ -13,7 +13,21 @@
       "to_release": "v0.21.3",
       "skill_version": "1.0.0",
       "classification": "baseline",
-      "affected_capabilities": ["profiles","bot_mode","delegation","structured_output","kanban","skills_context_soul","memory","tools_mcp","execute_code","model_routing","cron","security","observability"],
+      "affected_capabilities": [
+        "profiles",
+        "bot_mode",
+        "delegation",
+        "structured_output",
+        "kanban",
+        "skills_context_soul",
+        "memory",
+        "tools_mcp",
+        "execute_code",
+        "model_routing",
+        "cron",
+        "security",
+        "observability"
+      ],
       "review_required": false,
       "validation": "passed"
     }

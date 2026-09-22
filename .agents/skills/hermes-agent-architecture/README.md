@@ -13,6 +13,18 @@ When installed in Hermes, invoke with:
 Research date: 2026-09-21.  
 Latest stable release verified: Hermes Agent v0.21.3 (`v2026.9.14`).
 
+## v1.6 final hardening and promotion-control layer
+
+v1.6 is the final planned architecture-improvement release. It composes the earlier control layers into one end-to-end promotion/recovery model:
+
+- `maintenance/promotion_gate.py` — deterministic final knowledge-promotion and ecosystem-compatibility decision.
+- `tests/hardening-scenarios.json` — realistic upgrade/failure/recovery scenarios.
+- `tests/test_end_to_end_hardening.py` — full control-chain simulation across release impact, consumer impact, health, drift, validation, and recovery.
+- `references/18-promotion-recovery.md` — final promotion and recovery policy.
+- `research/PRODUCTION_READINESS.md` — production-readiness scope, invariants, and post-v1.6 policy.
+
+After v1.6, new semantic versions should be driven by real Hermes changes, weekly-audit defects, security requirements, or actual consumer needs—not by speculative architecture expansion.
+
 ## v1.5 consumer dependency drift layer
 
 v1.5 protects the v1.4 consumer registry from becoming stale:
@@ -90,6 +102,7 @@ python tests/test_release_impact.py
 python tests/test_health_drift.py
 python tests/test_consumer_impact.py
 python tests/test_consumer_drift.py
+python tests/test_end_to_end_hardening.py
 ```
 
 Routine audit and health snapshots are historical operating evidence and can be committed without bumping the semantic skill version. Semantic version changes are reserved for knowledge or control-logic changes.
