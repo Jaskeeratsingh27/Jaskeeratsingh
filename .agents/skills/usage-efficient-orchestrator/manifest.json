@@ -1,6 +1,6 @@
 {
   "name": "usage-efficient-orchestrator",
-  "version": "1.9.0",
+  "version": "2.0.0",
   "telemetry_schema_version": "1.0",
   "usage_intelligence_schema_version": "1.0",
   "canonical_repository": "Jaskeeratsingh27/Jaskeeratsingh",
@@ -32,10 +32,12 @@
     "node scripts/test-fault-injection.mjs",
     "node scripts/test-version-compatibility.mjs",
     "node scripts/test-readiness.mjs",
+    "node scripts/test-closed-loop.mjs",
     "node scripts/release-check-orchestrator.mjs"
   ],
   "adaptive_routing_schema_version": "1.0",
   "hardening_schema_version": "1.0",
   "compatibility_schema_version": "1.0",
-  "canary_schema_version": "1.0"
+  "canary_schema_version": "1.0",
+  "closed_loop_schema_version": "1.0"
 }

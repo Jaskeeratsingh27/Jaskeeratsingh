@@ -534,4 +534,4 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
   main();
 }
 
-export { summarize, tokenTrackExport, pruneEvents, readEvents, LEDGER, DATA_DIR };
+export { summarize, tokenTrackExport, pruneEvents, readEvents, emit, projectId, LEDGER, DATA_DIR };

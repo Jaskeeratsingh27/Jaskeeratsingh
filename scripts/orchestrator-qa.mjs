@@ -15,6 +15,7 @@ const checks=[
   "test-fault-injection.mjs",
   "test-version-compatibility.mjs",
   "test-readiness.mjs",
+  "test-closed-loop.mjs",
   "release-check-orchestrator.mjs"
 ];
 

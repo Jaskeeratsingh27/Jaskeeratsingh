@@ -1,0 +1,62 @@
+[
+  {
+    "id": "C01",
+    "name": "preflight creates task and bounded control action"
+  },
+  {
+    "id": "C02",
+    "name": "historically cheaper adaptive candidate stays shadow-only"
+  },
+  {
+    "id": "C03",
+    "name": "execution route remains canonical baseline"
+  },
+  {
+    "id": "C04",
+    "name": "delegation plan maps route roles to configured model/reasoning/access"
+  },
+  {
+    "id": "C05",
+    "name": "proxy status derives bounded counters"
+  },
+  {
+    "id": "C06",
+    "name": "live checkpoint below target continues"
+  },
+  {
+    "id": "C07",
+    "name": "live checkpoint at target stops"
+  },
+  {
+    "id": "C08",
+    "name": "live checkpoint above ceiling stops"
+  },
+  {
+    "id": "C09",
+    "name": "finalize records measured learning evidence"
+  },
+  {
+    "id": "C10",
+    "name": "post-task evaluation records prediction error when prediction exists"
+  },
+  {
+    "id": "C11",
+    "name": "CRITICAL task remains plan-only"
+  },
+  {
+    "id": "C12",
+    "name": "LARGE task remains plan-only"
+  },
+  {
+    "id": "C13",
+    "name": "no-history task falls back without fabricated percentage"
+  },
+  {
+    "id": "C14",
+    "name": "free-text closed-loop metadata rejected"
+  },
+  {
+    "id": "C15",
+    "name": "privacy ledger omits prompt/source/free-text content"
+  }
+]

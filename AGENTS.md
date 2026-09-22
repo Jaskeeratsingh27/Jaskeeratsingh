@@ -1,6 +1,6 @@
 # Usage-Efficient Codex Policy
 
-Version: 1.9.0
+Version: 2.0.0
 
 For every nontrivial engineering, agent-building, process-building, repository, or file-generation task in this repository, apply the `usage-efficient-orchestrator` skill before substantial work.
 
@@ -44,6 +44,13 @@ For every nontrivial engineering, agent-building, process-building, repository, 
 31. Active adaptive routing and canary execution remain disabled in the pre-v2 release. A future activation requires real operational evidence, canonical approval, explicit user approval, bounded exposure, and rollback triggers.
 32. Maintain an immutable last-known-good release commit and never perform destructive automatic repository rollback.
 33. Distinguish **software/control-plane readiness** from **active-adaptation evidence readiness**. Passing CI can make v2 shadow closed-loop software-ready; it cannot manufacture real-world evidence for autonomous route switching.
+34. **Closed-loop preflight:** for every nontrivial task, run the v2 preflight control path before substantial execution. It must combine task classification, budget prediction, canonical baseline routing, shadow adaptive analysis, delegation planning, and proxy limits into one bounded decision.
+35. The v2 execution route remains the canonical baseline route while adaptive routing is shadow-only. A cheaper historical candidate is advisory and must not silently replace the baseline.
+36. When a real live remaining-percentage checkpoint is available, use the closed-loop checkpoint gate. Stop at the selected profile target and treat the absolute ceiling as a hard upper boundary.
+37. Without a live meter, never claim exact percentage enforcement. Use the proxy governor before additional spawns, retries, test cycles, write phases, or senior escalation.
+38. Finalize every completed nontrivial task through the closed loop so measured burn, quality outcome, prediction error, and learning eligibility are recorded as structured metadata.
+39. "Learn" means future deterministic predictors and shadow routing consume validated telemetry. It does not mean opaque self-modification, autonomous policy rewriting, or chain-of-thought storage.
+40. v2.0 is a **shadow/baseline closed loop**: planning, prediction, measurement, evaluation, and learning are active; adaptive route replacement and canary routing remain disabled until separately approved evidence gates are met.
 
 Detailed control-plane rules live in:
 `.agents/skills/usage-efficient-orchestrator/SKILL.md`.

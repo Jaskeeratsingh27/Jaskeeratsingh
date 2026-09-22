@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Closed-Loop Preflight Result",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "orchestrator_version",
+    "task_id",
+    "mode",
+    "query",
+    "control_action",
+    "execution_route",
+    "delegation_plan",
+    "usage",
+    "adaptive",
+    "proxy_limits"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "orchestrator_version": {
+      "type": "string"
+    },
+    "task_id": {
+      "type": "string"
+    },
+    "mode": {
+      "const": "shadow_closed_loop"
+    },
+    "query": {
+      "type": "object"
+    },
+    "control_action": {
+      "enum": [
+        "execute",
+        "execute_with_proxy_guards",
+        "approval_required",
+        "split_required",
+        "plan_only",
+        "stop_target",
+        "stop_ceiling",
+        "stop_proxy_limit"
+      ]
+    },
+    "execution_route": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "delegation_plan": {
+      "type": "array"
+    },
+    "usage": {
+      "type": "object"
+    },
+    "adaptive": {
+      "type": "object"
+    },
+    "proxy_limits": {
+      "type": "object"
+    }
+  }
+}

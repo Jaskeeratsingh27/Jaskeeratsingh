@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.0.0 - 2026-09-21
+
+Closed-Loop Orchestrator release candidate.
+
+- Connected Plan -> Predict -> Route -> Delegate -> Execute -> Measure -> Evaluate -> Learn into one bounded control lifecycle.
+- Added integrated closed-loop preflight combining usage intelligence, canonical baseline routing, shadow adaptive analysis, delegation planning, and proxy limits.
+- Added role-to-model/reasoning/access delegation expansion from the capability registry.
+- Added live usage checkpoint enforcement: stop at profile target; ceiling remains absolute upper boundary when authoritative remaining-percent readings exist.
+- Added proxy-governor status for agent spawns, discovery passes, write phases, failed implementation attempts, test cycles, and senior escalations.
+- Added post-task finalization with measured burn, budget outcome, quality outcome, prediction error, and learning eligibility.
+- Added privacy-preserving preflight and post-task telemetry event types.
+- Preserved baseline-route execution while adaptive routing remains shadow-only.
+- Preserved disabled canary routing and an empty canonical adaptive approval registry.
+- Advanced last-known-good rollback state to approved v1.9.0.
+- Extended non-destructive telemetry compatibility through v2.0.
+- Added 15 closed-loop integration scenarios and unified QA coverage.
+
 ## 1.9.0 - 2026-09-21
 
 Final Hardening & Evaluation release candidate, consolidating the planned v1.6-v1.9 hardening track.
