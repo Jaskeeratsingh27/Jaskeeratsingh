@@ -2,6 +2,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createHash, timingSafeEqual } from "node:crypto";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 3000);
@@ -9,7 +10,10 @@ const OPENAI_ADMIN_KEY = process.env.OPENAI_ADMIN_KEY || "";
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || "";
 const CACHE_TTL_MS = Math.max(10_000, Number(process.env.CACHE_TTL_MS || 30_000));
 const UPSTREAM_TIMEOUT_MS = 15_000;
-const VERSION = "4.0.0-p2";
+const VERSION = "4.0.0-p3";
+const DATA_DIR = process.env.TOKENTRACK_DATA_DIR || "/data";
+const SYNC_DIR = path.join(DATA_DIR, "chatgpt-sync");
+const MAX_SYNC_BODY_BYTES = 1024 * 1024;
 
 const CORE_SOURCES = [
   { key: "completions", path: "completions", groupBy: ["model", "project_id", "api_key_id", "user_id", "service_tier", "batch"], required: true },
@@ -98,6 +102,98 @@ function json(res, status, body, extraHeaders = {}) {
 function text(res, status, body, contentType = "text/plain; charset=utf-8", extraHeaders = {}) {
   res.writeHead(status, { ...securityHeaders(contentType), ...extraHeaders });
   res.end(body);
+}
+
+
+function ensureSyncDir() {
+  try {
+    fs.mkdirSync(SYNC_DIR, { recursive: true });
+    fs.accessSync(SYNC_DIR, fs.constants.R_OK | fs.constants.W_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function syncStorageStatus() {
+  return {
+    directory: SYNC_DIR,
+    writable: ensureSyncDir()
+  };
+}
+
+function sha256Hex(value) {
+  return createHash("sha256").update(String(value)).digest("hex");
+}
+
+function validSyncId(value) {
+  return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+}
+
+function safeEqualHex(a, b) {
+  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
+  } catch {
+    return false;
+  }
+}
+
+function syncRecordPath(id) {
+  if (!validSyncId(id)) return null;
+  return path.join(SYNC_DIR, id + ".json");
+}
+
+async function readJsonBody(req, maxBytes = MAX_SYNC_BODY_BYTES) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > maxBytes) {
+      const err = new Error("Request body too large");
+      err.status = 413;
+      throw err;
+    }
+    chunks.push(chunk);
+  }
+  const raw = Buffer.concat(chunks).toString("utf8");
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const err = new Error("Invalid JSON body");
+    err.status = 400;
+    throw err;
+  }
+}
+
+function readSyncRecord(file) {
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch (error) {
+    if (error?.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+function verifySyncAuth(record, providedAuth) {
+  if (!record?.auth_hash || !providedAuth || providedAuth.length > 256) return false;
+  return safeEqualHex(record.auth_hash, sha256Hex(providedAuth));
+}
+
+function validateEncryptedBlob(blob) {
+  if (!blob || typeof blob !== "object") return false;
+  if (blob.v !== 1) return false;
+  if (typeof blob.iv !== "string" || blob.iv.length < 8 || blob.iv.length > 128) return false;
+  if (typeof blob.ciphertext !== "string" || blob.ciphertext.length < 8 || blob.ciphertext.length > 900000) return false;
+  return /^[A-Za-z0-9_-]+$/.test(blob.iv) && /^[A-Za-z0-9_-]+$/.test(blob.ciphertext);
+}
+
+function writeSyncRecordAtomic(file, record) {
+  ensureSyncDir();
+  const temp = file + "." + process.pid + "." + Date.now() + ".tmp";
+  fs.writeFileSync(temp, JSON.stringify(record), { encoding: "utf8", mode: 0o600 });
+  fs.renameSync(temp, file);
 }
 
 function authOkay(req) {
@@ -831,9 +927,68 @@ const server = http.createServer(async (req, res) => {
       version: VERSION,
       key_configured: Boolean(OPENAI_ADMIN_KEY),
       password_protected: Boolean(DASHBOARD_PASSWORD),
+      sync_storage: syncStorageStatus(),
       uptime_seconds: Math.floor(process.uptime()),
       time: new Date().toISOString()
     });
+  }
+
+  if (url.pathname === "/api/chatgpt-sync") {
+    const id = url.searchParams.get("id") || "";
+    const providedAuth = String(req.headers["x-sync-auth"] || "");
+    const file = syncRecordPath(id);
+
+    if (!file) return json(res, 400, { error: "Invalid sync id" });
+    if (!providedAuth || providedAuth.length > 256) return json(res, 401, { error: "Missing sync authorization" });
+    if (!ensureSyncDir()) return json(res, 503, { error: "Persistent sync storage is unavailable" });
+
+    try {
+      const existing = readSyncRecord(file);
+
+      if (req.method === "GET") {
+        if (!existing) return json(res, 404, { error: "Sync record not found" });
+        if (!verifySyncAuth(existing, providedAuth)) return json(res, 403, { error: "Invalid sync authorization" });
+        return json(res, 200, {
+          version: existing.version || 1,
+          updated_at: existing.updated_at,
+          blob: existing.blob
+        });
+      }
+
+      if (req.method === "PUT") {
+        if (existing && !verifySyncAuth(existing, providedAuth)) {
+          return json(res, 403, { error: "Invalid sync authorization" });
+        }
+        const body = await readJsonBody(req);
+        if (!validateEncryptedBlob(body.blob)) return json(res, 400, { error: "Invalid encrypted blob" });
+
+        const updatedAt = new Date().toISOString();
+        const record = {
+          version: 1,
+          auth_hash: existing?.auth_hash || sha256Hex(providedAuth),
+          created_at: existing?.created_at || updatedAt,
+          updated_at: updatedAt,
+          blob: body.blob
+        };
+        writeSyncRecordAtomic(file, record);
+        return json(res, existing ? 200 : 201, {
+          ok: true,
+          created: !existing,
+          updated_at: updatedAt
+        });
+      }
+
+      if (req.method === "DELETE") {
+        if (!existing) return json(res, 404, { error: "Sync record not found" });
+        if (!verifySyncAuth(existing, providedAuth)) return json(res, 403, { error: "Invalid sync authorization" });
+        fs.unlinkSync(file);
+        return json(res, 200, { ok: true, deleted: true });
+      }
+
+      return json(res, 405, { error: "Method not allowed" }, { Allow: "GET, PUT, DELETE" });
+    } catch (error) {
+      return json(res, error.status || 500, { error: error.message || "Sync storage error" });
+    }
   }
 
   const rawDays = Number(url.searchParams.get("days") || 30);
@@ -890,7 +1045,9 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
+  const syncStorage = syncStorageStatus();
   console.log("TokenTrack v" + VERSION + " listening on :" + PORT);
+  console.log("TokenTrack encrypted sync storage | writable=" + syncStorage.writable + " | directory=" + syncStorage.directory);
 
   if (OPENAI_ADMIN_KEY) {
     setTimeout(async () => {
