@@ -14,20 +14,23 @@ const approvals=read("adaptive-routing-approvals.json");
 const canary=read("canary-policy.json");
 const compat=read("compatibility.json");
 const release=read("release-state.json");
+const closedLoop=read("closed-loop.json");
 
 const tasks=reconstructTasks(readEvents(),56);
 const calibration=backtest(tasks);
 const shadow=shadowReport(tasks);
 
 const checks=[
-  ["candidate version is final pre-v2 release",manifest.version==="1.9.0"],
+  ["candidate version matches release state",manifest.version===release.candidate_version],
+  ["closed-loop mode enabled",closedLoop.mode==="shadow_closed_loop"],
   ["adaptive mode remains shadow",adaptive.mode==="shadow"],
   ["adaptive approvals empty",Array.isArray(approvals.approvals)&&approvals.approvals.length===0],
   ["canary disabled",canary.enabled===false],
-  ["last-known-good version recorded",release.last_known_good.version==="1.5.0"],
+  ["last-known-good version recorded",release.last_known_good.version==="1.9.0"],
   ["last-known-good immutable commit recorded",/^[a-f0-9]{40}$/.test(release.last_known_good.commit)],
   ["rollback is non-destructive by default",release.rollback.automatic_destructive_git_reset===false],
   ["compatibility floor documented",compat.minimum_supported_orchestrator_version==="1.3.0"],
+  ["compatibility current release matches manifest",compat.current_release===manifest.version],
   ["foreign schema policy fail-closed",compat.incompatible_event_policy==="ignore_foreign_schema_and_warn"],
   ["hardening requires shadow mode",hardening.readiness.require_shadow_mode===true],
   ["v2 active adaptation requires operational evidence",hardening.readiness.allow_v2_active_adaptation_without_operational_evidence===false]
@@ -61,7 +64,7 @@ const report={
     canary_enabled:canary.enabled
   },
   interpretation:softwareReady
-    ? "Control-plane software is statically ready for v2 shadow closed-loop operation. Active adaptation remains gated by real operational evidence and explicit approval."
+    ? "v2 closed-loop software is ready for shadow/baseline operation. Active route adaptation remains gated by real operational evidence, canary controls, canonical approval, and explicit user approval."
     : "One or more control-plane readiness checks failed."
 };
 
