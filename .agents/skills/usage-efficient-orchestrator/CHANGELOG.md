@@ -1,8 +1,27 @@
 # Changelog
 
+## 1.4.0 - 2026-09-21
+
+Usage Intelligence release candidate.
+
+- Added calibrated pre-task burn estimation from real measured telemetry.
+- Added hierarchical cohort fallback with minimum-sample gates.
+- Added robust p25/median/p90 empirical prediction bands and MAD dispersion.
+- Added low/medium/high confidence classification with drift downgrades.
+- Added historical median-drift detection.
+- Added leave-one-out backtesting with MAE, median absolute error, and conservative-upper coverage.
+- Added deterministic usage gates: proxy_only, proceed_with_proxy_guards, proceed, approval_required, split_required, plan_only.
+- Added profile-target/ceiling consistency checks against the canonical budget configuration.
+- Added baseline remaining-percentage projection when a real baseline is available.
+- Added aggregate analysis by complexity, profile, route signature, and orchestrator version.
+- Added privacy-preserving aggregate intelligence export for TokenTrack.
+- Added orchestrator-version stamps to new telemetry events.
+- Added usage-intelligence runtime tests to the unified QA suite.
+- Kept predictions explicitly non-guaranteed and prevented unmeasured work from being treated as zero usage.
+
 ## 1.3.0 - 2026-09-21
 
-Observability release candidate.
+Observability release.
 
 - Added privacy-preserving local append-only orchestration telemetry.
 - Added task/event IDs and project hashing without storing full paths.
@@ -19,23 +38,13 @@ Observability release candidate.
 
 Reliability release.
 
-- Added a unified QA runner for orchestrator releases.
-- Added GitHub Actions CI for orchestrator policy/config changes.
-- Added canonical manifest and version consistency checks.
-- Added global install drift detection.
-- Added safe one-command global sync with dry-run and backups.
-- Added high-confidence secret scanning and sandbox/config safety checks.
-- Expanded routing/reliability scenario coverage from 12 to 24 cases.
-- Added deterministic routing-policy evaluation.
-- Added release-consistency validation.
+- Added unified QA, CI, manifest/version checks, global drift detection, safe sync, security scanning, 24 routing scenarios, and release consistency validation.
 
 ## 1.1.0 - 2026-09-21
 
 Control-plane hardening release.
 
-- Added mandatory structured Task Envelope.
-- Added budget profiles and proxy counters.
-- Added risk classification, single-writer rule, capability registry, failure taxonomy, structured handoffs, and deterministic routing scenarios.
+- Added Task Envelopes, budget profiles/proxy counters, risk classification, single-writer execution, capability registry, failure taxonomy, structured handoffs, and deterministic routing scenarios.
 
 ## 1.0.0 - 2026-09-21
 

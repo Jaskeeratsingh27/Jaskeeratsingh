@@ -1,8 +1,9 @@
 {
   "name": "usage-efficient-orchestrator",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "telemetry_schema_version": "1.0",
-  "canonical_repository": "Jaskeeratsingh27/Jaskeeratsingh",
+  "usage_intelligence_schema_version": "1.0",
+  "canonical_repository": "Jaskeeratsing27/Jaskeeratsingh",
   "canonical_branch": "main",
   "managed_agents": [
     "luna-scout.toml",
@@ -24,6 +25,7 @@
     "node scripts/evaluate-routing-policy.mjs",
     "node scripts/security-check-orchestrator.mjs",
     "node scripts/test-observability.mjs",
+    "node scripts/test-usage-intelligence.mjs",
     "node scripts/release-check-orchestrator.mjs"
   ]
 }

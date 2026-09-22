@@ -62,7 +62,7 @@ const m=config.match(/max_concurrent_threads_per_session\s*=\s*(\d+)/);
 if(m && Number(m[1])<=3) pass("max concurrency safety",m[1]); else fail("max concurrency safety",m?.[1]??"missing");
 
 const skill=fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/SKILL.md"),"utf8");
-for(const gate of ["Reliability control plane","Security gate","Drift gate","CI gate","Privacy-preserving observability"]){
+for(const gate of ["Reliability control plane","Security gate","Drift gate","CI gate","Privacy-preserving observability","Usage intelligence gate"]){
   (skill.includes(gate)?pass:fail)(`skill gate: ${gate}`);
 }
 
@@ -74,6 +74,14 @@ const privacyOk=[
 (privacyOk?pass:fail)("observability privacy config");
 const exportCfg=observability.export || {};
 (exportCfg.aggregate_only===true && exportCfg.include_task_ids===false && exportCfg.include_project_ids===false ? pass : fail)("aggregate-only telemetry export");
+
+const intelligence=JSON.parse(fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/config/usage-intelligence.json"),"utf8"));
+const intelligenceOk=intelligence?.policy?.approval_when_upper_exceeds_target===true &&
+  intelligence?.policy?.split_when_upper_exceeds_ceiling===true &&
+  intelligence?.quantiles?.upper===0.9;
+(intelligenceOk?pass:fail)("usage intelligence config");
+const intelligenceScript=fs.readFileSync(path.join(ROOT,".agents/skills/usage-efficient-orchestrator/scripts/usage-intelligence.mjs"),"utf8");
+(!intelligenceScript.includes("prompt_text") && !intelligenceScript.includes("source_code") ? pass : fail)("usage intelligence privacy boundary");
 
 const failed=results.filter(r=>!r.ok);
 for(const r of results) console.log(`${r.ok?"PASS":"FAIL"} | ${r.name}${r.detail?" | "+r.detail:""}`);

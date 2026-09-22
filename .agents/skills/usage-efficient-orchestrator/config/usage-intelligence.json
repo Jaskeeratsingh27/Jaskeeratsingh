@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "history_days": 56,
+  "quantiles": {
+    "lower": 0.25,
+    "typical": 0.5,
+    "upper": 0.9
+  },
+  "hierarchy": [
+    {
+      "name": "exact",
+      "fields": [
+        "complexity",
+        "risk",
+        "profile"
+      ],
+      "min_samples": 5
+    },
+    {
+      "name": "complexity_profile",
+      "fields": [
+        "complexity",
+        "profile"
+      ],
+      "min_samples": 6
+    },
+    {
+      "name": "complexity",
+      "fields": [
+        "complexity"
+      ],
+      "min_samples": 8
+    },
+    {
+      "name": "global",
+      "fields": [],
+      "min_samples": 12
+    }
+  ],
+  "confidence": {
+    "medium_min_samples": 12,
+    "high_min_samples": 30,
+    "max_relative_spread_for_high": 1
+  },
+  "drift": {
+    "min_samples_each_side": 5,
+    "median_shift_ratio": 0.5
+  },
+  "backtest": {
+    "min_predictions_for_calibration": 8,
+    "minimum_upper_coverage": 0.75,
+    "maximum_mae_for_acceptable": 2.5
+  },
+  "profiles": {
+    "economy": {
+      "target_points": 3,
+      "ceiling_points": 5
+    },
+    "balanced": {
+      "target_points": 5,
+      "ceiling_points": 10
+    },
+    "quality-critical": {
+      "target_points": 5,
+      "ceiling_points": 10
+    }
+  },
+  "policy": {
+    "large_is_plan_only": true,
+    "critical_is_plan_only": true,
+    "weak_calibration_requires_proxy_guards": true,
+    "low_confidence_requires_proxy_guards": true,
+    "approval_when_upper_exceeds_target": true,
+    "split_when_upper_exceeds_ceiling": true
+  }
+}

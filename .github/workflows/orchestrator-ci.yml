@@ -12,6 +12,7 @@ on:
       - 'tests/orchestrator/**'
       - 'scripts/*orchestrator*'
       - 'scripts/test-observability.mjs'
+      - 'scripts/test-usage-intelligence.mjs'
       - 'docs/codex-usage-orchestrator.md'
       - 'docs/orchestrator-v*.md'
       - '.github/workflows/orchestrator-ci.yml'
@@ -23,7 +24,9 @@ on:
       - 'tests/orchestrator/**'
       - 'scripts/*orchestrator*'
       - 'scripts/test-observability.mjs'
+      - 'scripts/test-usage-intelligence.mjs'
       - 'docs/codex-usage-orchestrator.md'
+      - 'docs/orchestrator-v*.md'
       - '.github/workflows/orchestrator-ci.yml'
   workflow_dispatch:
 
