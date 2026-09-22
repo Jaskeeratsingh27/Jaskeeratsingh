@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/hermes/consumer-registry.schema.json",
+  "title": "Hermes Consumer Dependency Registry",
+  "type": "object",
+  "properties": {
+    "schema_version":{"type":"string"},
+    "registry_scope":{"type":"string"},
+    "ignored_path_prefixes":{"type":"array","items":{"type":"string"},"uniqueItems":true},
+    "consumers":{
+      "type":"array",
+      "items":{
+        "type":"object",
+        "properties":{
+          "id":{"type":"string"},
+          "type":{"type":"string","enum":["skill","agent","project","application","workflow"]},
+          "status":{"type":"string","enum":["active","paused","retired"]},
+          "criticality":{"type":"string","enum":["low","medium","high","critical"]},
+          "dependency_mode":{"type":"string"},
+          "paths":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true},
+          "capability_ids":{"type":"array","items":{"type":"string"},"minItems":1,"uniqueItems":true},
+          "rationale":{"type":"string"}
+        },
+        "required":["id","type","status","criticality","dependency_mode","paths","capability_ids","rationale"],
+        "additionalProperties":false
+      }
+    }
+  },
+  "required":["schema_version","registry_scope","ignored_path_prefixes","consumers"],
+  "additionalProperties":false
+}
