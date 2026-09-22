@@ -12,7 +12,10 @@ const state={
   localBudget:Number(localStorage.getItem("tt-budget")||0),
   theme:localStorage.getItem("tt-theme")||"dark",
   attr:"models",lastLoaded:0,nextRefresh:0,
-  chatSnapshots:loadChatSnapshots()
+  chatSnapshots:loadChatSnapshots(),
+  chatSyncKey:localStorage.getItem("tt-chat-sync-key-v1")||"",
+  chatAutoSync:localStorage.getItem("tt-chat-auto-sync-v1")!=="false",
+  chatSyncBusy:false
 };
 
 const num=v=>Number.isFinite(Number(v))?Number(v):0;
@@ -60,6 +63,194 @@ function loadChatSnapshots(){
 function saveChatSnapshots(){
   localStorage.setItem("tt-chat-snapshots-v1",JSON.stringify(state.chatSnapshots));
 }
+
+function b64urlEncode(bytes){
+  let binary="";const view=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
+  for(let i=0;i<view.length;i++)binary+=String.fromCharCode(view[i]);
+  return btoa(binary).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function b64urlDecode(value){
+  const clean=String(value||"").trim().replace(/-/g,"+").replace(/_/g,"/");
+  const padded=clean+"=".repeat((4-clean.length%4)%4),binary=atob(padded),out=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)out[i]=binary.charCodeAt(i);
+  return out;
+}
+function bytesHex(bytes){return [...new Uint8Array(bytes)].map(b=>b.toString(16).padStart(2,"0")).join("")}
+function concatBytes(a,b){const out=new Uint8Array(a.length+b.length);out.set(a);out.set(b,a.length);return out}
+async function syncContext(code=state.chatSyncKey){
+  if(!crypto?.subtle)throw new Error("WebCrypto is unavailable in this browser.");
+  const raw=b64urlDecode(String(code||"").replace(/\s+/g,""));
+  if(raw.length!==32)throw new Error("Invalid sync code.");
+  const enc=new TextEncoder();
+  const idDigest=await crypto.subtle.digest("SHA-256",concatBytes(enc.encode("tokentrack-sync-id-v1:"),raw));
+  const authDigest=await crypto.subtle.digest("SHA-256",concatBytes(enc.encode("tokentrack-sync-auth-v1:"),raw));
+  const aesKey=await crypto.subtle.importKey("raw",raw,{name:"AES-GCM"},false,["encrypt","decrypt"]);
+  return{code:b64urlEncode(raw),id:bytesHex(idDigest),auth:b64urlEncode(authDigest),aesKey};
+}
+async function encryptSyncSnapshots(ctx,snapshots){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const payload={schema_version:3,source:"tokentrack-encrypted-sync",snapshots};
+  const plaintext=new TextEncoder().encode(JSON.stringify(payload));
+  const cipher=await crypto.subtle.encrypt({name:"AES-GCM",iv},ctx.aesKey,plaintext);
+  return{v:1,iv:b64urlEncode(iv),ciphertext:b64urlEncode(new Uint8Array(cipher))};
+}
+async function decryptSyncBlob(ctx,blob){
+  if(!blob||blob.v!==1)throw new Error("Unsupported encrypted sync payload.");
+  const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64urlDecode(blob.iv)},ctx.aesKey,b64urlDecode(blob.ciphertext));
+  const data=JSON.parse(new TextDecoder().decode(plain));
+  if(!Array.isArray(data.snapshots))throw new Error("Encrypted sync payload is invalid.");
+  return data.snapshots;
+}
+function normalizeSyncSnapshot(row){
+  const used=Number(row?.used),recorded=new Date(row?.recorded_at);
+  if(!Number.isFinite(used)||used<0||used>100||!Number.isFinite(recorded.getTime()))return null;
+  let resetAt=null;
+  if(row.reset_at){const r=new Date(row.reset_at);if(Number.isFinite(r.getTime()))resetAt=r.toISOString()}
+  return{
+    id:String(row.id||((crypto.randomUUID&&crypto.randomUUID())||(recorded.getTime()+"-"+Math.random()))),
+    recorded_at:recorded.toISOString(),
+    used,
+    reset_at:resetAt,
+    note:String(row.note||"").slice(0,120)
+  };
+}
+function mergeSnapshotSets(...sets){
+  const byKey=new Map();
+  for(const rows of sets)for(const raw of rows||[]){
+    const row=normalizeSyncSnapshot(raw);if(!row)continue;
+    const key=row.id||row.recorded_at+"|"+row.used.toFixed(3)+"|"+row.note;
+    const existing=byKey.get(key);
+    if(!existing||new Date(row.recorded_at)>=new Date(existing.recorded_at))byKey.set(key,row);
+  }
+  return[...byKey.values()].sort((a,b)=>new Date(a.recorded_at)-new Date(b.recorded_at));
+}
+function setSyncLast(message){
+  localStorage.setItem("tt-chat-sync-last-v1",JSON.stringify({at:new Date().toISOString(),message}));
+  renderChatSync();
+}
+function renderChatSync(){
+  const enabled=Boolean(state.chatSyncKey);
+  $("chatSyncBadge").textContent=enabled?"Encrypted sync on":"Local only";
+  $("chatSyncStatus").textContent=enabled?"This browser has a sync key. The server stores encrypted checkpoint data only.":"No sync key configured.";
+  $("chatSyncCreate").classList.toggle("hidden",enabled);
+  ["chatSyncCopy","chatSyncDisable","chatSyncPull","chatSyncPush","chatSyncDeleteRemote","chatSyncCodeWrap"].forEach(id=>$(id).classList.toggle("hidden",!enabled));
+  $("chatSyncCode").value=enabled?state.chatSyncKey:"";
+  $("chatAutoSync").checked=state.chatAutoSync;
+  try{
+    const meta=JSON.parse(localStorage.getItem("tt-chat-sync-last-v1")||"null");
+    $("chatSyncLast").textContent=meta?.at?(meta.message+" · "+timeLabel(meta.at)):"Never synced";
+  }catch{$("chatSyncLast").textContent="Never synced"}
+}
+async function syncRequest(method,ctx,body){
+  const response=await fetch("/api/chatgpt-sync?id="+encodeURIComponent(ctx.id),{
+    method,
+    headers:{"Content-Type":"application/json","X-Sync-Auth":ctx.auth},
+    body:body?JSON.stringify(body):undefined,
+    cache:"no-store"
+  });
+  const data=await response.json().catch(()=>({error:"Invalid sync response"}));
+  if(response.status===404&&method==="GET")return null;
+  if(!response.ok)throw new Error(data.error||("Sync HTTP "+response.status));
+  return data;
+}
+async function fetchRemoteSnapshots(ctx){
+  const remote=await syncRequest("GET",ctx);
+  if(!remote)return null;
+  return{snapshots:await decryptSyncBlob(ctx,remote.blob),updated_at:remote.updated_at};
+}
+async function pushEncryptedSnapshots(ctx,snapshots){
+  const blob=await encryptSyncSnapshots(ctx,snapshots);
+  return syncRequest("PUT",ctx,{blob});
+}
+async function syncMergePush(){
+  if(!state.chatSyncKey||state.chatSyncBusy)return;
+  state.chatSyncBusy=true;
+  try{
+    const ctx=await syncContext(),remote=await fetchRemoteSnapshots(ctx);
+    state.chatSnapshots=mergeSnapshotSets(state.chatSnapshots,remote?.snapshots||[]);
+    saveChatSnapshots();renderChatGPT();
+    await pushEncryptedSnapshots(ctx,state.chatSnapshots);
+    setSyncLast("Synced");
+  }catch(error){setSyncLast("Sync failed");toast("Sync failed: "+error.message)}
+  finally{state.chatSyncBusy=false}
+}
+async function syncPushLocal(){
+  if(!state.chatSyncKey)return;
+  if(state.chatSyncBusy){toast("Sync already running");return}
+  state.chatSyncBusy=true;
+  try{
+    const ctx=await syncContext();
+    await pushEncryptedSnapshots(ctx,state.chatSnapshots);
+    setSyncLast("Local pushed");toast("Encrypted checkpoints pushed");
+  }catch(error){setSyncLast("Push failed");toast("Push failed: "+error.message)}
+  finally{state.chatSyncBusy=false}
+}
+async function syncPullMerge(){
+  if(!state.chatSyncKey)return;
+  if(state.chatSyncBusy){toast("Sync already running");return}
+  state.chatSyncBusy=true;
+  try{
+    const ctx=await syncContext(),remote=await fetchRemoteSnapshots(ctx);
+    if(!remote){await pushEncryptedSnapshots(ctx,state.chatSnapshots);setSyncLast("Cloud copy created");toast("No remote copy existed; local checkpoints uploaded");return}
+    state.chatSnapshots=mergeSnapshotSets(state.chatSnapshots,remote.snapshots);
+    saveChatSnapshots();renderChatGPT();
+    await pushEncryptedSnapshots(ctx,state.chatSnapshots);
+    setSyncLast("Pulled & merged");toast("Encrypted checkpoints merged");
+  }catch(error){setSyncLast("Pull failed");toast("Pull failed: "+error.message)}
+  finally{state.chatSyncBusy=false}
+}
+async function syncDeleteCheckpoint(id){
+  if(!state.chatSyncKey||!state.chatAutoSync)return;
+  if(state.chatSyncBusy)return;
+  state.chatSyncBusy=true;
+  try{
+    const ctx=await syncContext(),remote=await fetchRemoteSnapshots(ctx);
+    const merged=mergeSnapshotSets(state.chatSnapshots,remote?.snapshots||[]).filter(x=>x.id!==id);
+    state.chatSnapshots=merged;saveChatSnapshots();renderChatGPT();
+    await pushEncryptedSnapshots(ctx,merged);setSyncLast("Deletion synced");
+  }catch(error){setSyncLast("Delete sync failed");toast("Remote delete sync failed: "+error.message)}
+  finally{state.chatSyncBusy=false}
+}
+function queueChatAutoSync(){
+  if(!state.chatSyncKey||!state.chatAutoSync)return;
+  clearTimeout(window.__chatSyncTimer);
+  window.__chatSyncTimer=setTimeout(()=>syncMergePush(),350);
+}
+async function createChatSync(){
+  const raw=crypto.getRandomValues(new Uint8Array(32));
+  state.chatSyncKey=b64urlEncode(raw);
+  localStorage.setItem("tt-chat-sync-key-v1",state.chatSyncKey);
+  renderChatSync();
+  await syncPushLocal();
+}
+async function pairChatSync(code){
+  const ctx=await syncContext(code);
+  state.chatSyncKey=ctx.code;
+  localStorage.setItem("tt-chat-sync-key-v1",state.chatSyncKey);
+  renderChatSync();
+  await syncPullMerge();
+}
+async function deleteRemoteSync(){
+  if(!state.chatSyncKey)return;
+  const ctx=await syncContext();
+  try{
+    await syncRequest("DELETE",ctx);
+  }catch(error){
+    if(!/not found/i.test(error.message))throw error;
+  }
+  state.chatSyncKey="";
+  localStorage.removeItem("tt-chat-sync-key-v1");
+  localStorage.removeItem("tt-chat-sync-last-v1");
+  renderChatSync();
+}
+async function copyChatSyncCode(){
+  if(!state.chatSyncKey)return;
+  try{await navigator.clipboard.writeText(state.chatSyncKey);toast("Sync code copied")}
+  catch{
+    const input=$("chatSyncCode");input.type="text";input.select();document.execCommand("copy");input.type="password";toast("Sync code copied");
+  }
+}
+
 function addChatSnapshot(used,resetAt,note){
   state.chatSnapshots.push({
     id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()),
@@ -71,6 +262,7 @@ function addChatSnapshot(used,resetAt,note){
   state.chatSnapshots.sort((a,b)=>new Date(a.recorded_at)-new Date(b.recorded_at));
   saveChatSnapshots();
   renderChatGPT();
+  queueChatAutoSync();
 }
 function currentChatCycle(){
   const rows=state.chatSnapshots;
@@ -194,7 +386,7 @@ function importChatBackup(payload){
     existing.add(key);added++;
   }
   state.chatSnapshots.sort((a,b)=>new Date(a.recorded_at)-new Date(b.recorded_at));
-  saveChatSnapshots();renderChatGPT();return added;
+  saveChatSnapshots();renderChatGPT();queueChatAutoSync();return added;
 }
 
 function renderChatGPT(){
@@ -255,8 +447,10 @@ function renderChatGPT(){
     return '<tr><td>'+timeLabel(r.recorded_at)+'</td><td>'+num(r.used).toFixed(1)+'%</td><td>'+(100-num(r.used)).toFixed(1)+'%</td><td>'+change+'</td><td>'+(r.reset_at?timeLabel(r.reset_at):"—")+'</td><td>'+esc(r.note||"")+'</td><td><button class="button chat-delete" type="button" data-id="'+esc(r.id)+'">Delete</button></td></tr>';
   }).join(""):'<tr><td colspan="7">No ChatGPT checkpoints yet.</td></tr>';
   qsa(".chat-delete").forEach(b=>b.onclick=()=>{
-    state.chatSnapshots=state.chatSnapshots.filter(x=>x.id!==b.dataset.id);
+    const id=b.dataset.id;
+    state.chatSnapshots=state.chatSnapshots.filter(x=>x.id!==id);
     saveChatSnapshots();renderChatGPT();
+    void syncDeleteCheckpoint(id);
   });
   drawChatUsageChart();
 }
@@ -436,6 +630,29 @@ function countdown(){
 }
 
 qsa(".nav").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+$("chatSyncCreate").onclick=()=>createChatSync().catch(e=>toast("Could not enable sync: "+e.message));
+$("chatSyncCopy").onclick=()=>copyChatSyncCode();
+$("chatSyncDisable").onclick=()=>{
+  state.chatSyncKey="";localStorage.removeItem("tt-chat-sync-key-v1");renderChatSync();toast("Sync disabled on this device");
+};
+$("chatSyncPair").onclick=async()=>{
+  const code=$("chatSyncPairCode").value.trim();
+  if(!code){toast("Paste a sync code first");return}
+  try{await pairChatSync(code);$("chatSyncPairCode").value="";toast("Device paired")}
+  catch(e){toast("Pairing failed: "+e.message)}
+};
+$("chatSyncPull").onclick=()=>syncPullMerge();
+$("chatSyncPush").onclick=()=>syncPushLocal();
+$("chatAutoSync").onchange=e=>{
+  state.chatAutoSync=e.target.checked;localStorage.setItem("tt-chat-auto-sync-v1",String(state.chatAutoSync));
+  if(state.chatAutoSync)queueChatAutoSync();
+};
+$("chatSyncDeleteRemote").onclick=async()=>{
+  if(!confirm("Delete the encrypted cloud copy? Local checkpoints on this device will remain."))return;
+  try{await deleteRemoteSync();toast("Encrypted cloud copy deleted")}
+  catch(e){toast("Cloud delete failed: "+e.message)}
+};
+
 $("chatParseText").onclick=()=>{
   const parsed=parseChatUsageText($("chatPasteText").value);
   const result=$("chatParseResult");
@@ -464,8 +681,9 @@ $("chatCheckpointForm").onsubmit=e=>{
 $("chatExport").onclick=()=>exportChatSnapshots();
 $("chatClear").onclick=()=>{
   if(!state.chatSnapshots.length)return;
-  if(confirm("Clear all locally saved ChatGPT usage checkpoints?")){
+  if(confirm("Clear all locally saved ChatGPT usage checkpoints? If encrypted sync is enabled, the cloud copy will also be replaced with an empty history.")){
     state.chatSnapshots=[];saveChatSnapshots();renderChatGPT();toast("Checkpoint history cleared");
+    if(state.chatSyncKey&&state.chatAutoSync)void syncPushLocal();
   }
 };
 qsa(".chip").forEach(b=>b.onclick=()=>{state.attr=b.dataset.attr;qsa(".chip").forEach(x=>x.classList.toggle("active",x===b));renderAttribution()});
@@ -484,5 +702,7 @@ let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{render
 setInterval(countdown,1000);
 document.documentElement.dataset.theme=state.theme;state.nextRefresh=Date.now()+state.refreshSeconds*1000;
 $("apiControls").classList.add("hidden");
+renderChatSync();
 renderChatGPT();
+if(state.chatSyncKey&&state.chatAutoSync)setTimeout(()=>syncPullMerge(),700);
 load(false);
