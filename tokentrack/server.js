@@ -858,4 +858,26 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log("TokenTrack v" + VERSION + " listening on :" + PORT);
+
+  if (OPENAI_ADMIN_KEY) {
+    setTimeout(async () => {
+      try {
+        const data = await loadAnalytics(7);
+        console.log(
+          "TokenTrack analytics self-test OK" +
+          " | version=" + VERSION +
+          " | stale=" + Boolean(data.stale) +
+          " | warnings=" + (data.warnings || []).length +
+          " | models=" + (data.distribution?.models || []).length +
+          " | projects=" + (data.distribution?.projects || []).length +
+          " | api_keys=" + (data.distribution?.api_keys || []).length +
+          " | resources=" + (data.resources || []).length
+        );
+      } catch (error) {
+        console.error("TokenTrack analytics self-test FAILED | " + (error?.message || "unknown error"));
+      }
+    }, 1200);
+  } else {
+    console.warn("TokenTrack analytics self-test SKIPPED | OPENAI_ADMIN_KEY not configured");
+  }
 });
