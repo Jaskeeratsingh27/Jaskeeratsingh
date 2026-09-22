@@ -43,7 +43,7 @@
           <h2>ChatGPT usage tracker</h2>
           <p>ChatGPT does not expose your personal Plus usage through the OpenAI API. This section therefore uses checkpoints you enter from the ChatGPT usage screen and keeps them locally in this browser.</p>
         </div>
-        <div class="source-state"><strong>Manual source</strong><small>Separate from API telemetry</small></div>
+        <div class="source-state"><strong>Assisted checkpoints</strong><small>Local · separate from API telemetry</small></div>
       </div>
 
       <div class="kpis chat-kpis">
@@ -53,9 +53,28 @@
         <article class="card"><span>Projected exhaustion</span><strong id="chatProjected">—</strong><small id="chatProjectionDetail">Based on recent observed pace</small></article>
       </div>
 
+      <div class="cycle-intel">
+        <article class="panel intel-card"><span>Time to reset</span><strong id="chatTimeToReset">—</strong><small id="chatResetDetail">Add a reset time</small></article>
+        <article class="panel intel-card"><span>Cycle burn rate</span><strong id="chatCycleRate">—</strong><small id="chatCycleRateDetail">Needs 2 checkpoints</small></article>
+        <article class="panel intel-card"><span>Usage change</span><strong id="chatCycleChange">—</strong><small>since first checkpoint this cycle</small></article>
+        <article class="panel intel-card"><span>Pace status</span><strong id="chatPaceStatus">—</strong><small id="chatPaceDetail">Needs trend + reset</small></article>
+      </div>
+
       <div class="grid2">
         <article class="panel padded">
-          <div class="head"><div><h2>Add usage checkpoint</h2><p>Copy the percentage shown in ChatGPT Settings → Usage.</p></div></div>
+          <div class="head"><div><h2>Add usage checkpoint</h2><p>Enter it directly, or paste text copied from the ChatGPT usage screen.</p></div></div>
+
+          <div class="assisted-capture">
+            <label>Paste usage text
+              <textarea id="chatPasteText" class="control text-area" rows="4" placeholder="Example: Weekly usage 42% · resets Sep 28 at 3:00 PM"></textarea>
+            </label>
+            <div class="button-row">
+              <button id="chatParseText" class="button" type="button">Parse text</button>
+              <label class="button import-label">Import backup<input id="chatImportFile" type="file" accept=".json,application/json" hidden></label>
+            </div>
+            <div id="chatParseResult" class="parse-result">Paste text to prefill the checkpoint form. Parsed values are always shown for review before saving.</div>
+          </div>
+
           <form id="chatCheckpointForm" class="checkpoint-form">
             <label>Usage consumed (%)
               <input id="chatUsagePercent" class="control" type="number" min="0" max="100" step="0.1" required placeholder="e.g. 42">
@@ -68,7 +87,7 @@
             </label>
             <button class="button primary" type="submit">Save checkpoint</button>
           </form>
-          <div class="checkpoint-help">Nothing here is sent to OpenAI or GitHub. Checkpoints are stored in this browser only during Phase 1.</div>
+          <div class="checkpoint-help">Phase 2 still stores ChatGPT checkpoints only in this browser. Text parsing and backup import happen locally; nothing here is sent to OpenAI, Railway, or GitHub.</div>
         </article>
 
         <article class="panel chart">
