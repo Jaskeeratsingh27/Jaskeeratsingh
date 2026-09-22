@@ -512,7 +512,8 @@ function main(){
   if(command==="preflight") result=preflight(args);
   else if(command==="checkpoint") result=checkpoint(args);
   else if(command==="status") result=status(args);
-  else result=finalize(args);
+  else if(command==="finalize") result=finalize(args);
+  else die("unsupported closed-loop command");
   print(result,Boolean(args.json));
 }
 
