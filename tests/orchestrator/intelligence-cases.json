@@ -1,0 +1,89 @@
+[
+  {
+    "id": "I01",
+    "name": "small economy estimate remains under target",
+    "query": {
+      "complexity": "SMALL",
+      "risk": "LOW",
+      "profile": "economy"
+    },
+    "expected_gate": "proceed_with_proxy_guards"
+  },
+  {
+    "id": "I02",
+    "name": "medium balanced estimate exceeds target but not ceiling",
+    "query": {
+      "complexity": "MEDIUM",
+      "risk": "MEDIUM",
+      "profile": "balanced"
+    },
+    "expected_gate": "approval_required"
+  },
+  {
+    "id": "I03",
+    "name": "medium high-risk cohort exceeds ceiling",
+    "query": {
+      "complexity": "MEDIUM",
+      "risk": "HIGH",
+      "profile": "balanced"
+    },
+    "expected_gate": "split_required"
+  },
+  {
+    "id": "I04",
+    "name": "large task stays plan-only regardless estimate",
+    "query": {
+      "complexity": "LARGE",
+      "risk": "LOW",
+      "profile": "balanced"
+    },
+    "expected_gate": "plan_only"
+  },
+  {
+    "id": "I05",
+    "name": "insufficient recent history returns proxy-only",
+    "query": {
+      "complexity": "SMALL",
+      "risk": "LOW",
+      "profile": "economy"
+    },
+    "days": 1,
+    "expected_gate": "proxy_only"
+  },
+  {
+    "id": "I06",
+    "name": "drifted cohort is flagged and confidence downgraded",
+    "query": {
+      "complexity": "SMALL",
+      "risk": "MEDIUM",
+      "profile": "balanced"
+    },
+    "expected_drift": true
+  },
+  {
+    "id": "I07",
+    "name": "baseline produces remaining-allowance estimates",
+    "query": {
+      "complexity": "MEDIUM",
+      "risk": "MEDIUM",
+      "profile": "balanced"
+    },
+    "baseline": 60,
+    "expected_remaining": true
+  },
+  {
+    "id": "I08",
+    "name": "backtest emits historical calibration metrics",
+    "expected_backtest": true
+  },
+  {
+    "id": "I09",
+    "name": "aggregate intelligence export omits task and project IDs",
+    "expected_private_export": true
+  },
+  {
+    "id": "I10",
+    "name": "unmeasured task is excluded from burn calibration",
+    "expected_unmeasured_excluded": true
+  }
+]
