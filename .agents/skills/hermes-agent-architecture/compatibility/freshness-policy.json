@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0.0",
+  "priority_max_age_days": {
+    "critical": 14,
+    "high": 28,
+    "medium": 56,
+    "low": 90
+  },
+  "priority_weights": {
+    "critical": 3.0,
+    "high": 2.0,
+    "medium": 1.5,
+    "low": 1.0
+  },
+  "due_soon_ratio": 0.75,
+  "freshness_scores": {
+    "fresh": 100,
+    "due_soon": 80,
+    "stale": 40,
+    "unknown": 20
+  },
+  "status_scores": {
+    "verified": 100,
+    "partial": 65,
+    "needs_revalidation": 25,
+    "unsupported": 100
+  },
+  "audit_cadence": {
+    "expected_days": 7,
+    "max_age_days": 10,
+    "due_soon_after_days": 7
+  },
+  "health_thresholds": {
+    "healthy_min": 90,
+    "watch_min": 75,
+    "degraded_min": 50
+  }
+}

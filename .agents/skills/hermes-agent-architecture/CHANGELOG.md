@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.3.0 — 2026-09-21
+
+- Added per-capability verification dates and source-priority freshness thresholds.
+- Added deterministic knowledge-health scoring and drift detection.
+- Added weekly audit snapshot schema plus append-only audit-history index.
+- Added historical knowledge-health reports and health-history index.
+- Added drift signals for unresolved revalidation, pending upgrades, release-baseline mismatch, stale audits, and stale critical capabilities.
+- Added health/drift regression fixtures covering time aging and control-plane drift.
+- Expanded structural validation to cross-check freshness policy, verification dates, audit history, health history, and new control files.
+- Added a fourth GitHub CI gate for knowledge-health and drift regressions.
+- Updated weekly maintenance so every audit records history and health even when no Hermes knowledge changes.
+- Established that routine audit/health telemetry does not by itself require a semantic skill version bump.
+
 ## 1.2.0 — 2026-09-21
 
 - Added a deterministic release-impact engine that classifies Hermes changes by severity and computes their blast radius.
@@ -16,18 +29,12 @@
 
 - Added machine-readable Hermes compatibility manifest tied to the skill version and official source IDs.
 - Added machine-readable primitive-routing decision table for core Hermes architecture choices.
-- Added deterministic architecture regression fixtures and runner covering persistent agents, delegation, Kanban, skills, project context, SOUL, Cron, MCP, execute_code, and sandboxing.
-- Extended structural validation to cross-check compatibility status, source references, routing references, and regression fixtures.
-- Added GitHub Actions CI for Hermes skill changes and pull requests.
-- Updated the weekly refresh contract so maintenance runs refresh compatibility state and run both structural and regression validation before promotion.
-- Documented v1.1 quality gates and compatibility-status usage.
+- Added deterministic architecture regression fixtures and runner.
+- Extended structural validation and GitHub Actions CI.
+- Updated the weekly refresh contract to refresh compatibility state and run deterministic validation before promotion.
 
 ## 1.0.0 — 2026-09-21
 
 - Initial Hermes Agent architecture knowledge-base skill.
 - Verified stable release baseline v0.21.3 / v2026.9.14.
-- Added references for profiles, delegation, Kanban, skills/context, memory, tools/MCP, models, cron, security, and observability.
-- Added task/result contracts and profile/context templates.
-- Added a design-only weekly refresh specification.
-- Added machine-readable maintenance source manifest and ready-to-schedule weekly refresh prompt.
-- Added deterministic structural validator for version, JSON, paths, and source manifest.
+- Added references, task/result contracts, maintenance source manifest, weekly refresh prompt, and deterministic structural validation.

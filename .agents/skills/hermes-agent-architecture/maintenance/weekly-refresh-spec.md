@@ -1,84 +1,148 @@
 # Weekly Hermes Knowledge Refresh Specification
 
-Status: ACTIVE MAINTENANCE CONTRACT. The canonical skill has an external ChatGPT scheduled audit every Tuesday at 02:00 America/Winnipeg; this repository file defines how that audit must behave.
+Status: ACTIVE MAINTENANCE CONTRACT. The canonical skill has an external ChatGPT scheduled audit every Tuesday at 02:00 America/Winnipeg.
 
 ## Objective
 
-Keep the Hermes Agent architecture knowledge base synchronized with official releases and documentation without silently introducing unverified behavior, unnecessary rewrites, or unbounded regression work.
+Keep the Hermes Agent architecture knowledge base synchronized with official releases/documentation while preserving historical evidence of what was checked, how fresh each capability is, and whether the knowledge base is drifting.
 
 ## Cadence
 
-Weekly. The active external scheduler runs Tuesday at 02:00 America/Winnipeg using regular ChatGPT chat with web/GitHub access rather than Work/Codex unless the user explicitly changes that policy.
+Weekly. The external scheduler runs Tuesday at 02:00 America/Winnipeg using regular ChatGPT chat with web/GitHub access rather than Work/Codex unless the user explicitly changes that policy.
 
 ## Primary sources
 
-Use `maintenance/source-manifest.json` as the machine-readable watch list and `references/13-source-index.md` as the human-readable index. Prefer official Hermes docs, official GitHub releases/tags, and deployed-tag source code.
+Use `maintenance/source-manifest.json` as the machine-readable source inventory and `references/13-source-index.md` as the human-readable index.
 
-## v1.2 control flow
+## v1.3 control flow
 
 ```text
-official sources
-   -> structured change event(s)
-   -> release-impact engine
-   -> severity + blast radius
-   -> targeted analysis/regressions
-   -> smallest canonical patch
-   -> compatibility/upgrade update
-   -> full deterministic CI
-   -> reviewed promotion when required
+prior health + freshness state
+        ↓
+official-source audit
+        ↓
+structured change event(s)
+        ↓
+release-impact engine
+        ↓
+smallest justified patch
+        ↓
+capability revalidation dates/status
+        ↓
+historical audit snapshot
+        ↓
+knowledge-health engine
+        ↓
+health-history snapshot
+        ↓
+4 deterministic CI gates
+        ↓
+reviewed promotion when required
 ```
 
-## Workflow
+## Historical audit policy
 
-1. Read the current compatibility baseline and upgrade matrix.
-2. Check GitHub releases for a stable tag newer than the recorded baseline.
-3. Review primary sources according to source-manifest priority.
-4. Convert each distinct change into a JSON event conforming to `maintenance/change-event.schema.json`.
-5. Run `maintenance/impact_engine.py` before editing.
-6. Use `compatibility/impact-map.json` to derive affected knowledge files, routing rules, and targeted architecture regression cases.
-7. Produce `research/weekly-change-report-YYYY-MM-DD.md` with the aggregated impact assessment.
-8. If evidence is ambiguous, mark affected capabilities `needs_revalidation`; do not rewrite them as verified facts.
-9. If no material/ambiguous change exists, leave canonical knowledge and version untouched.
-10. If a stable release changed, populate `upgrade-matrix.json.next_upgrade` and require a branch/PR.
-11. Patch only the smallest affected files; any broader edit needs written justification in the change report.
-12. Update `SKILL.md` only when operating procedure or canonical architectural guidance changes.
-13. Update the research dossier only when conceptual understanding changes.
-14. Update `primitive-routing.json` only when primitive selection actually changes.
-15. Run all deterministic gates:
-    - structural/compatibility validation
-    - architecture regression validation
-    - release-impact regression validation
-16. Promote only after required review and passing CI.
-17. After a verified stable-release promotion, append the transition to the upgrade history and update the current baseline.
+Every weekly run creates an audit snapshot under `research/audits/YYYY-MM-DD.json` and updates `research/audits/index.json`, even when no Hermes knowledge changed.
 
-## Severity / promotion policy
+The snapshot records:
 
-- `info`: observation only; no canonical rewrite.
-- `patch`: verified documentation-only correction; may be low-risk.
-- `minor`: verified behavior/deprecation or stable transition without known breaking architecture.
-- `major`: breaking/architectural change, ambiguous evidence, or unknown source/capability.
-- `critical`: security-impacting change.
+- observed Hermes release/tag
+- source IDs actually checked
+- change-event IDs
+- highest severity
+- per-capability status and reverification date
+- deterministic validation status
+- notes
 
-Branch/PR review is mandatory for every stable-release transition and every major/critical/ambiguous/unknown impact.
+Audit snapshots are operating evidence and do not by themselves require a semantic version bump.
 
-## Scheduled-run behavior
+## Freshness policy
 
-- use `hermes-agent-architecture` as the governing maintenance contract
-- operate against the GitHub canonical repository
-- preserve release-vs-main distinctions
-- do not self-schedule recursively
-- do not automatically publish high-risk semantic changes
-- do not use Work/Codex unless explicitly requested
-- report the highest severity plus per-event impact details
+Each capability has `last_verified_on`. The strictest priority among its primary sources determines its maximum verification age through `compatibility/freshness-policy.json`.
+
+Current control thresholds:
+
+- critical source capability: 14 days
+- high: 28 days
+- medium: 56 days
+- low: 90 days
+- due-soon begins at 75% of maximum age
+
+A scheduled audit should prioritize due-soon and stale capabilities.
+
+## Health and drift
+
+After the audit and any canonical edits, run `maintenance/health_engine.py` and persist the report under `research/health/YYYY-MM-DD.json`. Update `research/health/index.json`.
+
+The health model combines:
+
+- capability verification status
+- capability freshness
+- source criticality weighting
+- weekly-audit freshness
+- unresolved revalidation
+- pending upgrade state
+- observed-release vs compatibility-baseline drift
+
+Health states:
+
+- `healthy`: >= 90
+- `watch`: 75–89.9
+- `degraded`: 50–74.9
+- `critical`: < 50
+
+The score is a maintenance-control metric, not a factual-accuracy probability.
+
+## Semantic version policy
+
+Bump the skill version only when:
+
+- canonical Hermes knowledge changes materially;
+- architecture/control logic changes;
+- contracts, routing rules, schemas, or maintenance semantics change.
+
+Do **not** bump the semantic version solely for routine weekly audit snapshots, health reports, or verification-date refreshes.
+
+## Release-impact workflow
+
+For material/ambiguous changes:
+
+1. create a change event;
+2. run `maintenance/impact_engine.py`;
+3. use `compatibility/impact-map.json` to compute blast radius;
+4. patch only justified files;
+5. update compatibility/upgrade state;
+6. run targeted analysis plus full deterministic CI.
+
+## Required deterministic gates
+
+- structural/compatibility/history validation
+- architecture regression validation
+- release-impact regression validation
+- health/drift regression validation
+
+## Promotion policy
+
+Branch/PR review is mandatory for:
+
+- every stable-release transition
+- every major/critical impact
+- ambiguous evidence
+- unknown source/capability mappings
+- breaking/architecture changes
+- security changes
 
 ## Acceptance criteria
 
-A refresh is complete only if:
+A weekly refresh is complete only if:
 
-- every changed claim is tied to official primary-source evidence;
-- every material/ambiguous change has a structured event;
-- every event has been classified by the impact engine;
+- source checks are recorded;
+- material/ambiguous changes have structured change events;
+- impact classification was performed before canonical edits;
+- capability verification dates reflect actual reverification;
+- an audit snapshot was appended;
+- a health report was appended;
+- health/drift delta was reported;
 - compatibility and upgrade state reflect verified knowledge;
-- the patch is limited to the justified blast radius;
-- all three deterministic validation suites pass;
+- all four deterministic validation suites pass;
 - required GitHub review/promotion rules were followed.

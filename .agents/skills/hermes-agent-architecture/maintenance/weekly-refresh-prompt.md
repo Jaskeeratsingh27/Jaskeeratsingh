@@ -4,42 +4,51 @@ Use this as the execution prompt for the scheduled maintenance job. The canonica
 
 ## Prompt
 
-Audit the canonical `hermes-agent-architecture` skill against current official Hermes Agent primary sources.
+Audit the canonical `hermes-agent-architecture` skill against current official Hermes Agent primary sources and append historical health evidence for this audit.
 
-1. Read the current skill, `VERSION`, `CHANGELOG.md`, `maintenance/source-manifest.json`, `compatibility/hermes-compatibility.json`, `compatibility/primitive-routing.json`, `compatibility/impact-map.json`, `compatibility/upgrade-matrix.json`, and `references/12-versioning-known-caveats.md`.
-2. Check the official Hermes Agent GitHub releases first and identify the current stable release/tag. Compare it with the recorded compatibility baseline and upgrade matrix.
-3. Review every `critical` source in `maintenance/source-manifest.json`. Review `high` sources when release notes, changed docs, or repository changes indicate relevance. Use `medium` sources only when affected.
-4. Detect factual changes to profiles/Bots, delegation/subagents, output schemas, Kanban, skills/context/SOUL, memory, tools/toolsets, execute_code, MCP, model/provider routing, Cron, security/sandboxing, checkpoints, plugins/hooks, observability, persistence, or deployment behavior.
-5. For each distinct material or ambiguous change, create a machine-readable event under `research/change-events/YYYY-MM-DD-<slug>.json` conforming to `maintenance/change-event.schema.json`. Include the official source IDs, change types, release transition, evidence status, summary, and explicit capability IDs when a global source such as release notes affects named capabilities.
-6. Run `python maintenance/impact_engine.py <event-file> --pretty` for every event before editing knowledge files.
-7. Use the impact result as the default blast radius:
-   - edit only `affected_files` unless verified evidence requires an additional file;
-   - inspect affected `routing_rule_ids`;
-   - run the recommended targeted regression case IDs during analysis;
-   - mark `needs_revalidation` capabilities when evidence is ambiguous;
-   - treat unknown source/capability IDs as at least major impact requiring review.
-8. Aggregate all event results into `research/weekly-change-report-YYYY-MM-DD.md` containing: sources checked; old/new stable versions; event IDs; severity; factual deltas; breaking/deprecated behavior; docs-vs-release discrepancies; affected capabilities/files/routing rules; targeted regressions; confidence; unresolved questions; and review requirements.
-9. If no material or ambiguous change exists, do not rewrite the knowledge base. Record the audit result only and leave the compatibility baseline unchanged.
-10. If verified changes exist, update only the smallest affected canonical files. Update the research dossier only when the conceptual model changes.
-11. Keep `compatibility/hermes-compatibility.json` synchronized with verified capability state. Never clear `needs_revalidation` without primary-source verification.
-12. If a stable Hermes release changed, populate `compatibility/upgrade-matrix.json.next_upgrade`, update the smallest affected files, and use a branch/PR. After approved promotion, append the verified transition to `history` and move it into `current_baseline`.
-13. Update `compatibility/primitive-routing.json` only when a verified change actually alters a canonical primitive-selection rule.
-14. Increment semantic version and update `CHANGELOG.md` when canonical knowledge/control behavior changes.
-15. Never silently convert documentation for `main` into claims about the pinned stable release. Label release-specific versus docs/current-main behavior.
-16. Run all deterministic quality gates after edits:
+1. Read the current skill, `VERSION`, `CHANGELOG.md`, `maintenance/source-manifest.json`, `compatibility/hermes-compatibility.json`, `compatibility/primitive-routing.json`, `compatibility/impact-map.json`, `compatibility/upgrade-matrix.json`, `compatibility/freshness-policy.json`, `research/audits/index.json`, `research/health/index.json`, and `references/12-versioning-known-caveats.md`.
+2. Check the official Hermes Agent GitHub releases first and identify the current stable release/tag. Compare it with the compatibility baseline, upgrade matrix, and latest audit snapshot.
+3. Review every `critical` source in `maintenance/source-manifest.json`. Review `high` sources when release notes, changed docs, or repository changes indicate relevance. Use `medium` sources when affected or when their capability is due/stale under the freshness policy.
+4. Before deciding the audit scope, run `python maintenance/health_engine.py --as-of YYYY-MM-DD` using the audit date. Use its stale/due-soon capability list to prioritize reverification.
+5. Detect factual changes to profiles/Bots, delegation/subagents, output schemas, Kanban, skills/context/SOUL, memory, tools/toolsets, execute_code, MCP, model/provider routing, Cron, security/sandboxing, checkpoints, plugins/hooks, observability, persistence, or deployment behavior.
+6. For each distinct material or ambiguous change, create a machine-readable event under `research/change-events/YYYY-MM-DD-<slug>.json` conforming to `maintenance/change-event.schema.json`.
+7. Run `python maintenance/impact_engine.py <event-file> --pretty` for every event before editing knowledge files.
+8. Use the impact result as the default blast radius. Edit only affected files unless verified evidence requires an additional file; explain any expansion in the weekly report.
+9. Update a capability's `last_verified_on` only if the audit actually checked enough of its required primary sources to reverify the claim. Do not refresh dates merely because the weekly job ran.
+10. Aggregate event results into `research/weekly-change-report-YYYY-MM-DD.md` containing sources checked, old/new versions, event IDs, severity, factual deltas, affected capabilities/files/routing rules, targeted regressions, confidence, unresolved questions, and review requirements.
+11. Create `research/audits/YYYY-MM-DD.json` conforming to `maintenance/audit-snapshot.schema.json`. Record the observed stable Hermes release/tag, all source IDs actually checked, event IDs, highest severity, per-capability verification result, deterministic-validation results, and notes.
+12. Append that snapshot to `research/audits/index.json` and move `latest_audit_date/latest_snapshot` to the new snapshot.
+13. If no material or ambiguous change exists, do not rewrite canonical knowledge and do not bump `VERSION`; still commit the audit snapshot/history update.
+14. If verified changes exist, update only the smallest affected canonical files. Update the research dossier only when the conceptual model changes.
+15. Keep `compatibility/hermes-compatibility.json` synchronized with verified capability state. Never clear `needs_revalidation` without primary-source verification.
+16. If a stable Hermes release changed, populate `compatibility/upgrade-matrix.json.next_upgrade`, use a branch/PR, and do not promote automatically. After approved promotion, append the verified transition to `history` and move it into `current_baseline`.
+17. Update `compatibility/primitive-routing.json` only when a verified change actually alters a canonical primitive-selection rule.
+18. Increment semantic version and update `CHANGELOG.md` only when canonical knowledge or maintenance/control logic changes. Routine audit/health telemetry alone does not require a version bump.
+19. Run all deterministic gates after edits/history updates:
     - `python tests/validate_skill.py`
     - `python tests/test_architecture_regressions.py`
     - `python tests/test_release_impact.py`
-17. Do not promote an update if any gate fails.
-18. Branch/PR review is mandatory for stable-release transitions, ambiguous evidence, unknown source/capability mappings, breaking/architecture changes, and security changes.
-19. A small verified documentation-only correction may be committed directly only when the repository maintenance policy explicitly permits it and all gates pass.
-20. Report a concise TL;DR containing: audit status, current stable Hermes version, whether the skill changed, new skill version if any, highest impact severity, affected capabilities, compatibility/upgrade state, files changed, all validation results, commit/PR details, and anything requiring human review.
+    - `python tests/test_health_drift.py`
+20. Run `python maintenance/health_engine.py --as-of YYYY-MM-DD --output research/health/YYYY-MM-DD.json` after the final compatibility/audit state is written.
+21. Append the generated health report to `research/health/index.json` and move `latest_health_date/latest_report` to the new report.
+22. Compare the new health result with the previous health report and explicitly report:
+    - overall health score/state change
+    - newly stale capabilities
+    - newly due-soon capabilities
+    - recovered/reverified capabilities
+    - new/resolved drift signals
+23. Run `python tests/validate_skill.py` again after writing the audit and health indexes so history consistency is verified.
+24. Do not promote a semantic update if any gate fails.
+25. Branch/PR review is mandatory for stable-release transitions, ambiguous evidence, unknown source/capability mappings, breaking/architecture changes, and security changes.
+26. A small verified documentation-only correction may be committed directly only when repository maintenance policy explicitly permits it and all gates pass.
+27. Report a concise TL;DR containing: audit status, current stable Hermes version, semantic skill version, whether canonical knowledge changed, highest impact severity, health score/state and delta, stale/due/recovered capabilities, drift signals, compatibility/upgrade state, files changed, validation results, commit/PR details, and anything requiring human review.
 
 ## Safety / quality gates
 
 - Official Hermes docs, GitHub releases/tags, and matching source code outrank secondary commentary.
 - Do not remove a previous caveat merely because a newer page omits it; verify the underlying behavior.
-- Preserve Git history and changelog traceability.
+- Preserve Git history, audit history, health history, and changelog traceability.
 - Do not update unrelated user agent designs merely because the knowledge-base skill changed.
 - Do not expose credentials or repository secrets in reports.
-- Do not broaden the blast radius merely for convenience; explain every file changed outside the impact engine's recommended set.
+- Do not broaden the blast radius merely for convenience.
+- Do not refresh capability verification dates without actual reverification evidence.
