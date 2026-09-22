@@ -3,7 +3,7 @@ name: usage-efficient-orchestrator
 description: Conserve Work/Codex weekly allowance by planning once, estimating burn from measured history, evaluating cheaper capability routes conservatively, preserving quality/risk floors, routing bounded work to the cheapest proven-capable roles, enforcing single-writer execution, proxy usage counters, failure-aware escalation, privacy-preserving telemetry, reliability gates, and user checkpoints before expensive continuation. Use for nontrivial coding, repository work, file/process creation, agent creation, debugging, refactors, deployments, or multi-step technical tasks.
 ---
 
-# Usage-Efficient Orchestrator v1.9.0
+# Usage-Efficient Orchestrator v2.0.0
 
 ## Mission
 
@@ -335,7 +335,57 @@ The canary policy is disabled by default.
 
 Future canary activation requires explicit user approval, canonical route approval, acceptable calibration, no drift, LOW risk, bounded exposure, and immediate rollback triggers.
 
-## 16. Reliability control plane
+## 16. Closed-loop runtime
+
+Read:
+- `references/closed-loop-policy.md`;
+- `config/closed-loop.json`.
+
+For every nontrivial task, use the integrated preflight:
+
+```bash
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/closed-loop.mjs preflight \
+  --task-kind <kind> --complexity <level> --risk <level> --profile <profile> --json
+```
+
+When an authoritative current remaining percentage is available, include `--baseline` and a usage-cycle ID.
+
+Preflight must return:
+- task ID;
+- strict control action;
+- canonical execution route;
+- ordered delegation plan with role/model/reasoning/access;
+- usage prediction/gate;
+- shadow adaptive recommendation;
+- proxy limits.
+
+The execution route remains canonical baseline while adaptive mode is shadow.
+
+Before additional expensive work, inspect:
+
+```bash
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/closed-loop.mjs status --task-id <id> --json
+```
+
+When a real usage reading is available:
+
+```bash
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/closed-loop.mjs checkpoint --task-id <id> --remaining <percent> --cycle <id> --json
+```
+
+A measured burn reaching the profile target returns `stop_target`. Reaching the ceiling returns `stop_ceiling`.
+
+At task end:
+
+```bash
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/closed-loop.mjs finalize --task-id <id> --status <status> --json
+```
+
+Finalization records measured burn when available, quality outcome, prediction error, and learning eligibility.
+
+The learn step is deterministic evidence reuse. It does not modify policy weights or store hidden reasoning.
+
+## 17. Reliability control plane
 
 GitHub repository content is canonical. Global Codex copies are runtime mirrors.
 
@@ -378,7 +428,7 @@ node scripts/orchestrator-sync.mjs --dry-run
 node scripts/orchestrator-sync.mjs
 ```
 
-## 17. Stop-loss gates
+## 18. Stop-loss gates
 
 Stop and return control to the user when:
 - profile retry limit is reached;
@@ -392,7 +442,7 @@ Stop and return control to the user when:
 - CRITICAL risk would move from planning to execution;
 - QA/security/drift status is unsafe for requested promotion or sync.
 
-## 18. Version-control and release policy
+## 19. Version-control and release policy
 
 1. Inspect current Git state/history before edits.
 2. Preserve unrelated user changes.
@@ -406,9 +456,9 @@ Stop and return control to the user when:
 10. Do not merge an orchestrator release candidate until QA is green and the user approves.
 11. Concurrent main changes must be preserved by rebasing/reconciling before promotion.
 
-## 19. Validation accuracy
+## 20. Validation accuracy
 
-v1.9 can validate:
+v2.0 can validate:
 - exact burn arithmetic from measured checkpoints;
 - usage and adaptive cohort selection;
 - route-template and baseline-route invariants across the full query matrix;
@@ -420,9 +470,13 @@ v1.9 can validate:
 - immutable rollback metadata;
 - canary disablement and bounded future exposure;
 - privacy/security invariants;
-- software/control-plane readiness.
+- software/control-plane readiness;
+- closed-loop lifecycle integration from preflight through finalize;
+- live-checkpoint target/ceiling stops when a real meter reading is supplied;
+- proxy-governor counters and delegation-plan generation;
+- post-task measured learning evidence and prediction-error recording.
 
-v1.9 still cannot prove that a candidate route will causally reduce future usage.
+v2.0 still cannot prove that a shadow candidate route will causally reduce future usage, and it does not activate candidate routes.
 
 Synthetic/adversarial fixtures validate implementation and policy behavior, not real-world causal effect.
 
@@ -464,3 +518,6 @@ Read supporting files only when needed:
 - `config/compatibility.json`
 - `config/canary-policy.json`
 - `config/release-state.json`
+- `references/closed-loop-policy.md`
+- `config/closed-loop.json`
+- `schemas/closed-loop-preflight.schema.json`
