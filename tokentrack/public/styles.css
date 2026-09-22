@@ -80,3 +80,8 @@ main{min-width:0;max-width:1640px;width:100%;margin:0 auto;padding:30px clamp(18
 @media(display-mode:standalone){
   .top{padding-top:env(safe-area-inset-top)}
 }
+
+.security-setting code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px}
+.security-state{display:flex;align-items:center;gap:9px;margin-bottom:8px}.security-state strong{font-size:13px}
+.status-badge{display:inline-flex;padding:3px 7px;border:1px solid var(--line);border-radius:999px;font-size:9px;font-weight:850;letter-spacing:.07em}
+.status-badge.secure{color:var(--good);border-color:var(--good)}.status-badge.public{color:var(--warn);border-color:var(--warn)}
