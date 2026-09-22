@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0b1119">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TokenTrack">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
 <title>TokenTrack · AI FinOps & Observability</title>
 <link rel="stylesheet" href="/styles.css">
 <script src="/app.js" defer></script>
@@ -29,6 +35,7 @@
     <header class="top">
       <div><div class="eyebrow">CHATGPT + OPENAI API TELEMETRY</div><h1>Usage command center</h1><p>Live cost, token, cache, attribution, tools and anomaly intelligence.</p></div>
       <div class="actions" id="apiControls">
+        <button id="installApp" class="button hidden" type="button">Install app</button>
         <select id="days" class="control"><option value="1">24h</option><option value="7">7d</option><option value="30" selected>30d</option><option value="90">90d</option><option value="180">180d</option></select>
         <button id="refresh" class="button primary">Refresh</button>
       </div>
@@ -167,6 +174,7 @@
         <article class="panel alert-summary-card"><span>Critical</span><strong id="criticalAlertCount">0</strong><small>requires immediate attention</small></article>
         <article class="panel alert-summary-card"><span>Warnings</span><strong id="warningAlertCount">0</strong><small>approaching a threshold</small></article>
         <article class="panel alert-summary-card"><span>Browser notifications</span><strong id="notificationState">Off</strong><small id="notificationDetail">Permission not requested</small></article>
+        <article class="panel alert-summary-card"><span>Background API monitor</span><strong id="serverMonitorState">—</strong><small id="serverMonitorDetail">Loading monitor state</small></article>
       </div>
 
       <div class="grid2">
@@ -331,6 +339,8 @@
         <article class="panel setting"><h3>Local budget overlay</h3><label>Monthly target (USD)<input id="localBudget" class="control" type="number" min="0" step="1" placeholder="Optional"></label><p>This is separate from OpenAI’s native hard limit and remains only in this browser.</p></article>
         <article class="panel setting"><h3>Theme</h3><label>Appearance<select id="theme" class="control"><option value="dark">Dark</option><option value="light">Light</option></select></label></article>
         <article class="panel setting"><h3>Exports</h3><div class="stack"><button class="button export" data-export="daily">Daily CSV</button><button class="button export" data-export="models">Models CSV</button><button class="button export" data-export="projects">Projects CSV</button></div></article>
+        <article class="panel setting"><h3>Recovery kit</h3><p>Backup local checkpoints, alert rules, preferences, and event history. The sync encryption key is deliberately excluded.</p><div class="stack"><button id="exportRecoveryKit" class="button" type="button">Download recovery kit</button><label class="button import-label">Restore recovery kit<input id="importRecoveryKit" type="file" accept=".json,application/json" hidden></label></div></article>
+        <article class="panel setting"><h3>Installed app</h3><p>TokenTrack can be installed as a standalone app on supported browsers. Offline mode caches only the app shell, never API telemetry.</p><div class="stack"><button id="installAppSettings" class="button" type="button">Install TokenTrack</button><span id="pwaState" class="subtle">Checking install support…</span></div></article>
       </div>
       <article class="panel padded"><div class="head"><div><h2>System diagnostics</h2><p>Service, data freshness and source coverage.</p></div></div><div id="diagnostics" class="diaggrid"></div></article>
     </section>
