@@ -99,7 +99,7 @@
             </label>
             <button class="button primary" type="submit">Save checkpoint</button>
           </form>
-          <div class="checkpoint-help">Phase 2 still stores ChatGPT checkpoints only in this browser. Text parsing and backup import happen locally; nothing here is sent to OpenAI, Railway, or GitHub.</div>
+          <div class="checkpoint-help">ChatGPT checkpoints stay local by default. If encrypted device sync is enabled, only client-side encrypted ciphertext is stored on TokenTrack's persistent volume; readable checkpoint content is never committed to GitHub.</div>
         </article>
 
         <article class="panel chart">
@@ -341,6 +341,7 @@
         <article class="panel setting"><h3>Exports</h3><div class="stack"><button class="button export" data-export="daily">Daily CSV</button><button class="button export" data-export="models">Models CSV</button><button class="button export" data-export="projects">Projects CSV</button></div></article>
         <article class="panel setting"><h3>Recovery kit</h3><p>Backup local checkpoints, alert rules, preferences, and event history. The sync encryption key is deliberately excluded.</p><div class="stack"><button id="exportRecoveryKit" class="button" type="button">Download recovery kit</button><label class="button import-label">Restore recovery kit<input id="importRecoveryKit" type="file" accept=".json,application/json" hidden></label></div></article>
         <article class="panel setting"><h3>Installed app</h3><p>TokenTrack can be installed as a standalone app on supported browsers. Offline mode caches only the app shell, never API telemetry.</p><div class="stack"><button id="installAppSettings" class="button" type="button">Install TokenTrack</button><span id="pwaState" class="subtle">Checking install support…</span></div></article>
+        <article class="panel setting security-setting"><h3>Production security</h3><div class="security-state"><span id="securityState" class="status-badge">Checking…</span><strong id="securityTitle">Checking dashboard protection</strong></div><p id="securityDetail">Loading server security state.</p><p class="subtle">To make the entire dashboard private, set <code>DASHBOARD_PASSWORD</code> in Railway. The health endpoint remains public for Railway health checks.</p></article>
       </div>
       <article class="panel padded"><div class="head"><div><h2>System diagnostics</h2><p>Service, data freshness and source coverage.</p></div></div><div id="diagnostics" class="diaggrid"></div></article>
     </section>
