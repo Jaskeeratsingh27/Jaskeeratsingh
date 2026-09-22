@@ -220,10 +220,11 @@ function recommend(query,tasks){
   const best=chooseBest(candidates);
   if(!best){
     const hasQualityReject=rejections.some(r=>["success_floor","validation_floor","success_regression","validation_regression"].includes(r.reason));
+    const hasRiskReject=rejections.some(r=>["high_risk_review","plan_only_floor","senior_initial","escalation_only"].includes(r.reason));
     return {
       schema_version:CONFIG.schema_version,orchestrator_version:MANIFEST.version,mode:CONFIG.mode,
       query,basis:selected.basis,baseline_route:baselineId,baseline,
-      decision:hasQualityReject?"quality_floor":"no_qualified_candidate",
+      decision:hasQualityReject?"quality_floor":hasRiskReject?"risk_floor":"no_qualified_candidate",
       candidate_route:null,active_eligible:false,rejections,
       reason:"No cheaper route cleared all evidence, quality, risk, and efficiency gates."
     };
