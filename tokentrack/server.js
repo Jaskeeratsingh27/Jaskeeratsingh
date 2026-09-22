@@ -873,6 +873,9 @@ server.listen(PORT, "0.0.0.0", () => {
           " | api_keys=" + (data.distribution?.api_keys || []).length +
           " | resources=" + (data.resources || []).length
         );
+        if ((data.warnings || []).length) {
+          console.warn("TokenTrack analytics coverage warnings | " + data.warnings.join(" || "));
+        }
       } catch (error) {
         console.error("TokenTrack analytics self-test FAILED | " + (error?.message || "unknown error"));
       }
