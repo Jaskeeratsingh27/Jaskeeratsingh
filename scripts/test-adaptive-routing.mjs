@@ -126,7 +126,7 @@ for(let i=0;i<6;i++){
 // Legacy/unrecognized role sequence: enough events to be visible, never a known candidate.
 for(let i=0;i<6;i++){
   addTask({
-    id:"legacy_"+i,daysAgo:20-i,profile:"economy",taskKind:"unknown",complexity:"SMALL",risk:"LOW",
+    id:"legacy_"+i,daysAgo:20-i,profile:"balanced",taskKind:"unknown",complexity:"MICRO",risk:"LOW",
     burn:0.5,roles:["architect","standard_engineer"]
   });
 }
@@ -175,7 +175,7 @@ check("A08 deterministic route decision",
   deterministic1?.candidate_route===deterministic2?.candidate_route &&
   deterministic1?.decision===deterministic2?.decision);
 
-const legacy=rec("unknown","SMALL","LOW","economy");
+const legacy=rec("unknown","MICRO","LOW","balanced");
 check("A09 legacy unknown task kind not adaptively promoted",legacy?.candidate_route===null,JSON.stringify(legacy));
 
 const shadow=JSON.parse(run(["shadow","--days","56","--json"]).stdout);
