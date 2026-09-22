@@ -1,6 +1,6 @@
 # Usage-Efficient Codex Orchestrator
 
-Version: 1.3.0
+Version: 1.4.0
 
 GitHub is the canonical source for the orchestration policy.
 
@@ -8,6 +8,7 @@ GitHub is the canonical source for the orchestration policy.
 
 Primary supervisor
 -> Task Envelope
+-> historical usage-intelligence gate
 -> privacy-preserving telemetry start
 -> cheap read-only discovery where needed
 -> one standard writer
@@ -16,7 +17,7 @@ Primary supervisor
 -> targeted validation
 -> measured checkpoint when available
 -> telemetry finish
--> compact report
+-> calibration history for future tasks
 
 ## Usage profiles
 
@@ -24,7 +25,42 @@ Primary supervisor
 - balanced: target <=5, ceiling <=10.
 - quality-critical: target <=5, ceiling <=10 with stronger assurance.
 
-If live usage is unavailable, the system uses enforceable proxy counters and never fabricates a percentage.
+If live usage is unavailable, proxy counters remain enforceable. Historical predictions never replace the proxy stop-loss.
+
+## Usage Intelligence
+
+After global sync:
+
+```bash
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/usage-intelligence.mjs predict \
+  --complexity MEDIUM --risk MEDIUM --profile balanced --json
+```
+
+With a real current remaining percentage:
+
+```bash
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/usage-intelligence.mjs predict \
+  --complexity MEDIUM --risk MEDIUM --profile balanced --baseline 60 --json
+```
+
+Historical analysis:
+
+```bash
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/usage-intelligence.mjs analyze --days 56 --json
+node ~/.agents/skills/usage-efficient-orchestrator/scripts/usage-intelligence.mjs backtest --days 56
+```
+
+The estimator uses measured tasks only, chooses the narrowest sufficiently populated historical cohort, and reports p25/median/p90 empirical bands.
+
+Gate meanings:
+- proxy_only
+- proceed_with_proxy_guards
+- proceed
+- approval_required
+- split_required
+- plan_only
+
+These are control decisions based on historical evidence, not guarantees of future account usage.
 
 ## Observability
 
@@ -32,17 +68,9 @@ Local ledger:
 
 `~/.codex/orchestrator/telemetry/events.jsonl`
 
-The ledger stores structured metadata only. Prompts, source code, file contents, secrets, and raw tool output are intentionally excluded.
+Prompts, source code, file contents, secrets, and raw tool output are excluded.
 
-Useful commands after global sync:
-
-```bash
-node ~/.agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs report --days 7
-node ~/.agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs export --days 7 --out /tmp/tokentrack-orchestrator.json
-node ~/.agents/skills/usage-efficient-orchestrator/scripts/telemetry.mjs prune
-```
-
-Measured allowance burn is reported only for tasks that have real before/after remaining-percentage checkpoints.
+New telemetry events record the orchestrator version to support drift/calibration analysis.
 
 ## Reliability
 
@@ -61,4 +89,5 @@ node scripts/orchestrator-sync.mjs
 - v1.3 observability
 - v1.4 usage intelligence and calibrated burn estimation
 - v1.5 adaptive routing
+- v1.6-v1.9 hardening/evaluations
 - v2.0 closed-loop orchestrator
