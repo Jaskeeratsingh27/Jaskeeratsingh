@@ -1,4 +1,4 @@
-version: 1.0.0
+version: 1.0.1
 
 states:
   - IDEA
@@ -45,7 +45,13 @@ gates:
       - qa_pass
 
 exception_states:
-  - BLOCKED
-  - INPUT_REQUIRED
-  - FAILED
-  - CANCELED
+  BLOCKED:
+    resumable: true
+    resume_to: previous_state
+  INPUT_REQUIRED:
+    resumable: true
+    resume_to: previous_state
+  FAILED:
+    resumable: false
+  CANCELED:
+    resumable: false
