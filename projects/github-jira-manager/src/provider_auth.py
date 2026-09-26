@@ -1,6 +1,9 @@
 import json
 import time
 import urllib.request
+from pathlib import Path
+
+from cryptography.fernet import Fernet, InvalidToken
 from datetime import datetime, timezone
 from typing import Dict, Optional, Protocol
 
@@ -14,6 +17,83 @@ class AuthError(RuntimeError):
 class SecretStore(Protocol):
     def get(self, key: str) -> str: ...
     def set(self, key: str, value: str) -> None: ...
+
+
+class EncryptedFileSecretStore:
+    """Small single-node secret store for rotating credentials.
+
+    The file is encrypted with a Fernet key supplied separately at runtime. Hosted
+    production deployments may replace this with a cloud secret-manager adapter that
+    implements the same get/set protocol.
+    """
+
+    def __init__(
+        self,
+        path: str,
+        encryption_key: str,
+        bootstrap: Optional[Dict[str, str]] = None,
+    ) -> None:
+        self.path = Path(path)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            self.fernet = Fernet(encryption_key.encode("utf-8"))
+        except Exception as exc:
+            raise AuthError("invalid CONTROL_PLANE_SECRET_KEY") from exc
+        if not self.path.exists():
+            self.values = dict(bootstrap or {})
+            if self.values:
+                self._persist()
+        else:
+            self.values = self._load()
+
+    def _load(self) -> Dict[str, str]:
+        try:
+            raw = self.fernet.decrypt(self.path.read_bytes())
+            data = json.loads(raw.decode("utf-8"))
+        except (OSError, InvalidToken, json.JSONDecodeError) as exc:
+            raise AuthError("failed to load encrypted rotating secrets") from exc
+        if not isinstance(data, dict):
+            raise AuthError("encrypted rotating secret payload is invalid")
+        return {str(k): str(v) for k, v in data.items()}
+
+    def _persist(self) -> None:
+        encoded = json.dumps(self.values, sort_keys=True).encode("utf-8")
+        encrypted = self.fernet.encrypt(encoded)
+        tmp = self.path.with_suffix(self.path.suffix + ".tmp")
+        tmp.write_bytes(encrypted)
+        try:
+            tmp.chmod(0o600)
+        except OSError:
+            pass
+        tmp.replace(self.path)
+        try:
+            self.path.chmod(0o600)
+        except OSError:
+            pass
+
+    def get(self, key: str) -> str:
+        try:
+            return self.values[key]
+        except KeyError as exc:
+            raise AuthError(f"missing rotating secret: {key}") from exc
+
+    def set(self, key: str, value: str) -> None:
+        self.values[key] = value
+        self._persist()
+
+
+class CompositeSecretStore:
+    def __init__(self, static: Dict[str, str], rotating: SecretStore) -> None:
+        self.static = dict(static)
+        self.rotating = rotating
+
+    def get(self, key: str) -> str:
+        if key in self.static and self.static[key]:
+            return self.static[key]
+        return self.rotating.get(key)
+
+    def set(self, key: str, value: str) -> None:
+        self.rotating.set(key, value)
 
 
 class MemorySecretStore:
