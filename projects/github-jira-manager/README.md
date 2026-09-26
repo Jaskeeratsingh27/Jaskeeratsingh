@@ -8,20 +8,7 @@ A policy-controlled AI engineering control plane that lets one human command a f
 
 ## Agent topology
 
-```
-Human
-  |
-  v
-Orchestrator
-  |-------------------|-------------------|
-  v                   v                   v
-Project Manager   Software Engineer   QA Validator
-  |                   |                   |
- Jira               GitHub             CI/tests
-  \___________________|___________________/
-                      |
-               Reconciliation
-```
+Human → Orchestrator → Project Manager / Software Engineer / QA Validator → Jira / GitHub / CI → Reconciliation.
 
 The user normally talks only to the Orchestrator.
 
@@ -30,7 +17,8 @@ The user normally talks only to the Orchestrator.
 - Four agent roles are executable contracts, not only prose.
 - Role permissions are deny-by-default.
 - GitHub/CI events resolve through a deterministic reconciliation engine.
-- CI failure blocks work; CI recovery returns it to implementation state.
+- Reconciliation is capability-aware: it targets only statuses the live Jira workflow supports.
+- CI failure keeps work In Progress and applies ci-blocked; CI recovery removes the label.
 - CI PASS alone cannot move work to review.
 - PR-ready needs CI + independent QA.
 - Done needs merge + CI + QA + explicit human approval.
@@ -39,7 +27,7 @@ The user normally talks only to the Orchestrator.
 
 ## Safety model
 
-- No agent may push directly to `main` or `master`.
+- No agent may push directly to main or master.
 - Software Engineer cannot merge its own PR.
 - QA cannot implement the change it certifies.
 - Project Manager cannot mark work Done without terminal evidence.
@@ -58,29 +46,10 @@ The user normally talks only to the Orchestrator.
 
 ## Current scope
 
-Included:
-- four executable agent contracts,
-- policy and workflow gates,
-- deterministic reconciliation,
-- idempotency,
-- failure/recovery tests,
-- GitHub Actions validation,
-- live GitHub/Jira connector operation from the orchestration interface.
+Included: four executable agent contracts, policy/workflow gates, deterministic capability-aware reconciliation, idempotency, failure/recovery tests, GitHub Actions validation, and live GitHub/Jira connector operation from the orchestration interface.
 
-Still deferred:
-- durable runtime database,
-- always-on webhook receiver/event bus,
-- production deployment worker,
-- Hermes worker pool,
-- autonomous merge.
+Still deferred: durable runtime database, always-on webhook receiver/event bus, production deployment worker, Hermes worker pool, and autonomous merge.
 
 ## V1.2 completion gate
 
-V1.2 is ready for merge when:
-- structural validation passes,
-- all unit/regression tests pass,
-- deliberate CI failure is observed and recorded,
-- the failure is repaired without weakening tests,
-- recovery CI passes,
-- Jira reflects the evidence,
-- PR remains behind human merge approval.
+V1.2 is ready for merge when structural validation and all regression tests pass, the deliberate CI failure and recovery are recorded, Jira reflects the evidence, and the PR remains behind human merge approval.
