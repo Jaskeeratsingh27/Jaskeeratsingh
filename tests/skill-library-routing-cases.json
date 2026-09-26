@@ -1,0 +1,97 @@
+{
+  "version": "1.1.0",
+  "purpose": "Post-install activation evaluation. Run these in a clean ChatGPT/Codex session with Personal Skill Library installed. These are semantic activation cases, not deterministic unit tests.",
+  "cases": [
+    {
+      "id": "github-access-direct",
+      "prompt": "Use github-access-helper and check why ChatGPT cannot see my new repository.",
+      "expected_primary": "github-access-helper",
+      "should_activate": true
+    },
+    {
+      "id": "github-access-indirect",
+      "prompt": "I created a repo but ChatGPT still cannot access it. Help me fix the authorization.",
+      "expected_primary": "github-access-helper",
+      "should_activate": true
+    },
+    {
+      "id": "project-sync",
+      "prompt": "Start this dashboard as a durable project and keep GitHub as the canonical record as we build it.",
+      "expected_primary": "github-project-sync",
+      "should_activate": true
+    },
+    {
+      "id": "handoff",
+      "prompt": "We just finished v2. Create a complete versioned reference guide I can use in NotebookLM and future chats.",
+      "expected_primary": "project-knowledge-handoff",
+      "should_activate": true
+    },
+    {
+      "id": "kaizen",
+      "prompt": "Analyze our chat-to-email-to-call support process using DMAIC and FMEA, including controls.",
+      "expected_primary": "kaizen-orchestrator",
+      "should_activate": true
+    },
+    {
+      "id": "hermes-create",
+      "prompt": "Design a Hermes sub-agent for this workflow with tools, failure paths, an eval plan, and production guardrails.",
+      "expected_primary": "hermes-agent-creator",
+      "should_activate": true
+    },
+    {
+      "id": "hermes-architecture",
+      "prompt": "How should Hermes model routing, Cron, memory, and delegated subagents be architected?",
+      "expected_primary": "hermes-agent-architecture",
+      "should_activate": true
+    },
+    {
+      "id": "second-brain",
+      "prompt": "Turn these rough notes into atomic PARA-routed Obsidian notes with real links and staged approval.",
+      "expected_primary": "secondbrain-curator",
+      "should_activate": true
+    },
+    {
+      "id": "research-cycle",
+      "prompt": "Research recent agent architecture developments and stage a small batch of notes for my approval before they enter the vault.",
+      "expected_primary": "anveshak-research-cycle",
+      "should_activate": true
+    },
+    {
+      "id": "youtube",
+      "prompt": "Extract this YouTube video's transcript and give me a coverage-audited actionable walkthrough.",
+      "expected_primary": "youtube-insights-extractor",
+      "should_activate": true
+    },
+    {
+      "id": "usage",
+      "prompt": "Handle this multi-step refactor while minimizing my weekly model usage without lowering the quality floor.",
+      "expected_primary": "usage-efficient-orchestrator",
+      "should_activate": true
+    },
+    {
+      "id": "router-inventory",
+      "prompt": "What personal skills are in my library, and which one should I use for GitHub project handoff?",
+      "expected_primary": "skill-library-router",
+      "should_activate": true
+    },
+    {
+      "id": "multi-skill",
+      "prompt": "Design a Hermes agent for this workflow and preserve the resulting project in GitHub with version control.",
+      "expected_primary": "hermes-agent-creator",
+      "expected_secondary": "github-project-sync",
+      "should_activate": true
+    },
+    {
+      "id": "negative-simple",
+      "prompt": "What is 17 times 23?",
+      "expected_primary": null,
+      "should_activate": false
+    },
+    {
+      "id": "negative-general-writing",
+      "prompt": "Rewrite this sentence to sound more concise.",
+      "expected_primary": null,
+      "should_activate": false
+    }
+  ]
+}
