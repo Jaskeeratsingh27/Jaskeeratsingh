@@ -1,12 +1,12 @@
 # Agent Contracts — V1.2
 
-The executable source of truth for operation grants is `src/control_plane.py::AGENT_CONTRACTS`. This document explains the human-readable contract. If this file and executable policy disagree, validation must fail and the executable policy is not silently overridden.
+The executable source of truth for operation grants is src/control_plane.py::AGENT_CONTRACTS. This document explains the human-readable contract. If this file and executable policy disagree, validation must fail and the executable policy is not silently overridden.
 
 ## Common envelope
 
 Every specialist receives:
-- `run_id`
-- `work_item_id`
+- run_id
+- work_item_id
 - explicit goal
 - acceptance criteria
 - allowed operation surface
@@ -32,7 +32,7 @@ Every specialist returns evidence, not confidence:
 
 **Owns:** Jira operational truth.
 
-**May:** read/create/link Jira work, add comments, and apply non-terminal transitions supported by verified reconciliation evidence.
+**May:** read/create/link Jira work, add comments/labels, and apply non-terminal transitions supported by verified reconciliation evidence.
 
 **Must not:** write code, merge PRs, or mark work Done without the terminal evidence gate.
 
@@ -54,17 +54,17 @@ Every specialist returns evidence, not confidence:
 
 ## Reconciliation contract
 
-GitHub/CI events may propose Jira state changes:
+The current AI Agents Jira workflow supports only **To Do, In Progress, In Review, Done**. V1.2 therefore represents a CI block using the supported In Progress status plus a ci-blocked label.
 
 | Event | Jira outcome |
 |---|---|
 | PR opened | In Progress |
-| CI failed | Blocked |
-| CI passed | In Progress; QA still required |
+| CI failed | In Progress + ci-blocked |
+| CI passed | In Progress, remove ci-blocked; QA still required |
 | PR ready + CI PASS + QA PASS | In Review |
 | PR merged + CI PASS + QA PASS + human approval | Done |
 
-A merge event alone is never sufficient for Done.
+The reconciliation layer must never target a Jira status the project cannot actually accept. A merge event alone is never sufficient for Done.
 
 ## Human approval boundary
 
