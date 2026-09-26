@@ -48,10 +48,22 @@ def parse_frontmatter(path: Path) -> tuple[str | None, str | None]:
         fail(f"{path}: description exceeds 1024 characters")
     return name, description
 
-if not CANONICAL.is_dir():
-    fail("canonical .agents/skills directory is missing")
-if not MIRROR.is_dir():
-    fail("plugin skills mirror is missing")
+def validate_openai_yaml(skill_dir: Path) -> None:
+    meta = skill_dir / "agents" / "openai.yaml"
+    if not meta.exists():
+        fail(f"{skill_dir.name}: missing agents/openai.yaml")
+        return
+    text = meta.read_text(encoding="utf-8")
+    if "display_name:" not in text:
+        fail(f"{skill_dir.name}: openai.yaml missing interface.display_name")
+    if "short_description:" not in text:
+        fail(f"{skill_dir.name}: openai.yaml missing interface.short_description")
+    if "CHAT" not in text:
+        fail(f"{skill_dir.name}: openai.yaml does not target CHAT")
+    if "CODEX" not in text:
+        fail(f"{skill_dir.name}: openai.yaml does not target CODEX")
+    if not re.search(r"allow_implicit_invocation:\s*true", text):
+        fail(f"{skill_dir.name}: implicit invocation is not enabled")
 
 try:
     manifest = json.loads((PLUGIN / "plugin.json").read_text(encoding="utf-8"))
@@ -66,6 +78,13 @@ for key in ("$schema", "name", "version", "description"):
 plugin_name = manifest.get("name", "")
 if plugin_name != "personal-skill-library":
     fail(f"unexpected plugin name: {plugin_name!r}")
+if manifest.get("version") != "2.0.0":
+    fail(f"expected plugin version 2.0.0, got {manifest.get('version')!r}")
+
+interface = manifest.get("extensions", {}).get("com.openai", {}).get("interface", {})
+for key in ("displayName", "shortDescription", "longDescription", "developerName", "category"):
+    if not interface.get(key):
+        fail(f"plugin OpenAI interface missing {key}")
 
 try:
     marketplace = json.loads(MARKETPLACE.read_text(encoding="utf-8"))
@@ -99,6 +118,7 @@ for skill_dir in sorted(p for p in CANONICAL.iterdir() if p.is_dir()):
         warnings.append(f"{skill_dir.name}: no SKILL.md; ignored as non-skill directory")
         continue
     name, _ = parse_frontmatter(skill_file)
+    validate_openai_yaml(skill_dir)
     if name:
         if name in names:
             fail(f"duplicate skill name {name!r}: {names[name]} and {skill_file}")
@@ -117,16 +137,21 @@ try:
             fail(f"skill missing from index: {name}")
         for name in sorted(indexed - actual):
             fail(f"index contains nonexistent skill: {name}")
+    if index.get("products") != ["CHAT", "CODEX"]:
+        fail("v2 index must target CHAT and CODEX")
+    if index.get("allow_implicit_invocation") is not True:
+        fail("v2 index must enable implicit invocation")
     if index.get("runtime_github_fetch_required") is not False:
-        fail("v1.1 index must set runtime_github_fetch_required=false")
+        fail("v2 index must set runtime_github_fetch_required=false")
 except Exception as exc:
     fail(f"skills-index.json unreadable or invalid: {exc}")
 
-print(f"Personal Skill Library validation")
+print("Personal Skill Library validation")
 print(f"  plugin version: {manifest.get('version', 'unknown')}")
 print(f"  canonical skills: {len(names)}")
 print(f"  canonical files: {len(canonical_files)}")
 print(f"  mirrored files: {len(mirror_files)}")
+print("  required products: CHAT, CODEX")
 
 for warning in warnings:
     print(f"WARNING: {warning}")
@@ -137,4 +162,4 @@ if errors:
         print(f"  - {error}")
     sys.exit(1)
 
-print("PASS: canonical library, plugin mirror, registry, and marketplace are consistent")
+print("PASS: v2 Chat/Codex metadata, canonical mirror, registry, and marketplace are consistent")

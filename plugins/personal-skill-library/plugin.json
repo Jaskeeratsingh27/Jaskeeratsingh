@@ -1,8 +1,11 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "personal-skill-library",
-  "version": "1.1.0",
-  "description": "Personal reusable skill library for GitHub, agent engineering, continuous improvement, knowledge management, research, and usage-efficient technical workflows.",
+  "version": "2.0.0",
+  "description": "Personal reusable workflow library for GitHub, AI agents, continuous improvement, knowledge management, research, and usage-efficient technical work.",
+  "author": {
+    "name": "Jaskeerat Singh"
+  },
   "repository": "https://github.com/Jaskeeratsingh27/Jaskeeratsingh",
   "keywords": [
     "skills",
@@ -11,6 +14,28 @@
     "agents",
     "hermes",
     "dmaic",
-    "obsidian"
-  ]
+    "obsidian",
+    "chatgpt"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Personal Skill Library",
+        "shortDescription": "Reusable personal workflows",
+        "longDescription": "A reusable skill library for normal ChatGPT chats and Codex. It includes GitHub workflows, project handoffs, Hermes agent design and architecture, Lean Six Sigma/DMAIC, Obsidian knowledge curation, research workflows, YouTube insight extraction, and usage-efficient orchestration.",
+        "developerName": "Jaskeerat Singh",
+        "category": "Productivity",
+        "capabilities": [
+          "Reusable workflow guidance",
+          "Automatic skill selection",
+          "ChatGPT and Codex support"
+        ],
+        "defaultPrompt": [
+          "Which personal skill should handle this task?",
+          "Use my GitHub workflow for this project.",
+          "Use the right personal skill automatically for this request."
+        ]
+      }
+    }
+  }
 }

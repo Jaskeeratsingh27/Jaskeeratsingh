@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.0.0
+
+- Made regular ChatGPT a first-class target for every packaged skill.
+- Added `agents/openai.yaml` to all 11 canonical and plugin-mirrored skills.
+- Declared `products: [CHAT, CODEX]` for every skill.
+- Enabled implicit invocation for every skill.
+- Added OpenAI install-surface metadata to the plugin manifest.
+- Added normal ChatGPT desktop installation instructions.
+- Added cross-device/mobile distribution guidance without assuming local installs sync to mobile.
+- Hardened validation to fail when Chat support or implicit invocation is missing.
+
 ## 1.1.0
 
 - Mirrored the complete canonical skill library into the plugin package.
@@ -14,5 +25,4 @@
 - Added the personal skill-library plugin.
 - Added `skill-library-router` with progressive-disclosure routing.
 - Indexed the initial canonical skills.
-- Packaged `github-access-helper` natively.
 - Preserved `.agents/skills/` as the canonical source of truth.
