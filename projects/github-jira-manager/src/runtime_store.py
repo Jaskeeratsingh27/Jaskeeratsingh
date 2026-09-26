@@ -1,14 +1,12 @@
 import hashlib
 import json
 import sqlite3
-from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from control_plane import (
     Approval,
     ApprovalLevel,
-    JiraStatus,
     Job,
     ReconciliationDecision,
     WorkflowState,
@@ -22,9 +20,9 @@ class RuntimeStoreViolation(RuntimeError):
 class RuntimeStore:
     """Durable V1.3 state store.
 
-    The store persists job state, inbound webhook delivery identity, reconciliation
-    decisions, and outbound side-effect intents. Raw webhook bodies and secrets are
-    deliberately not persisted.
+    Raw webhook bodies and secrets are deliberately not persisted. Inbound delivery
+    identity is stored as metadata plus SHA-256 hash. Decision + outbox writes are
+    atomic so a crash cannot leave a decided event without its side-effect intents.
     """
 
     def __init__(self, path: str) -> None:
@@ -211,6 +209,12 @@ class RuntimeStore:
                 )
             return False
 
+    def event_status(self, event_id: str) -> Optional[str]:
+        row = self.conn.execute(
+            "SELECT status FROM inbound_events WHERE event_id = ?", (event_id,)
+        ).fetchone()
+        return row["status"] if row else None
+
     @staticmethod
     def _decision_payload(decision: ReconciliationDecision) -> Dict[str, Any]:
         return {
@@ -224,22 +228,6 @@ class RuntimeStore:
             "requires_human_approval": decision.requires_human_approval,
         }
 
-    def save_decision(
-        self, event_id: str, decision: ReconciliationDecision, status: str = "DECIDED"
-    ) -> None:
-        payload = json.dumps(self._decision_payload(decision), sort_keys=True)
-        with self.conn:
-            updated = self.conn.execute(
-                """
-                UPDATE inbound_events
-                SET status = ?, decision_json = ?, updated_at = CURRENT_TIMESTAMP
-                WHERE event_id = ?
-                """,
-                (status, payload, event_id),
-            )
-            if updated.rowcount != 1:
-                raise RuntimeStoreViolation(f"unknown event_id: {event_id}")
-
     def get_decision(self, event_id: str) -> Optional[Dict[str, Any]]:
         row = self.conn.execute(
             "SELECT decision_json FROM inbound_events WHERE event_id = ?",
@@ -252,7 +240,7 @@ class RuntimeStore:
     def mark_event_ignored(self, event_id: str, reason: str) -> None:
         payload = json.dumps({"ignored": True, "reason": reason}, sort_keys=True)
         with self.conn:
-            self.conn.execute(
+            updated = self.conn.execute(
                 """
                 UPDATE inbound_events
                 SET status='IGNORED', decision_json=?, updated_at=CURRENT_TIMESTAMP
@@ -260,43 +248,43 @@ class RuntimeStore:
                 """,
                 (payload, event_id),
             )
+            if updated.rowcount != 1:
+                raise RuntimeStoreViolation(f"unknown event_id: {event_id}")
 
-    def enqueue_outbox(
+    def persist_decision_and_outbox(
         self,
-        operation_id: str,
         event_id: str,
-        operation: str,
-        payload: Dict[str, Any],
-    ) -> bool:
-        encoded = json.dumps(payload, sort_keys=True)
+        decision: ReconciliationDecision,
+        operations: Sequence[Tuple[str, str, Dict[str, Any]]],
+    ) -> None:
+        decision_json = json.dumps(self._decision_payload(decision), sort_keys=True)
         try:
             with self.conn:
-                self.conn.execute(
+                updated = self.conn.execute(
                     """
-                    INSERT INTO outbox (
-                        operation_id, event_id, operation, payload_json
-                    ) VALUES (?, ?, ?, ?)
+                    UPDATE inbound_events
+                    SET status='DECIDED', decision_json=?, updated_at=CURRENT_TIMESTAMP
+                    WHERE event_id=?
                     """,
-                    (operation_id, event_id, operation, encoded),
+                    (decision_json, event_id),
                 )
-            return True
-        except sqlite3.IntegrityError:
-            row = self.conn.execute(
-                "SELECT event_id, operation, payload_json FROM outbox "
-                "WHERE operation_id = ?",
-                (operation_id,),
-            ).fetchone()
-            if row is None:
-                raise
-            if (row["event_id"], row["operation"], row["payload_json"]) != (
-                event_id,
-                operation,
-                encoded,
-            ):
-                raise RuntimeStoreViolation(
-                    "operation_id reuse with different outbox request is denied"
-                )
-            return False
+                if updated.rowcount != 1:
+                    raise RuntimeStoreViolation(f"unknown event_id: {event_id}")
+
+                for operation_id, operation, payload in operations:
+                    encoded = json.dumps(payload, sort_keys=True)
+                    self.conn.execute(
+                        """
+                        INSERT INTO outbox (
+                            operation_id, event_id, operation, payload_json
+                        ) VALUES (?, ?, ?, ?)
+                        """,
+                        (operation_id, event_id, operation, encoded),
+                    )
+        except sqlite3.IntegrityError as exc:
+            raise RuntimeStoreViolation(
+                "atomic decision/outbox write collided with an existing operation"
+            ) from exc
 
     def pending_outbox(self, limit: int = 100) -> List[Dict[str, Any]]:
         rows = self.conn.execute(
@@ -323,7 +311,7 @@ class RuntimeStore:
 
     def mark_outbox_complete(self, operation_id: str) -> None:
         with self.conn:
-            self.conn.execute(
+            updated = self.conn.execute(
                 """
                 UPDATE outbox
                 SET status='COMPLETE', attempts=attempts+1,
@@ -332,10 +320,12 @@ class RuntimeStore:
                 """,
                 (operation_id,),
             )
+            if updated.rowcount != 1:
+                raise RuntimeStoreViolation(f"unknown operation_id: {operation_id}")
 
     def mark_outbox_failed(self, operation_id: str, error: str) -> None:
         with self.conn:
-            self.conn.execute(
+            updated = self.conn.execute(
                 """
                 UPDATE outbox
                 SET status='FAILED', attempts=attempts+1,
@@ -344,6 +334,8 @@ class RuntimeStore:
                 """,
                 (error, operation_id),
             )
+            if updated.rowcount != 1:
+                raise RuntimeStoreViolation(f"unknown operation_id: {operation_id}")
 
     def counts(self) -> Dict[str, int]:
         return {
