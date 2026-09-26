@@ -1,77 +1,55 @@
-# GitHub Jira Manager — V1
+# GitHub Jira Manager — V1.2
 
-Version: 1.0.1
+Version: 1.2.0
 
 ## Purpose
 
 A policy-controlled AI engineering control plane that lets one human command a four-agent team while GitHub remains the canonical technical source of truth and Jira remains the operational work-tracking system.
 
-## V1 agent topology
+## Agent topology
 
-1. **Orchestrator** — interprets the user's goal, decomposes work, routes tasks, and enforces policy/approval gates.
-2. **Project Manager** — owns Jira planning/state: epics, issues, dependencies, milestones, comments, and status.
-3. **Software Engineer** — owns branch-scoped GitHub changes: inspect, branch, modify, commit, and open PR.
-4. **QA / Validation** — independently verifies acceptance criteria, CI status, regressions, and policy compliance.
+Human → Orchestrator → Project Manager / Software Engineer / QA Validator → Jira / GitHub / CI → Reconciliation.
 
 The user normally talks only to the Orchestrator.
 
-## V1 safety model
+## V1.2 additions
 
-- No agent may push directly to `main`.
-- No agent may merge a PR without a review-required approval.
-- Destructive actions and production-impacting actions require explicit human approval.
-- GitHub is canonical for code, agent definitions, architecture, documentation, and released versions.
-- Jira is canonical for backlog, project status, issue workflow, dependencies, and milestones.
-- Runtime job state belongs to the control plane, not chat history.
-- Unknown operations are denied by default.
-- Mutating mock operations require an idempotency key.
-- BLOCKED and INPUT_REQUIRED jobs retain their previous state and can resume safely.
+- Four agent roles are executable contracts, not only prose.
+- Role permissions are deny-by-default.
+- GitHub/CI events resolve through a deterministic reconciliation engine.
+- Reconciliation is capability-aware: it targets only statuses the live Jira workflow supports.
+- CI failure keeps work In Progress and applies ci-blocked; CI recovery removes the label.
+- CI PASS alone cannot move work to review.
+- PR-ready needs CI + independent QA.
+- Done needs merge + CI + QA + explicit human approval.
+- Event processing is idempotent.
+- A full failure/recovery regression sequence is tested.
 
-## V1 scope
+## Safety model
 
-Included:
-- Four-agent contracts.
-- Workflow/state machine with QA, CI, and human approval gates.
-- Approval policy.
-- Deterministic Python reference implementation.
-- Deterministic mock tool adapter with idempotency protection.
-- Unit tests and structural validation.
-- GitHub Actions CI.
+- No agent may push directly to main or master.
+- Software Engineer cannot merge its own PR.
+- QA cannot implement the change it certifies.
+- Project Manager cannot mark work Done without terminal evidence.
+- Unknown tool operations and ungranted role actions are denied by default.
+- Mutating operations and reconciliation events require deterministic IDs.
+- Destructive and production actions require explicit human approval.
 
-Deferred to V1.1+:
-- Live Jira OAuth/API adapter.
-- Dedicated GitHub App adapter.
-- Persistent database.
-- Webhooks/event bus.
-- Deployment worker.
-- Hermes workers.
-- Autonomous merging.
+## Source-of-truth boundaries
 
-## Project layout
+| Domain | Canonical system |
+|---|---|
+| code, agent definitions, architecture, released versions | GitHub |
+| backlog, work status, dependencies, milestones | Jira |
+| runtime execution state | control plane |
+| test/CI evidence | GitHub Actions / test runner |
 
-```
-projects/github-jira-manager/
-├── README.md
-├── VERSION
-├── CHANGELOG.md
-├── architecture/V1.md
-├── agents/AGENTS.md
-├── config/approval-policy.yaml
-├── config/workflow.yaml
-├── src/control_plane.py
-└── tests/
-    ├── test_control_plane.py
-    └── validate_v1.py
-```
+## Current scope
 
-## V1 completion gate
+Included: four executable agent contracts, policy/workflow gates, deterministic capability-aware reconciliation, idempotency, failure/recovery tests, GitHub Actions validation, and live GitHub/Jira connector operation from the orchestration interface.
 
-V1 is structurally complete when:
-- all required files exist,
-- unit tests pass,
-- policy tests prove unsafe actions are blocked without approval,
-- workflow tests prove work cannot skip QA/CI/human merge approval gates,
-- idempotency tests prevent duplicate side effects,
-- CI executes those checks on pull requests.
+Still deferred: durable runtime database, always-on webhook receiver/event bus, production deployment worker, Hermes worker pool, and autonomous merge.
 
-Live Jira/GitHub mutation is deliberately not part of this gate.
+## V1.2 completion gate
+
+V1.2 is ready for merge when structural validation and all regression tests pass, the deliberate CI failure and recovery are recorded, Jira reflects the evidence, and the PR remains behind human merge approval.
