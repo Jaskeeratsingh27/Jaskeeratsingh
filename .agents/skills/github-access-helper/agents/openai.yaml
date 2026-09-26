@@ -1,7 +1,10 @@
 interface:
   display_name: "GitHub Access Helper"
-  short_description: "Authorize GitHub repositories and verify ChatGPT/Codex write access."
-  default_prompt: "Check my GitHub connection and help me authorize or verify repository access."
+  short_description: "Fix GitHub access and auth"
+  default_prompt: "Check my GitHub connection and repository access."
 
 policy:
+  products:
+    - CHAT
+    - CODEX
   allow_implicit_invocation: true
