@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "scenarios": [
     {
       "id": "clean-no-change",
@@ -19,8 +19,13 @@
       "event": {
         "change_id": "sim-stable-delegation",
         "observed_on": "2026-09-22",
-        "source_ids": ["releases", "delegation"],
-        "change_types": ["behavior"],
+        "source_ids": [
+          "releases",
+          "delegation"
+        ],
+        "change_types": [
+          "behavior"
+        ],
         "stable_release_changed": true,
         "from_release": "v0.21.3",
         "to_release": "v0.22.0",
@@ -28,14 +33,19 @@
         "summary": "Simulated stable release with delegation behavior change."
       },
       "as_of": "2026-09-22",
-      "mutations": {"candidate_release": "v0.22.0"},
+      "mutations": {
+        "candidate_release": "v0.22.0"
+      },
       "consumer_drift": false,
       "validation_failures": [],
       "expected": {
         "overall_state": "review_required",
         "knowledge_state": "review_required",
         "ecosystem_state": "review_required",
-        "consumer_ids": ["hermes-agent-creator", "kaizen-orchestrator"]
+        "consumer_ids": [
+          "hermes-agent-creator",
+          "kaizen-orchestrator"
+        ]
       }
     },
     {
@@ -43,8 +53,12 @@
       "event": {
         "change_id": "sim-security",
         "observed_on": "2026-09-22",
-        "source_ids": ["security"],
-        "change_types": ["security"],
+        "source_ids": [
+          "security"
+        ],
+        "change_types": [
+          "security"
+        ],
         "stable_release_changed": false,
         "from_release": "v0.21.3",
         "to_release": "v0.21.3",
@@ -59,7 +73,9 @@
         "overall_state": "blocked",
         "knowledge_state": "review_required",
         "ecosystem_state": "blocked",
-        "blocking_consumer_ids": ["hermes-agent-creator"]
+        "blocking_consumer_ids": [
+          "hermes-agent-creator"
+        ]
       }
     },
     {
@@ -67,8 +83,12 @@
       "event": {
         "change_id": "sim-routing-ambiguous",
         "observed_on": "2026-09-22",
-        "source_ids": ["provider-routing"],
-        "change_types": ["documentation"],
+        "source_ids": [
+          "provider-routing"
+        ],
+        "change_types": [
+          "documentation"
+        ],
         "stable_release_changed": false,
         "from_release": "v0.21.3",
         "to_release": "v0.21.3",
@@ -76,7 +96,11 @@
         "summary": "Simulated ambiguous provider-routing documentation."
       },
       "as_of": "2026-09-22",
-      "mutations": {"needs_revalidation": ["model_routing"]},
+      "mutations": {
+        "needs_revalidation": [
+          "model_routing"
+        ]
+      },
       "consumer_drift": false,
       "validation_failures": [],
       "expected": {
@@ -90,8 +114,12 @@
       "event": {
         "change_id": "sim-unknown",
         "observed_on": "2026-09-22",
-        "source_ids": ["future-new-subsystem"],
-        "change_types": ["architecture"],
+        "source_ids": [
+          "future-new-subsystem"
+        ],
+        "change_types": [
+          "architecture"
+        ],
         "stable_release_changed": true,
         "from_release": "v0.21.3",
         "to_release": "v0.22.0",
@@ -140,7 +168,9 @@
       "as_of": "2026-09-22",
       "mutations": {},
       "consumer_drift": false,
-      "validation_failures": ["consumer_drift"],
+      "validation_failures": [
+        "consumer_drift"
+      ],
       "expected": {
         "overall_state": "blocked",
         "knowledge_state": "blocked",
@@ -164,6 +194,124 @@
         "overall_state": "allow",
         "knowledge_state": "allow",
         "ecosystem_state": "cleared"
+      }
+    },
+    {
+      "id": "stable-upgrade-approved",
+      "proposal_id": "hermes-v0.22.0",
+      "event": {
+        "change_id": "sim-approved-stable",
+        "observed_on": "2026-09-22",
+        "source_ids": [
+          "releases",
+          "delegation"
+        ],
+        "change_types": [
+          "behavior"
+        ],
+        "stable_release_changed": true,
+        "from_release": "v0.21.4",
+        "to_release": "v0.22.0",
+        "evidence_status": "verified",
+        "summary": "Simulated verified stable upgrade after explicit user approval."
+      },
+      "as_of": "2026-09-22",
+      "mutations": {},
+      "consumer_drift": false,
+      "validation_failures": [],
+      "approval": {
+        "proposal_id": "hermes-v0.22.0",
+        "approved": true,
+        "scope": "full_upgrade",
+        "approved_by": "user",
+        "approved_at": "2026-09-22T12:00:00-05:00",
+        "consumer_migrations_verified": false,
+        "cleared_consumer_ids": []
+      },
+      "expected": {
+        "overall_state": "allow",
+        "knowledge_state": "allow",
+        "ecosystem_state": "cleared"
+      }
+    },
+    {
+      "id": "security-approved-without-consumer-clearance",
+      "proposal_id": "hermes-security-fix",
+      "event": {
+        "change_id": "sim-security-approved-no-clearance",
+        "observed_on": "2026-09-22",
+        "source_ids": [
+          "security"
+        ],
+        "change_types": [
+          "security"
+        ],
+        "stable_release_changed": false,
+        "from_release": "v0.21.4",
+        "to_release": "v0.21.4",
+        "evidence_status": "verified",
+        "summary": "Simulated critical security change approved before downstream migration clearance."
+      },
+      "as_of": "2026-09-22",
+      "mutations": {},
+      "consumer_drift": false,
+      "validation_failures": [],
+      "approval": {
+        "proposal_id": "hermes-security-fix",
+        "approved": true,
+        "scope": "full_upgrade",
+        "approved_by": "user",
+        "approved_at": "2026-09-22T12:00:00-05:00",
+        "consumer_migrations_verified": false,
+        "cleared_consumer_ids": []
+      },
+      "expected": {
+        "overall_state": "blocked",
+        "knowledge_state": "allow",
+        "ecosystem_state": "blocked",
+        "blocking_consumer_ids": [
+          "hermes-agent-creator"
+        ]
+      }
+    },
+    {
+      "id": "security-approved-with-verified-consumer-clearance",
+      "proposal_id": "hermes-security-fix",
+      "event": {
+        "change_id": "sim-security-approved-clear",
+        "observed_on": "2026-09-22",
+        "source_ids": [
+          "security"
+        ],
+        "change_types": [
+          "security"
+        ],
+        "stable_release_changed": false,
+        "from_release": "v0.21.4",
+        "to_release": "v0.21.4",
+        "evidence_status": "verified",
+        "summary": "Simulated critical security change after verified downstream migration clearance."
+      },
+      "as_of": "2026-09-22",
+      "mutations": {},
+      "consumer_drift": false,
+      "validation_failures": [],
+      "approval": {
+        "proposal_id": "hermes-security-fix",
+        "approved": true,
+        "scope": "full_upgrade",
+        "approved_by": "user",
+        "approved_at": "2026-09-22T12:00:00-05:00",
+        "consumer_migrations_verified": true,
+        "cleared_consumer_ids": [
+          "hermes-agent-creator"
+        ]
+      },
+      "expected": {
+        "overall_state": "allow",
+        "knowledge_state": "allow",
+        "ecosystem_state": "cleared",
+        "blocking_consumer_ids": []
       }
     }
   ]
