@@ -1,0 +1,25 @@
+version: 1.2.0
+
+events:
+  pr_opened: In Progress
+  ci_failed: Blocked
+  ci_passed: In Progress
+  pr_ready: In Review
+  pr_merged: Done
+
+gates:
+  pr_ready:
+    requires:
+      - ci_pass
+      - qa_pass
+  pr_merged:
+    requires:
+      - ci_pass
+      - qa_pass
+      - human_merge_approved
+
+rules:
+  - ci_pass_does_not_imply_qa_pass
+  - merge_event_does_not_imply_human_approval
+  - missing_evidence_means_no_forward_transition
+  - reconciliation_event_ids_are_idempotent
