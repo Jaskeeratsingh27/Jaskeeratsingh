@@ -1,0 +1,46 @@
+version: 1.0.0
+
+levels:
+  L0:
+    name: read_only
+    human_approval: false
+  L1:
+    name: bounded_safe_write
+    human_approval: false
+  L2:
+    name: review_required
+    human_approval: true
+  L3:
+    name: explicit_destructive_or_production
+    human_approval: true
+
+operations:
+  github.read_repository: L0
+  github.read_issue: L0
+  github.read_pull_request: L0
+  jira.read_issue: L0
+  jira.search_issues: L0
+
+  github.create_branch: L1
+  github.commit_feature_branch: L1
+  github.open_pull_request: L1
+  jira.create_issue: L1
+  jira.add_comment: L1
+  jira.transition_non_terminal: L1
+
+  github.merge_pull_request: L2
+  jira.transition_done: L2
+  github.create_release: L2
+  architecture.change_contract: L2
+
+  github.delete_repository: L3
+  github.force_push_protected: L3
+  secrets.modify: L3
+  production.deploy: L3
+  jira.delete_project: L3
+
+hard_denies:
+  - direct_write_to_main
+  - bypass_required_ci
+  - agent_self_approval
+  - expose_secret_in_prompt_or_log
