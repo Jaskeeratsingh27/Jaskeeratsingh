@@ -117,7 +117,7 @@ Use for nontrivial technical work where weekly Work/Codex allowance should be co
 
 ## ChatGPT plugin marketplace
 
-v1 of the native discovery layer is packaged at:
+v1.1 of the native discovery layer is packaged at:
 
 `plugins/personal-skill-library/`
 
@@ -125,7 +125,7 @@ and registered in:
 
 `.agents/plugins/marketplace.json`
 
-The plugin currently packages `skill-library-router` and `github-access-helper` natively. The router indexes all canonical skills and retrieves other matched `.agents/skills/<name>/SKILL.md` files from GitHub on demand.
+The plugin now mirrors the complete canonical `.agents/skills/` library, including each skill's supporting references/scripts/assets. ChatGPT/Codex can discover dedicated skills directly from packaged metadata; runtime GitHub fetch is not required merely to load a skill. GitHub remains canonical and marketplace sync distributes updates.
 
 ## Architecture
 
