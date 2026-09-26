@@ -7,14 +7,14 @@
 - Deny-by-default role/operation authorization.
 - Deterministic GitHub-event to Jira-state reconciliation engine.
 - Reconciliation event idempotency.
-- Explicit CI-failure blocking and recovery semantics.
 - Merge-to-Done rule requiring CI, independent QA, and human approval evidence.
 - Regression tests for the full failure → recovery → review → approval → Done sequence.
 
-### Validation plan
-- V1.2 deliberately ships its first branch revision with one reconciliation defect so CI must catch it.
-- After failure evidence is recorded, the defect is repaired and CI rerun.
-- The PR remains unmerged until human approval.
+### Validated
+- Deliberate CI failure observed in GitHub Actions run #12: structural validation passed and unit tests failed.
+- Jira correctly remained out of In Review during the failure.
+- Live Jira capability discovery showed the AI Agents workflow has no Blocked status.
+- Reconciliation was hardened to represent CI failure as In Progress + ci-blocked, then remove that label after CI recovery.
 
 ## 1.0.1 — 2026-09-25
 
