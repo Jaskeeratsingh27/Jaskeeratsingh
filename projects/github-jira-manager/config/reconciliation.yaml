@@ -1,13 +1,29 @@
 version: 1.2.0
 
+jira_workflow_capabilities:
+  statuses:
+    - To Do
+    - In Progress
+    - In Review
+    - Done
+  blocked_representation:
+    status: In Progress
+    blocked_label: ci-blocked
+
 events:
   pr_opened: In Progress
-  ci_failed: Blocked
+  ci_failed: In Progress
   ci_passed: In Progress
   pr_ready: In Review
   pr_merged: Done
 
 gates:
+  ci_failed:
+    effects:
+      - add_label: ci-blocked
+  ci_passed:
+    effects:
+      - remove_label: ci-blocked
   pr_ready:
     requires:
       - ci_pass
@@ -19,6 +35,7 @@ gates:
       - human_merge_approved
 
 rules:
+  - never_target_a_jira_status_the_project_does_not_support
   - ci_pass_does_not_imply_qa_pass
   - merge_event_does_not_imply_human_approval
   - missing_evidence_means_no_forward_transition
