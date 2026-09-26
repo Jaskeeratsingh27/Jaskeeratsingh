@@ -32,7 +32,6 @@ class JiraStatus(str, Enum):
     IN_PROGRESS = "In Progress"
     IN_REVIEW = "In Review"
     DONE = "Done"
-    BLOCKED = "Blocked"
 
 
 class AgentRole(str, Enum):
@@ -81,6 +80,7 @@ AGENT_CONTRACTS: Dict[AgentRole, AgentContract] = {
                 "jira.read_issue",
                 "jira.create_issue",
                 "jira.add_comment",
+                "jira.edit_labels",
                 "jira.transition_non_terminal",
                 "jira.link_issue",
             }
@@ -151,6 +151,7 @@ POLICY: Dict[str, ApprovalLevel] = {
     "github.update_pull_request": ApprovalLevel.L1,
     "jira.create_issue": ApprovalLevel.L1,
     "jira.add_comment": ApprovalLevel.L1,
+    "jira.edit_labels": ApprovalLevel.L1,
     "jira.transition_non_terminal": ApprovalLevel.L1,
     "github.merge_pull_request": ApprovalLevel.L2,
     "jira.transition_done": ApprovalLevel.L2,
@@ -334,6 +335,9 @@ class ReconciliationEvidence:
 class ReconciliationDecision:
     desired_status: Optional[JiraStatus]
     reason: str
+    blocked: bool = False
+    add_labels: FrozenSet[str] = frozenset()
+    remove_labels: FrozenSet[str] = frozenset()
     requires_human_approval: bool = False
 
 
@@ -347,19 +351,22 @@ class ReconciliationEngine:
             return ReconciliationDecision(
                 JiraStatus.IN_PROGRESS,
                 "A reviewable implementation branch/PR exists.",
+                remove_labels=frozenset({"ci-blocked"}),
             )
 
         if event.event_type == ReconciliationEventType.CI_FAILED:
-            # Deliberate V1.2 failure-probe defect: tests require BLOCKED.
             return ReconciliationDecision(
-                JiraStatus.IN_REVIEW,
-                "CI failed; work must not advance.",
+                JiraStatus.IN_PROGRESS,
+                "CI failed. The live Jira workflow has no Blocked status, so work remains In Progress and carries an explicit ci-blocked label.",
+                blocked=True,
+                add_labels=frozenset({"ci-blocked"}),
             )
 
         if event.event_type == ReconciliationEventType.CI_PASSED:
             return ReconciliationDecision(
                 JiraStatus.IN_PROGRESS,
-                "CI passed; QA evidence is still required before review.",
+                "CI passed; clear the CI block, but QA evidence is still required before review.",
+                remove_labels=frozenset({"ci-blocked"}),
             )
 
         if event.event_type == ReconciliationEventType.PR_READY:
@@ -367,6 +374,7 @@ class ReconciliationEngine:
                 return ReconciliationDecision(
                     JiraStatus.IN_REVIEW,
                     "CI and independent QA passed; ready for human review.",
+                    remove_labels=frozenset({"ci-blocked"}),
                 )
             return ReconciliationDecision(
                 None,
@@ -378,6 +386,7 @@ class ReconciliationEngine:
                 return ReconciliationDecision(
                     JiraStatus.DONE,
                     "Merged after CI, QA, and explicit human approval.",
+                    remove_labels=frozenset({"ci-blocked"}),
                 )
             return ReconciliationDecision(
                 None,
