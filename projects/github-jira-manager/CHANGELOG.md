@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.4.0 — 2026-09-26
+
+### Added
+- Long-running durable outbox worker.
+- GitHub App installation authentication.
+- Jira OAuth 2.0 refresh-token authentication.
+- Durable handling of Atlassian rotating refresh tokens.
+- Encrypted single-node rotating-secret store contract.
+- Exponential retry scheduling and dead-letter state.
+- Provider integration tests using isolated fake GitHub/Jira APIs.
+- Docker worker image and deployment runbook.
+
+### Reliability
+- Temporary HTTP/network/auth failures are retryable.
+- Permanent unsupported operations are dead-lettered.
+- Completed outbox operations are not selected after restart.
+- Logical operation IDs remain stable across retries.
+
+### Security
+- Secrets remain outside Git.
+- Rotated Jira refresh tokens are persisted before the new access token is accepted.
+- GitHub installation tokens are short-lived and generated dynamically.
+- Production deployment requires a secure secret manager or encrypted persistent secret volume.
+
+### Boundary
+- Live account credentials are not fabricated in CI.
+- Actual 24/7 hosted-provider validation remains blocked until the account owner creates/injects GitHub App and Jira OAuth credentials.
+
 ## 1.3.0 — 2026-09-26
 
 ### Added
@@ -17,10 +45,6 @@
 - Secrets and raw credentials are runtime-only and never persisted in source control or event rows.
 - Reused delivery IDs with changed content are rejected.
 
-### Boundary
-- V1.3 does not pretend ChatGPT interactive connector authorization is a deployable service credential.
-- Unattended API writes require a separately authenticated worker.
-
 ## 1.2.0 — 2026-09-26
 
 ### Added
@@ -31,27 +55,14 @@
 - Merge-to-Done rule requiring CI, independent QA, and human approval evidence.
 - Regression tests for the full failure → recovery → review → approval → Done sequence.
 
-### Validated
-- Deliberate CI failure observed in GitHub Actions run #12: structural validation passed and unit tests failed.
-- Jira correctly remained out of In Review during the failure.
-- Live Jira capability discovery showed the AI Agents workflow has no Blocked status.
-- Reconciliation was hardened to represent CI failure as In Progress + ci-blocked, then remove that label after CI recovery.
-
 ## 1.0.1 — 2026-09-25
 
 ### Fixed
 - Enforced human approval before entering READY_TO_MERGE.
 - Added safe resume semantics for BLOCKED and INPUT_REQUIRED states.
 - Added deterministic operation-id idempotency checks.
-- Added regression coverage for duplicate operations and protected-branch writes.
 
 ## 1.0.0 — 2026-09-25
 
 ### Added
-- Four-agent topology: Orchestrator, Project Manager, Software Engineer, QA/Validation.
-- Source-of-truth contract for GitHub, Jira, and runtime state.
-- Explicit approval tiers.
-- Workflow state machine with QA gate.
-- Deterministic Python control-plane reference implementation.
-- Unit and structural validation tests.
-- CI workflow for V1 validation.
+- Four-agent topology and first deterministic control-plane reference implementation.
