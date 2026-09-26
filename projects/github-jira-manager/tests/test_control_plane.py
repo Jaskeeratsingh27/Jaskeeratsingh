@@ -36,7 +36,6 @@ class PolicyTests(unittest.TestCase):
     def test_merge_requires_l2(self):
         with self.assertRaises(PolicyViolation):
             PolicyEngine.authorize("github.merge_pull_request")
-
         approval = Approval(ApprovalLevel.L2, "human", "reviewed")
         self.assertTrue(PolicyEngine.authorize("github.merge_pull_request", approval))
 
@@ -159,11 +158,9 @@ class WorkflowTests(unittest.TestCase):
         job.qa_pass = True
         with self.assertRaises(WorkflowViolation):
             WorkflowEngine.transition(job, WorkflowState.READY_TO_MERGE)
-
         job.ci_pass = True
         with self.assertRaises(WorkflowViolation):
             WorkflowEngine.transition(job, WorkflowState.READY_TO_MERGE)
-
         job.human_merge_approved = True
         WorkflowEngine.transition(job, WorkflowState.READY_TO_MERGE)
         self.assertEqual(job.state, WorkflowState.READY_TO_MERGE)
@@ -195,19 +192,22 @@ class ReconciliationTests(unittest.TestCase):
         )
         self.assertEqual(decision.desired_status, JiraStatus.IN_PROGRESS)
 
-    def test_ci_failure_blocks_work(self):
+    def test_ci_failure_stays_in_progress_and_sets_blocked_label(self):
         decision = ReconciliationLedger().process(
             ReconciliationEvent("evt-2", ReconciliationEventType.CI_FAILED),
             ReconciliationEvidence(ci_pass=False),
         )
-        self.assertEqual(decision.desired_status, JiraStatus.BLOCKED)
+        self.assertEqual(decision.desired_status, JiraStatus.IN_PROGRESS)
+        self.assertTrue(decision.blocked)
+        self.assertIn("ci-blocked", decision.add_labels)
 
-    def test_ci_pass_alone_does_not_advance_to_review(self):
+    def test_ci_pass_clears_block_but_does_not_advance_to_review(self):
         decision = ReconciliationLedger().process(
             ReconciliationEvent("evt-3", ReconciliationEventType.CI_PASSED),
             ReconciliationEvidence(ci_pass=True),
         )
         self.assertEqual(decision.desired_status, JiraStatus.IN_PROGRESS)
+        self.assertIn("ci-blocked", decision.remove_labels)
 
     def test_pr_ready_requires_ci_and_qa(self):
         ledger = ReconciliationLedger()
@@ -266,13 +266,16 @@ class ReconciliationTests(unittest.TestCase):
             ReconciliationEvent("seq-2", ReconciliationEventType.CI_FAILED),
             ReconciliationEvidence(),
         )
-        self.assertEqual(failed.desired_status, JiraStatus.BLOCKED)
+        self.assertEqual(failed.desired_status, JiraStatus.IN_PROGRESS)
+        self.assertTrue(failed.blocked)
+        self.assertIn("ci-blocked", failed.add_labels)
 
         recovered = ledger.process(
             ReconciliationEvent("seq-3", ReconciliationEventType.CI_PASSED),
             ReconciliationEvidence(ci_pass=True),
         )
         self.assertEqual(recovered.desired_status, JiraStatus.IN_PROGRESS)
+        self.assertIn("ci-blocked", recovered.remove_labels)
 
         review = ledger.process(
             ReconciliationEvent("seq-4", ReconciliationEventType.PR_READY),
