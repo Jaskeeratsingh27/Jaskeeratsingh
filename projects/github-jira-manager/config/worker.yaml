@@ -1,0 +1,35 @@
+version: 1.4.0
+
+worker:
+  batch_size: 100
+  max_attempts: 5
+  backoff:
+    base_seconds: 30
+    max_seconds: 900
+    strategy: exponential
+  permanent_failures: dead_letter
+  transient_failures: retry
+
+github:
+  auth: github_app_installation
+  installation_token_ttl: provider_managed
+  secrets:
+    - GITHUB_APP_PRIVATE_KEY
+
+jira:
+  auth: oauth_2_3lo_refresh_token
+  api_base: https://api.atlassian.com
+  rotating_refresh_token: true
+  refresh_token_store: external_secret_store
+  scopes: least_privilege
+
+security:
+  source_control_secrets: forbidden
+  log_access_tokens: forbidden
+  log_refresh_tokens: forbidden
+  production_secret_store_required: true
+
+deployment:
+  process_model: long_running_worker
+  containerized: true
+  live_provider_test_requires_user_credentials: true
