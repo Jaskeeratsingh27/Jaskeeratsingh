@@ -1,0 +1,32 @@
+name: Validate Personal Skill Library
+
+on:
+  push:
+    paths:
+      - ".agents/skills/**"
+      - ".agents/plugins/marketplace.json"
+      - "plugins/personal-skill-library/**"
+      - "scripts/validate-skill-library.py"
+      - "tests/skill-library-routing-cases.json"
+      - ".github/workflows/validate-skill-library.yml"
+  pull_request:
+    paths:
+      - ".agents/skills/**"
+      - ".agents/plugins/marketplace.json"
+      - "plugins/personal-skill-library/**"
+      - "scripts/validate-skill-library.py"
+      - "tests/skill-library-routing-cases.json"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate skill library
+        run: python scripts/validate-skill-library.py
