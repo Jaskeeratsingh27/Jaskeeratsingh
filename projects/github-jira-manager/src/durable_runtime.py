@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 from control_plane import (
     ReconciliationEngine,
@@ -14,20 +14,52 @@ from webhooks import NormalizedWebhookEvent
 class IngestResult:
     event_id: str
     duplicate: bool
+    resumed: bool
     ignored: bool
     decision: Optional[Dict[str, object]]
 
 
 class DurableRuntime:
-    """Persist-first reconciliation with a transactional-style outbox boundary.
-
-    Inbound deliveries are written before decisions are produced. Side effects are
-    represented as durable outbox intents and are not considered complete until an
-    external worker explicitly acknowledges them.
-    """
+    """Persist-first reconciliation with atomic decision + outbox persistence."""
 
     def __init__(self, store: RuntimeStore) -> None:
         self.store = store
+
+    @staticmethod
+    def _operations(
+        inbound: NormalizedWebhookEvent,
+        decision,
+    ) -> List[Tuple[str, str, Dict[str, object]]]:
+        operations: List[Tuple[str, str, Dict[str, object]]] = []
+        if decision.desired_status is not None:
+            operations.append(
+                (
+                    f"{inbound.event_id}:jira-status",
+                    "jira.set_status",
+                    {
+                        "work_item_id": inbound.work_item_id,
+                        "status": decision.desired_status.value,
+                        "reason": decision.reason,
+                    },
+                )
+            )
+        for label in sorted(decision.add_labels):
+            operations.append(
+                (
+                    f"{inbound.event_id}:jira-add-label:{label}",
+                    "jira.add_label",
+                    {"work_item_id": inbound.work_item_id, "label": label},
+                )
+            )
+        for label in sorted(decision.remove_labels):
+            operations.append(
+                (
+                    f"{inbound.event_id}:jira-remove-label:{label}",
+                    "jira.remove_label",
+                    {"work_item_id": inbound.work_item_id, "label": label},
+                )
+            )
+        return operations
 
     def ingest(
         self,
@@ -41,13 +73,19 @@ class DurableRuntime:
             payload=inbound.payload,
             work_item_id=inbound.work_item_id,
         )
-        if not created:
+        prior_status = self.store.event_status(inbound.event_id)
+        prior_decision = self.store.get_decision(inbound.event_id)
+
+        if not created and prior_status in {"DECIDED", "IGNORED"}:
             return IngestResult(
                 event_id=inbound.event_id,
                 duplicate=True,
-                ignored=False,
-                decision=self.store.get_decision(inbound.event_id),
+                resumed=False,
+                ignored=prior_status == "IGNORED",
+                decision=prior_decision,
             )
+
+        resumed = not created and prior_status == "RECEIVED"
 
         if inbound.reconciliation_event_type is None:
             self.store.mark_event_ignored(
@@ -56,7 +94,8 @@ class DurableRuntime:
             )
             return IngestResult(
                 event_id=inbound.event_id,
-                duplicate=False,
+                duplicate=not created,
+                resumed=resumed,
                 ignored=True,
                 decision=None,
             )
@@ -68,7 +107,8 @@ class DurableRuntime:
             )
             return IngestResult(
                 event_id=inbound.event_id,
-                duplicate=False,
+                duplicate=not created,
+                resumed=resumed,
                 ignored=True,
                 decision=None,
             )
@@ -80,39 +120,17 @@ class DurableRuntime:
             ),
             evidence,
         )
-        self.store.save_decision(inbound.event_id, decision)
-
-        if decision.desired_status is not None:
-            self.store.enqueue_outbox(
-                operation_id=f"{inbound.event_id}:jira-status",
-                event_id=inbound.event_id,
-                operation="jira.set_status",
-                payload={
-                    "work_item_id": inbound.work_item_id,
-                    "status": decision.desired_status.value,
-                    "reason": decision.reason,
-                },
-            )
-
-        for label in sorted(decision.add_labels):
-            self.store.enqueue_outbox(
-                operation_id=f"{inbound.event_id}:jira-add-label:{label}",
-                event_id=inbound.event_id,
-                operation="jira.add_label",
-                payload={"work_item_id": inbound.work_item_id, "label": label},
-            )
-
-        for label in sorted(decision.remove_labels):
-            self.store.enqueue_outbox(
-                operation_id=f"{inbound.event_id}:jira-remove-label:{label}",
-                event_id=inbound.event_id,
-                operation="jira.remove_label",
-                payload={"work_item_id": inbound.work_item_id, "label": label},
-            )
+        operations = self._operations(inbound, decision)
+        self.store.persist_decision_and_outbox(
+            inbound.event_id,
+            decision,
+            operations,
+        )
 
         return IngestResult(
             event_id=inbound.event_id,
-            duplicate=False,
+            duplicate=not created,
+            resumed=resumed,
             ignored=False,
             decision=self.store.get_decision(inbound.event_id),
         )
