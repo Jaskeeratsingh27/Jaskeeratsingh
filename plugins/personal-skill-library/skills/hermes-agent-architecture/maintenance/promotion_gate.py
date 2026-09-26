@@ -25,12 +25,26 @@ def _validation_failures(validation: dict[str, str]) -> list[str]:
     )
 
 
+def _approval(bundle: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
+    approval = bundle.get("approval") or {}
+    proposal_id = bundle.get("proposal_id")
+    valid = (
+        approval.get("approved") is True
+        and approval.get("scope") == "full_upgrade"
+        and bool(approval.get("approved_by"))
+        and bool(approval.get("approved_at"))
+        and (proposal_id is None or approval.get("proposal_id") == proposal_id)
+    )
+    return valid, approval
+
+
 def decide(bundle: dict[str, Any]) -> dict[str, Any]:
     impact = bundle.get("impact") or {}
     consumer = bundle.get("consumer_impact") or {}
     health = bundle.get("health") or {}
     drift = bundle.get("consumer_drift") or {}
     validation = bundle.get("validation") or {}
+    approval_valid, approval = _approval(bundle)
 
     knowledge_blockers: list[str] = []
     knowledge_review: list[str] = []
@@ -59,15 +73,22 @@ def decide(bundle: dict[str, Any]) -> dict[str, Any]:
     elif health_state in {"degraded", "watch"}:
         knowledge_review.append(f"knowledge_health_{health_state}")
 
-    if impact.get("review_required"):
+    # Explicit approval satisfies policy review for a verified upgrade, but never
+    # validation, ambiguity, freshness, coverage, or migration blockers.
+    if impact.get("review_required") and not approval_valid:
         knowledge_review.append("impact_review_required")
-    if impact.get("stable_release_changed"):
+    if impact.get("stable_release_changed") and not approval_valid:
         knowledge_review.append("stable_release_transition")
 
-    if consumer.get("requires_consumer_review"):
+    raw_blocking_consumers = set(consumer.get("blocking_consumer_ids", []))
+    cleared_consumers = set()
+    if approval_valid and approval.get("consumer_migrations_verified") is True:
+        cleared_consumers = set(approval.get("cleared_consumer_ids", []))
+    blocking_consumers = sorted(raw_blocking_consumers - cleared_consumers)
+
+    if consumer.get("requires_consumer_review") and not approval_valid:
         ecosystem_review.append("consumer_review_required")
 
-    blocking_consumers = sorted(set(consumer.get("blocking_consumer_ids", [])))
     if blocking_consumers:
         ecosystem_blockers.append(
             "consumer_compatibility_blocked:" + ",".join(blocking_consumers)
@@ -116,7 +137,17 @@ def decide(bundle: dict[str, Any]) -> dict[str, Any]:
     )
 
     return {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
+        "proposal_id": bundle.get("proposal_id"),
+        "approval": {
+            "valid": approval_valid,
+            "approved_by": approval.get("approved_by"),
+            "approved_at": approval.get("approved_at"),
+            "consumer_migrations_verified": bool(
+                approval_valid and approval.get("consumer_migrations_verified") is True
+            ),
+            "cleared_consumer_ids": sorted(cleared_consumers),
+        },
         "overall_state": overall_state,
         "knowledge_promotion": {
             "state": knowledge_state,
@@ -135,7 +166,7 @@ def decide(bundle: dict[str, Any]) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("bundle", help="JSON bundle containing impact/consumer/health/drift/validation")
+    parser.add_argument("bundle", help="JSON bundle containing impact/consumer/health/drift/validation/approval")
     parser.add_argument("--pretty", action="store_true")
     args = parser.parse_args()
     payload = json.loads(Path(args.bundle).read_text(encoding="utf-8"))

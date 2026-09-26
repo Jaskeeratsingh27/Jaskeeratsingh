@@ -1,7 +1,7 @@
 ---
 name: hermes-agent-architecture
 description: Design production Hermes agents and multi-agent systems
-version: 1.7.0
+version: 1.8.0
 metadata:
   hermes:
     tags: [hermes, agents, multi-agent, architecture, orchestration]
@@ -12,7 +12,7 @@ metadata:
 
 ## When to Use
 
-Load this skill whenever the task involves Hermes Agent architecture, profile/Bot design, subagents, Kanban orchestration, SOUL.md, AGENTS.md, skills, model/tool routing, MCP, memory, cron, agent-to-agent contracts, production hardening, observability, release compatibility, knowledge freshness, downstream consumer impact, consumer dependency drift, promotion/recovery control, or creating instructions/files for Hermes agents.
+Load this skill whenever the task involves Hermes Agent architecture, profile/Bot design, subagents, Kanban orchestration, SOUL.md, AGENTS.md, skills, model/tool routing, MCP, memory, cron, agent-to-agent contracts, production hardening, observability, release compatibility, knowledge freshness, downstream consumer impact, consumer dependency drift, promotion/recovery control, autonomous approval-gated maintenance, or creating instructions/files for Hermes agents.
 
 ## Knowledge Baseline
 
@@ -67,7 +67,9 @@ Load this skill whenever the task involves Hermes Agent architecture, profile/Bo
 - `consumers/detection-rules.json` defines conservative evidence signatures for detecting registry drift.
 - `maintenance/consumer_drift.py` detects unregistered consumers, undeclared capabilities, and missing dependency evidence without auto-mutating the registry.
 - `research/consumer-drift/index.json` is the append-only dependency-drift history index.
-- `maintenance/promotion_gate.py` combines validation, impact, consumer, health, and registry-drift state into deterministic knowledge-promotion and ecosystem-compatibility decisions.
+- `maintenance/promotion_gate.py` combines validation, impact, consumer, health, registry-drift, and durable user-approval state into deterministic knowledge-promotion and ecosystem-compatibility decisions.
+- `maintenance/autonomous-upgrade-runbook.md` is the canonical two-stage scheduler/approval lifecycle for preparing, approving, merging, verifying, and recovering Hermes upgrades without chat-history dependence.
+- `maintenance/upgrade-proposal.schema.json` and `maintenance/approval-record.schema.json` make pending upgrades and approvals resumable from GitHub.
 - Routine weekly audit/health records do not require a semantic skill-version bump by themselves.
 
 ## Quality Gates
@@ -84,7 +86,7 @@ Before promoting a canonical knowledge/control change, run:
 
 Do not clear `needs_revalidation` or refresh a capability's `last_verified_on` unless its required primary sources were actually checked sufficiently to reverify the claim.
 
-Any stable Hermes release transition must go through a reviewed branch/PR.
+Any stable Hermes release transition must go through a branch/PR. The scheduler may prepare the complete candidate automatically, but semantic promotion requires explicit user approval recorded against that proposal; approval never overrides deterministic blockers.
 
 ## Architecture Defaults
 
@@ -167,6 +169,7 @@ Use the templates under `templates/` rather than inventing incompatible handoff 
 - Do not auto-register or auto-remove consumers from text matches. Dependency drift creates review findings; verified registry changes are explicit control-data updates.
 - Do not call the ecosystem compatibility-cleared merely because the knowledge patch is valid; consumer blockers must also be resolved.
 - Do not weaken a deterministic gate to obtain a passing release. Fix the defect, evidence, or modelled policy instead.
+- Do not require the originating chat to resume a pending upgrade; use the proposal branch/PR, proposal JSON, approval record, and canonical runbook.
 
 ## Verification
 
