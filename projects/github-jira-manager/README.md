@@ -1,55 +1,68 @@
-# GitHub Jira Manager — V1.2
+# GitHub Jira Manager — V1.3
 
-Version: 1.2.0
+Version: 1.3.0
 
 ## Purpose
 
-A policy-controlled AI engineering control plane that lets one human command a four-agent team while GitHub remains the canonical technical source of truth and Jira remains the operational work-tracking system.
+A policy-controlled AI engineering control plane where GitHub is canonical for technical artifacts, Jira is canonical for work state, and event processing can survive process/chat restarts.
 
-## Agent topology
+## Runtime topology
 
-Human → Orchestrator → Project Manager / Software Engineer / QA Validator → Jira / GitHub / CI → Reconciliation.
+Human → Orchestrator → Project Manager / Software Engineer / QA Validator → GitHub/Jira/CI.
 
-The user normally talks only to the Orchestrator.
+External events enter through:
 
-## V1.2 additions
+GitHub/Jira webhook → signature verification → durable event store → reconciliation → durable outbox → authenticated side-effect worker.
 
-- Four agent roles are executable contracts, not only prose.
-- Role permissions are deny-by-default.
-- GitHub/CI events resolve through a deterministic reconciliation engine.
-- Reconciliation is capability-aware: it targets only statuses the live Jira workflow supports.
-- CI failure keeps work In Progress and applies ci-blocked; CI recovery removes the label.
-- CI PASS alone cannot move work to review.
-- PR-ready needs CI + independent QA.
-- Done needs merge + CI + QA + explicit human approval.
-- Event processing is idempotent.
-- A full failure/recovery regression sequence is tested.
+## V1.3 additions
+
+- SQLite reference runtime store for jobs, inbound event identity, decisions and outbox intents.
+- Persist-before-reconcile semantics.
+- Atomic reconciliation-decision + outbox persistence.
+- Crash/restart recovery for events received but not yet decided.
+- Delivery replay protection using provider delivery IDs plus payload hashes.
+- GitHub HMAC-SHA256 webhook verification.
+- Jira HMAC webhook verification.
+- GitHub PR/workflow-run event normalization.
+- Jira webhook auditing without feedback-loop side effects.
+- Durable failed/pending outbox replay.
+- No raw webhook secrets or credentials stored in Git or runtime event records.
+
+## Reliability model
+
+1. Authenticate the webhook.
+2. Normalize only known event shapes.
+3. Persist delivery identity before reconciliation.
+4. Reject a reused delivery ID with different content.
+5. Compute a deterministic reconciliation decision.
+6. Atomically persist the decision and all side-effect intents.
+7. Let a worker execute outbox operations.
+8. Mark a side effect complete only after the destination API acknowledges it.
+9. Re-run pending/failed outbox rows after restart.
+
+## Storage
+
+SQLite is the deterministic V1.3 reference because it is dependency-free and testable in CI. The production target remains Postgres.
+
+## Important deployment boundary
+
+V1.3 makes receipt, persistence, reconciliation and replay deployment-ready. It does **not** embed ChatGPT connector credentials in a server. True unattended Jira/GitHub writes require a deployed worker authenticated with service credentials/OAuth.
 
 ## Safety model
 
-- No agent may push directly to main or master.
-- Software Engineer cannot merge its own PR.
-- QA cannot implement the change it certifies.
-- Project Manager cannot mark work Done without terminal evidence.
-- Unknown tool operations and ungranted role actions are denied by default.
-- Mutating operations and reconciliation events require deterministic IDs.
-- Destructive and production actions require explicit human approval.
+All V1.2 role and approval gates remain. Webhook events are evidence, not authority: a merge event still cannot produce Jira Done without CI, QA and explicit human-approval evidence.
 
-## Source-of-truth boundaries
+## Completion gate
 
-| Domain | Canonical system |
-|---|---|
-| code, agent definitions, architecture, released versions | GitHub |
-| backlog, work status, dependencies, milestones | Jira |
-| runtime execution state | control plane |
-| test/CI evidence | GitHub Actions / test runner |
-
-## Current scope
-
-Included: four executable agent contracts, policy/workflow gates, deterministic capability-aware reconciliation, idempotency, failure/recovery tests, GitHub Actions validation, and live GitHub/Jira connector operation from the orchestration interface.
-
-Still deferred: durable runtime database, always-on webhook receiver/event bus, production deployment worker, Hermes worker pool, and autonomous merge.
-
-## V1.2 completion gate
-
-V1.2 is ready for merge when structural validation and all regression tests pass, the deliberate CI failure and recovery are recorded, Jira reflects the evidence, and the PR remains behind human merge approval.
+V1.3 is ready for review when:
+- V1/V1.2 regressions pass,
+- official GitHub/Jira signature vectors pass,
+- tampered requests are rejected,
+- job state survives restart,
+- identical retries are idempotent,
+- conflicting retries are rejected,
+- a crash after event receipt resumes on redelivery,
+- outbox work survives restart,
+- failed outbox actions remain replayable,
+- CI is green,
+- merge remains human-gated.

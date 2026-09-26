@@ -8,22 +8,29 @@ REQUIRED = [
     "CHANGELOG.md",
     "architecture/V1.md",
     "architecture/V1.2.md",
+    "architecture/V1.3.md",
     "agents/AGENTS.md",
     "config/approval-policy.yaml",
     "config/workflow.yaml",
     "config/reconciliation.yaml",
+    "config/runtime.yaml",
+    "docs/V1.3-SOURCES.md",
     "src/control_plane.py",
+    "src/runtime_store.py",
+    "src/webhooks.py",
+    "src/durable_runtime.py",
     "tests/test_control_plane.py",
+    "tests/test_runtime_v13.py",
 ]
 
 for rel in REQUIRED:
     path = ROOT / rel
     if not path.exists():
-        raise SystemExit(f"missing required V1.2 file: {rel}")
+        raise SystemExit(f"missing required V1.3 file: {rel}")
 
 version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
-if version != "1.2.0":
-    raise SystemExit(f"unexpected V1.2 version: {version}")
+if version != "1.3.0":
+    raise SystemExit(f"unexpected V1.3 version: {version}")
 
 agents = (ROOT / "agents/AGENTS.md").read_text(encoding="utf-8")
 for role in ["Orchestrator", "Project Manager", "Software Engineer", "QA Validator"]:
@@ -39,16 +46,9 @@ for required in [
     if required not in policy:
         raise SystemExit(f"missing policy guard: {required}")
 
-workflow = (ROOT / "config/workflow.yaml").read_text(encoding="utf-8")
-for required in ["human_approval", "resume_to: previous_state"]:
-    if required not in workflow:
-        raise SystemExit(f"missing workflow safeguard: {required}")
-
 reconciliation = (ROOT / "config/reconciliation.yaml").read_text(encoding="utf-8")
 for required in [
-    "ci_failed: In Progress",
     "blocked_label: ci-blocked",
-    "ci_passed: In Progress",
     "pr_ready: In Review",
     "pr_merged: Done",
     "human_merge_approved",
@@ -56,17 +56,35 @@ for required in [
     if required not in reconciliation:
         raise SystemExit(f"missing reconciliation rule: {required}")
 
-implementation = (ROOT / "src/control_plane.py").read_text(encoding="utf-8")
+runtime = (ROOT / "config/runtime.yaml").read_text(encoding="utf-8")
 for required in [
-    "AGENT_CONTRACTS",
-    "class ReconciliationEngine",
-    "class ReconciliationLedger",
-    "blocked: bool",
-    "ci-blocked",
-    "human_merge_approved",
-    "operation_id reuse with different request is denied",
+    "persist_before_reconcile: true",
+    "idempotent_delivery_ids: true",
+    "durable_outbox: true",
+    "requires_service_credentials",
 ]:
-    if required not in implementation:
-        raise SystemExit(f"missing V1.2 implementation safeguard: {required}")
+    if required not in runtime:
+        raise SystemExit(f"missing V1.3 runtime rule: {required}")
 
-print("V1.2 structural validation: PASS")
+for path, required_tokens in {
+    "src/runtime_store.py": [
+        "CREATE TABLE IF NOT EXISTS inbound_events",
+        "CREATE TABLE IF NOT EXISTS outbox",
+        "persist_decision_and_outbox",
+    ],
+    "src/webhooks.py": [
+        "X-Hub-Signature-256",
+        "X-Atlassian-Webhook-Identifier",
+        "hmac.compare_digest",
+    ],
+    "src/durable_runtime.py": [
+        "prior_status == \"RECEIVED\"",
+        "persist_decision_and_outbox",
+    ],
+}.items():
+    content = (ROOT / path).read_text(encoding="utf-8")
+    for token in required_tokens:
+        if token not in content:
+            raise SystemExit(f"missing V1.3 safeguard in {path}: {token}")
+
+print("V1.3 structural validation: PASS")

@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.3.0 — 2026-09-26
+
+### Added
+- Durable SQLite reference runtime for jobs, inbound events, decisions and outbox intents.
+- Authenticated GitHub and Jira webhook ingestion.
+- Provider-delivery-id and payload-hash replay protection.
+- Atomic reconciliation-decision + outbox persistence.
+- Crash/restart recovery for partially processed webhook events.
+- Persistent retry state for failed outbound operations.
+- V1.3 webhook, durability, replay and restart regression suite.
+
+### Security
+- GitHub webhook validation uses X-Hub-Signature-256 and HMAC-SHA256.
+- Jira webhook validation uses X-Hub-Signature with a safe HMAC algorithm allowlist.
+- Secrets and raw credentials are runtime-only and never persisted in source control or event rows.
+- Reused delivery IDs with changed content are rejected.
+
+### Boundary
+- V1.3 does not pretend ChatGPT interactive connector authorization is a deployable service credential.
+- Unattended API writes require a separately authenticated worker.
+
 ## 1.2.0 — 2026-09-26
 
 ### Added
@@ -34,9 +55,3 @@
 - Deterministic Python control-plane reference implementation.
 - Unit and structural validation tests.
 - CI workflow for V1 validation.
-
-### Deferred
-- Persistent database.
-- Webhook/event receiver service.
-- Deployment automation.
-- Hermes execution workers.

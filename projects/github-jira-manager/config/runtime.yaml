@@ -1,0 +1,34 @@
+version: 1.3.0
+
+persistence:
+  engine: sqlite
+  production_target: postgres
+  persist:
+    - jobs
+    - inbound_event_identity
+    - reconciliation_decisions
+    - outbox_intents
+  never_persist:
+    - webhook_secrets
+    - raw_credentials
+
+webhooks:
+  github:
+    signature_header: X-Hub-Signature-256
+    algorithm: sha256
+    delivery_id_header: X-GitHub-Delivery
+  jira:
+    signature_header: X-Hub-Signature
+    delivery_id_header: X-Atlassian-Webhook-Identifier
+
+reliability:
+  persist_before_reconcile: true
+  idempotent_delivery_ids: true
+  durable_outbox: true
+  side_effect_complete_only_after_ack: true
+  duplicate_same_delivery: no_op
+  duplicate_conflicting_delivery: reject
+
+deployment:
+  receiver: framework_agnostic
+  unattended_side_effect_worker: requires_service_credentials
