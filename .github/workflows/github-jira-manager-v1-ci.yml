@@ -1,0 +1,26 @@
+name: GitHub Jira Manager V1 CI
+
+on:
+  pull_request:
+    paths:
+      - 'projects/github-jira-manager/**'
+      - '.github/workflows/github-jira-manager-v1-ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'projects/github-jira-manager/**'
+      - '.github/workflows/github-jira-manager-v1-ci.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Structural validation
+        run: python projects/github-jira-manager/tests/validate_v1.py
+      - name: Unit tests
+        run: python -m unittest discover -s projects/github-jira-manager/tests -p 'test_*.py' -v

@@ -1,0 +1,57 @@
+version: 1.0.1
+
+states:
+  - IDEA
+  - DISCOVERY
+  - PLANNED
+  - READY
+  - IN_PROGRESS
+  - CODE_COMPLETE
+  - VALIDATION
+  - REVIEW
+  - READY_TO_MERGE
+  - DONE
+  - BLOCKED
+  - INPUT_REQUIRED
+  - FAILED
+  - CANCELED
+
+happy_path:
+  IDEA: DISCOVERY
+  DISCOVERY: PLANNED
+  PLANNED: READY
+  READY: IN_PROGRESS
+  IN_PROGRESS: CODE_COMPLETE
+  CODE_COMPLETE: VALIDATION
+  VALIDATION: REVIEW
+  REVIEW: READY_TO_MERGE
+  READY_TO_MERGE: DONE
+
+gates:
+  VALIDATION:
+    requires:
+      - acceptance_criteria
+      - test_evidence
+  REVIEW:
+    requires:
+      - qa_pass
+  READY_TO_MERGE:
+    requires:
+      - required_ci_pass
+      - human_approval
+  DONE:
+    requires:
+      - merged_or_formally_closed
+      - qa_pass
+
+exception_states:
+  BLOCKED:
+    resumable: true
+    resume_to: previous_state
+  INPUT_REQUIRED:
+    resumable: true
+    resume_to: previous_state
+  FAILED:
+    resumable: false
+  CANCELED:
+    resumable: false
