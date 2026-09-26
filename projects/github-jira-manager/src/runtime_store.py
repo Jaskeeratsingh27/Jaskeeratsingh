@@ -351,6 +351,10 @@ class RuntimeStore:
             if updated.rowcount != 1:
                 raise RuntimeStoreViolation(f"unknown operation_id: {operation_id}")
 
+    def mark_outbox_failed(self, operation_id: str, error: str) -> None:
+        """V1.3 compatibility: immediately replayable failed operation."""
+        self.mark_outbox_retry(operation_id, error, 0.0)
+
     def mark_outbox_dead_letter(self, operation_id: str, error: str) -> None:
         with self.conn:
             updated = self.conn.execute(
