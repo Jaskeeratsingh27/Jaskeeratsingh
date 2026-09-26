@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Adaptive Routing Aggregate Export",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generated_at",
+    "mode",
+    "total_tasks",
+    "known_task_kind_tasks",
+    "by_route",
+    "shadow_summary"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "mode": {
+      "enum": [
+        "shadow",
+        "active"
+      ]
+    },
+    "total_tasks": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "known_task_kind_tasks": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "by_route": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object"
+      }
+    },
+    "shadow_summary": {
+      "type": "object",
+      "required": [
+        "classes_evaluated",
+        "candidate_recommendations",
+        "decisions"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "classes_evaluated": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "candidate_recommendations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "decisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "query",
+              "baseline_route",
+              "candidate_route",
+              "decision",
+              "estimated_p90_savings_points",
+              "active_eligible"
+            ],
+            "additionalProperties": true
+          }
+        }
+      }
+    }
+  }
+}

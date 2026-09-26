@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "candidate_version": "2.0.0",
+  "last_known_good": {
+    "version": "1.9.0",
+    "commit": "1685d9395bb91b751d3b7dcc887a73418e744fd5",
+    "branch": "main"
+  },
+  "rollback": {
+    "automatic_destructive_git_reset": false,
+    "require_explicit_user_approval_for_repository_rollback": true,
+    "target_immutable_commit": true
+  }
+}

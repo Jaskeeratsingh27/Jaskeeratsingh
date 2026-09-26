@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "release_track": "v1.6-v1.9-consolidated",
+  "invariants": {
+    "adaptive_default_mode": "shadow",
+    "canonical_approvals_must_be_empty_for_release_candidate": true,
+    "max_concurrent_agents": 3,
+    "single_writer_shared_tree": true,
+    "high_risk_requires_reviewer": true,
+    "critical_plan_only": true,
+    "large_plan_only": true,
+    "senior_specialist_escalation_only": true,
+    "unknown_task_kind_cannot_activate_adaptation": true,
+    "predictions_never_replace_proxy_limits": true
+  },
+  "fault_injection": {
+    "malformed_ledger_lines_must_be_ignored": true,
+    "foreign_schema_events_must_be_ignored": true,
+    "incompatible_usage_cycles_must_remain_unmeasured": true,
+    "usage_reset_must_not_create_negative_burn": true,
+    "incomplete_tasks_must_not_become_measured": true,
+    "unknown_routes_must_not_become_candidates": true,
+    "invalid_free_text_telemetry_must_be_rejected": true
+  },
+  "property_tests": {
+    "all_task_kind_complexity_risk_profile_combinations": true,
+    "deterministic_repeated_decisions": true,
+    "route_templates_unique": true,
+    "risk_floor_dominates_efficiency": true,
+    "quality_floor_dominates_efficiency": true
+  },
+  "readiness": {
+    "require_all_qa_suites": true,
+    "require_ci_green": true,
+    "require_last_known_good_commit": true,
+    "require_rollback_policy": true,
+    "require_compatibility_policy": true,
+    "require_canary_policy": true,
+    "require_shadow_mode": true,
+    "require_empty_approval_registry": true,
+    "allow_v2_closed_loop_shadow": true,
+    "allow_v2_active_adaptation_without_operational_evidence": false
+  }
+}

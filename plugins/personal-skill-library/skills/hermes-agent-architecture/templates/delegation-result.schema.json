@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/hermes/delegation-result.schema.json",
+  "title": "Hermes Delegated Result",
+  "type": "object",
+  "properties": {
+    "status": {"type": "string", "enum": ["completed", "partial", "blocked", "failed"]},
+    "summary": {"type": "string"},
+    "artifacts": {"type": "array", "items": {"type": "string"}},
+    "evidence": {"type": "array", "items": {"type": "string"}},
+    "assumptions": {"type": "array", "items": {"type": "string"}},
+    "verification": {"type": "array", "items": {"type": "string"}},
+    "residual_risks": {"type": "array", "items": {"type": "string"}},
+    "blocked_reason": {"type": ["string", "null"]},
+    "follow_up_tasks": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": ["status", "summary"],
+  "additionalProperties": true
+}

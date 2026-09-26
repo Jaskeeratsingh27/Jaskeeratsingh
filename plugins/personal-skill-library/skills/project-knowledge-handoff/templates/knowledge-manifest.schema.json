@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/project-knowledge-handoff/knowledge-manifest.schema.json",
+  "title": "Project Knowledge Handoff Manifest",
+  "type": "object",
+  "properties": {
+    "schema_version": {"type": "string"},
+    "project_name": {"type": "string", "minLength": 1},
+    "project_slug": {"type": "string", "minLength": 1},
+    "repository": {"type": "string", "minLength": 1},
+    "project_root": {"type": "string", "minLength": 1},
+    "project_version": {"type": "string", "minLength": 1},
+    "guide_revision": {"type": "integer", "minimum": 1},
+    "canonical_guide": {"type": "string", "minLength": 1},
+    "latest_snapshot": {"type": ["string", "null"]},
+    "source_commit": {"type": "string", "minLength": 7},
+    "last_updated_on": {"type": "string", "format": "date"},
+    "snapshot_policy": {
+      "type": "string",
+      "enum": ["semantic_release", "milestone", "explicit_only"]
+    },
+    "exports": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "status": {
+      "type": "string",
+      "enum": ["current", "needs_refresh", "partial", "archived"]
+    },
+    "known_gaps": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  },
+  "required": [
+    "schema_version",
+    "project_name",
+    "project_slug",
+    "repository",
+    "project_root",
+    "project_version",
+    "guide_revision",
+    "canonical_guide",
+    "latest_snapshot",
+    "source_commit",
+    "last_updated_on",
+    "snapshot_policy",
+    "exports",
+    "status",
+    "known_gaps"
+  ],
+  "additionalProperties": false
+}

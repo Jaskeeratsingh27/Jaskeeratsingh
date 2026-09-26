@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0.0",
+  "cases": [
+    {
+      "id": "persistent-researcher",
+      "scenario": "A researcher needs its own long-lived memory, model, skills, credentials, and history.",
+      "rule_id": "persistent-specialist",
+      "expected_primitive": "profile"
+    },
+    {
+      "id": "parallel-source-checks",
+      "scenario": "One parent needs four temporary workers to independently research sources and return results.",
+      "rule_id": "short-isolated-worker",
+      "expected_primitive": "delegate_task"
+    },
+    {
+      "id": "restart-human-approval",
+      "scenario": "A workflow must survive restart, wait for a human answer, then continue through review.",
+      "rule_id": "durable-workflow",
+      "expected_primitive": "kanban"
+    },
+    {
+      "id": "coding-sop",
+      "scenario": "Several agents need the same reusable coding and validation procedure.",
+      "rule_id": "reusable-procedure",
+      "expected_primitive": "skill"
+    },
+    {
+      "id": "repo-conventions",
+      "scenario": "All agents working in a repository must follow its architecture, test commands, and directory conventions.",
+      "rule_id": "project-rules",
+      "expected_primitive": "project_context"
+    },
+    {
+      "id": "agent-persona",
+      "scenario": "A persistent QA agent needs a stable mission, responsibility boundary, and operating philosophy.",
+      "rule_id": "persistent-identity",
+      "expected_primitive": "soul"
+    },
+    {
+      "id": "weekly-audit",
+      "scenario": "Run a Hermes knowledge audit every Tuesday at 2 AM.",
+      "rule_id": "scheduled-trigger",
+      "expected_primitive": "cron"
+    },
+    {
+      "id": "github-integration",
+      "scenario": "An agent needs access to an external GitHub capability with a narrow allowlist.",
+      "rule_id": "external-capability",
+      "expected_primitive": "mcp"
+    },
+    {
+      "id": "bulk-tool-processing",
+      "scenario": "The agent needs to call many tools, filter results, branch on values, and only return a compact aggregate.",
+      "rule_id": "deterministic-multitool",
+      "expected_primitive": "execute_code"
+    },
+    {
+      "id": "untrusted-code",
+      "scenario": "An engineering agent executes untrusted or side-effecting code and needs real filesystem/process isolation.",
+      "rule_id": "execution-isolation",
+      "expected_primitive": "sandbox"
+    }
+  ]
+}

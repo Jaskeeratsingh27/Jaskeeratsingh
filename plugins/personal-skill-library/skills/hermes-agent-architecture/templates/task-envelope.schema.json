@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/hermes/task-envelope.schema.json",
+  "title": "Hermes Agent Task Envelope",
+  "type": "object",
+  "properties": {
+    "contract_version": {"type": "string"},
+    "task_id": {"type": "string"},
+    "parent_task_id": {"type": ["string", "null"]},
+    "objective": {"type": "string"},
+    "context_refs": {"type": "array", "items": {"type": "string"}},
+    "inputs": {"type": "object"},
+    "constraints": {"type": "array", "items": {"type": "string"}},
+    "acceptance_criteria": {"type": "array", "items": {"type": "string"}},
+    "expected_artifacts": {"type": "array", "items": {"type": "string"}},
+    "verification_requirements": {"type": "array", "items": {"type": "string"}},
+    "priority": {"type": "string", "enum": ["low", "normal", "high", "critical"]},
+    "budget": {
+      "type": "object",
+      "properties": {
+        "max_iterations": {"type": ["integer", "null"], "minimum": 1},
+        "max_children": {"type": ["integer", "null"], "minimum": 0},
+        "cost_limit": {"type": ["number", "null"], "minimum": 0}
+      },
+      "additionalProperties": true
+    }
+  },
+  "required": ["contract_version", "task_id", "objective"],
+  "additionalProperties": true
+}

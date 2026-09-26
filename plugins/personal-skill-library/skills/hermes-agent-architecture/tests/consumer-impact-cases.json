@@ -1,0 +1,30 @@
+{
+  "schema_version":"1.0.0",
+  "cases":[
+    {
+      "id":"delegation-minor",
+      "impact":{"change_id":"delegation-minor","severity":"minor","affected_capabilities":["delegation"],"unknown_source_ids":[],"unknown_capability_ids":[]},
+      "expected":{"consumer_ids":["hermes-agent-creator","kaizen-orchestrator"],"requires_consumer_review":true,"blocking_consumer_ids":[]}
+    },
+    {
+      "id":"kanban-major",
+      "impact":{"change_id":"kanban-major","severity":"major","affected_capabilities":["kanban"],"unknown_source_ids":[],"unknown_capability_ids":[]},
+      "expected":{"consumer_ids":["hermes-agent-creator"],"requires_consumer_review":true,"blocking_consumer_ids":["hermes-agent-creator"]}
+    },
+    {
+      "id":"cron-patch",
+      "impact":{"change_id":"cron-patch","severity":"patch","affected_capabilities":["cron"],"unknown_source_ids":[],"unknown_capability_ids":[]},
+      "expected":{"consumer_ids":["hermes-agent-creator","kaizen-orchestrator"],"requires_consumer_review":true,"blocking_consumer_ids":[]}
+    },
+    {
+      "id":"security-critical",
+      "impact":{"change_id":"security-critical","severity":"critical","affected_capabilities":["security"],"unknown_source_ids":[],"unknown_capability_ids":[]},
+      "expected":{"consumer_ids":["hermes-agent-creator"],"requires_consumer_review":true,"blocking_consumer_ids":["hermes-agent-creator"]}
+    },
+    {
+      "id":"unknown-subsystem",
+      "impact":{"change_id":"unknown-subsystem","severity":"major","affected_capabilities":[],"unknown_source_ids":["future-new-subsystem"],"unknown_capability_ids":[]},
+      "expected":{"consumer_ids":[],"coverage_gap":true,"requires_consumer_review":false,"blocking_consumer_ids":[]}
+    }
+  ]
+}

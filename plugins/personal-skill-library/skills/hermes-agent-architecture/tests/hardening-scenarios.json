@@ -1,0 +1,170 @@
+{
+  "schema_version": "1.0.0",
+  "scenarios": [
+    {
+      "id": "clean-no-change",
+      "event": null,
+      "as_of": "2026-09-22",
+      "mutations": {},
+      "consumer_drift": false,
+      "validation_failures": [],
+      "expected": {
+        "overall_state": "allow",
+        "knowledge_state": "allow",
+        "ecosystem_state": "cleared"
+      }
+    },
+    {
+      "id": "stable-delegation-upgrade",
+      "event": {
+        "change_id": "sim-stable-delegation",
+        "observed_on": "2026-09-22",
+        "source_ids": ["releases", "delegation"],
+        "change_types": ["behavior"],
+        "stable_release_changed": true,
+        "from_release": "v0.21.3",
+        "to_release": "v0.22.0",
+        "evidence_status": "verified",
+        "summary": "Simulated stable release with delegation behavior change."
+      },
+      "as_of": "2026-09-22",
+      "mutations": {"candidate_release": "v0.22.0"},
+      "consumer_drift": false,
+      "validation_failures": [],
+      "expected": {
+        "overall_state": "review_required",
+        "knowledge_state": "review_required",
+        "ecosystem_state": "review_required",
+        "consumer_ids": ["hermes-agent-creator", "kaizen-orchestrator"]
+      }
+    },
+    {
+      "id": "security-critical-consumer-block",
+      "event": {
+        "change_id": "sim-security",
+        "observed_on": "2026-09-22",
+        "source_ids": ["security"],
+        "change_types": ["security"],
+        "stable_release_changed": false,
+        "from_release": "v0.21.3",
+        "to_release": "v0.21.3",
+        "evidence_status": "verified",
+        "summary": "Simulated critical security change."
+      },
+      "as_of": "2026-09-22",
+      "mutations": {},
+      "consumer_drift": false,
+      "validation_failures": [],
+      "expected": {
+        "overall_state": "blocked",
+        "knowledge_state": "review_required",
+        "ecosystem_state": "blocked",
+        "blocking_consumer_ids": ["hermes-agent-creator"]
+      }
+    },
+    {
+      "id": "ambiguous-routing-revalidation",
+      "event": {
+        "change_id": "sim-routing-ambiguous",
+        "observed_on": "2026-09-22",
+        "source_ids": ["provider-routing"],
+        "change_types": ["documentation"],
+        "stable_release_changed": false,
+        "from_release": "v0.21.3",
+        "to_release": "v0.21.3",
+        "evidence_status": "ambiguous",
+        "summary": "Simulated ambiguous provider-routing documentation."
+      },
+      "as_of": "2026-09-22",
+      "mutations": {"needs_revalidation": ["model_routing"]},
+      "consumer_drift": false,
+      "validation_failures": [],
+      "expected": {
+        "overall_state": "blocked",
+        "knowledge_state": "blocked",
+        "ecosystem_state": "blocked"
+      }
+    },
+    {
+      "id": "unknown-future-subsystem",
+      "event": {
+        "change_id": "sim-unknown",
+        "observed_on": "2026-09-22",
+        "source_ids": ["future-new-subsystem"],
+        "change_types": ["architecture"],
+        "stable_release_changed": true,
+        "from_release": "v0.21.3",
+        "to_release": "v0.22.0",
+        "evidence_status": "verified",
+        "summary": "Simulated unknown Hermes subsystem."
+      },
+      "as_of": "2026-09-22",
+      "mutations": {},
+      "consumer_drift": false,
+      "validation_failures": [],
+      "expected": {
+        "overall_state": "blocked",
+        "knowledge_state": "blocked",
+        "ecosystem_state": "blocked"
+      }
+    },
+    {
+      "id": "missed-audits-health-critical",
+      "event": null,
+      "as_of": "2026-10-07",
+      "mutations": {},
+      "consumer_drift": false,
+      "validation_failures": [],
+      "expected": {
+        "overall_state": "blocked",
+        "knowledge_state": "blocked",
+        "ecosystem_state": "blocked"
+      }
+    },
+    {
+      "id": "consumer-registry-drift",
+      "event": null,
+      "as_of": "2026-09-22",
+      "mutations": {},
+      "consumer_drift": true,
+      "validation_failures": [],
+      "expected": {
+        "overall_state": "blocked",
+        "knowledge_state": "blocked",
+        "ecosystem_state": "blocked"
+      }
+    },
+    {
+      "id": "ci-gate-failure",
+      "event": null,
+      "as_of": "2026-09-22",
+      "mutations": {},
+      "consumer_drift": false,
+      "validation_failures": ["consumer_drift"],
+      "expected": {
+        "overall_state": "blocked",
+        "knowledge_state": "blocked",
+        "ecosystem_state": "blocked"
+      }
+    },
+    {
+      "id": "recovered-after-review",
+      "event": null,
+      "as_of": "2026-09-22",
+      "mutations": {
+        "audit_date": "2026-09-22",
+        "verified_on": "2026-09-22",
+        "observed_release": "v0.21.4",
+        "candidate_release": null,
+        "needs_revalidation": []
+      },
+      "consumer_drift": false,
+      "validation_failures": [],
+      "expected": {
+        "overall_state": "allow",
+        "knowledge_state": "allow",
+        "ecosystem_state": "cleared"
+      }
+    }
+  ]
+}

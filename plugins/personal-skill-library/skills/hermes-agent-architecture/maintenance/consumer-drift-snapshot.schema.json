@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/hermes/consumer-drift-snapshot.schema.json",
+  "title": "Hermes Consumer Dependency Drift Snapshot",
+  "type": "object",
+  "properties": {
+    "schema_version":{"type":"string"},
+    "scan_date":{"type":"string","format":"date"},
+    "skill_version":{"type":"string"},
+    "registry_schema_version":{"type":"string"},
+    "finding_count":{"type":"integer","minimum":0},
+    "drift_detected":{"type":"boolean"},
+    "findings":{"type":"array","items":{"type":"object"}}
+  },
+  "required":["schema_version","scan_date","skill_version","registry_schema_version","finding_count","drift_detected","findings"],
+  "additionalProperties":false
+}

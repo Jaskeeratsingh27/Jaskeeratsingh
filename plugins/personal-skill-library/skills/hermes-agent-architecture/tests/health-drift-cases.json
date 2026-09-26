@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0.0",
+  "cases": [
+    {
+      "id":"baseline-healthy",
+      "as_of":"2026-09-22",
+      "expected":{"health_state":"healthy","overall_score":100.0,"stale":0,"drift_signal_types":[]}
+    },
+    {
+      "id":"weekly-audit-due",
+      "as_of":"2026-09-29",
+      "expected":{"health_state":"healthy","audit_freshness":"due_soon","drift_signal_types":[]}
+    },
+    {
+      "id":"missed-audit-degrades",
+      "as_of":"2026-10-03",
+      "expected":{"health_state":"degraded","minimum_due_soon":1,"drift_signal_types":["audit_stale"]}
+    },
+    {
+      "id":"critical-capabilities-stale",
+      "as_of":"2026-10-07",
+      "expected":{"health_state":"critical","minimum_stale":1,"drift_signal_types":["audit_stale","critical_capability_stale"]}
+    },
+    {
+      "id":"unresolved-revalidation",
+      "as_of":"2026-09-22",
+      "mutations":{"needs_revalidation":["model_routing"]},
+      "expected":{"health_state":"degraded","drift_signal_types":["needs_revalidation"]}
+    },
+    {
+      "id":"pending-upgrade",
+      "as_of":"2026-09-22",
+      "mutations":{"candidate_release":"v0.22.0"},
+      "expected":{"health_state":"degraded","drift_signal_types":["pending_upgrade"]}
+    },
+    {
+      "id":"release-baseline-mismatch",
+      "as_of":"2026-09-22",
+      "mutations":{"observed_hermes_release":"v0.22.0"},
+      "expected":{"health_state":"critical","drift_signal_types":["release_baseline_mismatch"]}
+    }
+  ]
+}

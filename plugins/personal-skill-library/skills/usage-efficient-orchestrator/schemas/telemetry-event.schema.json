@@ -1,0 +1,336 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/usage-efficient-orchestrator/telemetry-event.schema.json",
+  "title": "Usage-Efficient Orchestrator Telemetry Event",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "event_id",
+    "timestamp",
+    "event_type",
+    "task_id",
+    "project_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 80
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "event_type": {
+      "enum": [
+        "task_started",
+        "route_selected",
+        "worker_finished",
+        "validation",
+        "usage_checkpoint",
+        "budget_stop",
+        "task_finished",
+        "routing_recommendation",
+        "preflight_decision",
+        "post_task_evaluation"
+      ]
+    },
+    "task_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,80}$"
+    },
+    "project_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{12,64}$"
+    },
+    "work_unit": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,40}$"
+    },
+    "profile": {
+      "enum": [
+        "economy",
+        "balanced",
+        "quality-critical"
+      ]
+    },
+    "complexity": {
+      "enum": [
+        "MICRO",
+        "SMALL",
+        "MEDIUM",
+        "LARGE"
+      ]
+    },
+    "risk": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ]
+    },
+    "role": {
+      "enum": [
+        "cheap_reader",
+        "standard_engineer",
+        "reviewer",
+        "senior_specialist",
+        "architect"
+      ]
+    },
+    "model": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._/-]{1,80}$"
+    },
+    "reasoning": {
+      "enum": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "extra-high"
+      ]
+    },
+    "access": {
+      "enum": [
+        "read-only",
+        "workspace-write",
+        "isolated-write",
+        "none"
+      ]
+    },
+    "status": {
+      "enum": [
+        "started",
+        "complete",
+        "blocked",
+        "failed",
+        "passed",
+        "stopped",
+        "cancelled"
+      ]
+    },
+    "failure_class": {
+      "enum": [
+        "none",
+        "information",
+        "tooling_environment",
+        "test_fixture",
+        "implementation",
+        "architecture",
+        "permission_security"
+      ]
+    },
+    "stop_reason": {
+      "enum": [
+        "budget_target",
+        "budget_ceiling",
+        "retry_limit",
+        "scope_expansion",
+        "architecture_change",
+        "risk_gate",
+        "user_checkpoint",
+        "qa_failure",
+        "security_gate",
+        "drift_gate",
+        "other"
+      ]
+    },
+    "remaining_pct": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "usage_source": {
+      "enum": [
+        "user",
+        "status"
+      ]
+    },
+    "usage_cycle_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,80}$"
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "files_inspected": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "files_touched": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tests_run": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "retries": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "check_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failed_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "orchestrator_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\\\.[0-9]+\\\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$"
+    },
+    "task_kind": {
+      "enum": [
+        "discovery",
+        "implementation",
+        "review",
+        "architecture",
+        "mixed",
+        "unknown"
+      ]
+    },
+    "baseline_route": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,100}$"
+    },
+    "candidate_route": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,100}$"
+    },
+    "decision_mode": {
+      "enum": [
+        "shadow",
+        "active"
+      ]
+    },
+    "route_decision": {
+      "enum": [
+        "keep_baseline",
+        "candidate_lower_burn",
+        "insufficient_data",
+        "insufficient_baseline",
+        "no_qualified_candidate",
+        "quality_floor",
+        "risk_floor",
+        "drift_suppressed",
+        "calibration_suppressed",
+        "manual_approval_required"
+      ]
+    },
+    "evidence_samples": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "estimated_savings_p90": {
+      "type": "number",
+      "minimum": 0
+    },
+    "loop_mode": {
+      "enum": [
+        "shadow_closed_loop"
+      ]
+    },
+    "control_action": {
+      "enum": [
+        "execute",
+        "execute_with_proxy_guards",
+        "approval_required",
+        "split_required",
+        "plan_only",
+        "stop_target",
+        "stop_ceiling",
+        "stop_proxy_limit"
+      ]
+    },
+    "selected_route": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,100}$"
+    },
+    "usage_gate": {
+      "enum": [
+        "proxy_only",
+        "proceed_with_proxy_guards",
+        "proceed",
+        "approval_required",
+        "split_required",
+        "plan_only"
+      ]
+    },
+    "predicted_typical_points": {
+      "type": "number",
+      "minimum": 0
+    },
+    "predicted_upper_points": {
+      "type": "number",
+      "minimum": 0
+    },
+    "prediction_confidence": {
+      "enum": [
+        "none",
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "calibration_status": {
+      "enum": [
+        "insufficient",
+        "acceptable",
+        "weak"
+      ]
+    },
+    "actual_burn_points": {
+      "type": "number",
+      "minimum": 0
+    },
+    "prediction_abs_error_points": {
+      "type": "number",
+      "minimum": 0
+    },
+    "target_points": {
+      "type": "number",
+      "minimum": 0
+    },
+    "ceiling_points": {
+      "type": "number",
+      "minimum": 0
+    },
+    "budget_outcome": {
+      "enum": [
+        "within_target",
+        "above_target",
+        "above_ceiling",
+        "unmeasured"
+      ]
+    },
+    "quality_outcome": {
+      "enum": [
+        "passed",
+        "failed",
+        "blocked",
+        "stopped",
+        "cancelled",
+        "unknown"
+      ]
+    },
+    "learning_status": {
+      "enum": [
+        "measured_eligible",
+        "unmeasured",
+        "invalid"
+      ]
+    },
+    "learning_eligible": {
+      "type": "boolean"
+    }
+  }
+}

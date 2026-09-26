@@ -1,0 +1,43 @@
+{
+  "name": "usage-efficient-orchestrator",
+  "version": "2.0.0",
+  "telemetry_schema_version": "1.0",
+  "usage_intelligence_schema_version": "1.0",
+  "canonical_repository": "Jaskeeratsingh27/Jaskeeratsingh",
+  "canonical_branch": "main",
+  "managed_agents": [
+    "luna-scout.toml",
+    "luna-researcher.toml",
+    "terra-implementer.toml",
+    "terra-reviewer.toml",
+    "sol-specialist.toml"
+  ],
+  "global_sync": {
+    "agents_instructions": "~/.codex/AGENTS.md",
+    "skill": "~/.agents/skills/usage-efficient-orchestrator",
+    "agents_dir": "~/.codex/agents",
+    "config": "~/.codex/config.toml",
+    "config_candidate": "~/.codex/usage-efficient-orchestrator.config.toml",
+    "telemetry_dir": "~/.codex/orchestrator/telemetry"
+  },
+  "qa_commands": [
+    "node scripts/validate-orchestrator.mjs",
+    "node scripts/evaluate-routing-policy.mjs",
+    "node scripts/security-check-orchestrator.mjs",
+    "node scripts/test-observability.mjs",
+    "node scripts/test-usage-intelligence.mjs",
+    "node scripts/test-adaptive-routing.mjs",
+    "node scripts/test-policy-invariants.mjs",
+    "node scripts/test-budget-governor.mjs",
+    "node scripts/test-fault-injection.mjs",
+    "node scripts/test-version-compatibility.mjs",
+    "node scripts/test-readiness.mjs",
+    "node scripts/test-closed-loop.mjs",
+    "node scripts/release-check-orchestrator.mjs"
+  ],
+  "adaptive_routing_schema_version": "1.0",
+  "hardening_schema_version": "1.0",
+  "compatibility_schema_version": "1.0",
+  "canary_schema_version": "1.0",
+  "closed_loop_schema_version": "1.0"
+}
