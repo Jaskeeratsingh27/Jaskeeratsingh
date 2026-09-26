@@ -1,65 +1,95 @@
 # Weekly Hermes Architecture Refresh Prompt
 
-Use this as the execution prompt for the scheduled maintenance job. The canonical copy of the skill is the GitHub repository version; do not treat chat history as source of truth.
+Use this as the execution prompt for the scheduled maintenance job. The canonical GitHub repository is the source of truth; do not depend on the originating chat.
 
-## Prompt
+## Required contracts
 
-Audit the canonical `hermes-agent-architecture` skill against current official Hermes Agent primary sources and append historical health evidence for this audit.
+Before doing anything, read:
 
-1. Read the current skill, `VERSION`, `CHANGELOG.md`, `maintenance/source-manifest.json`, `compatibility/hermes-compatibility.json`, `compatibility/primitive-routing.json`, `compatibility/impact-map.json`, `compatibility/upgrade-matrix.json`, `compatibility/freshness-policy.json`, `consumers/registry.json`, `consumers/detection-rules.json`, `research/consumer-drift/index.json`, `research/audits/index.json`, `research/health/index.json`, and `references/12-versioning-known-caveats.md`.
-2. Run `python maintenance/consumer_drift.py --pretty` against the canonical repository before web research. Save the result as `research/consumer-drift/YYYY-MM-DD.json` and append/update `research/consumer-drift/index.json`.
-3. If dependency drift is detected, classify each finding for review. Do not auto-add/remove registry entries. Verify candidate consumers or changed dependency evidence before editing `consumers/registry.json`. A verified registry-only dependency-data update does not by itself require a semantic skill-version bump.
-4. Check the official Hermes Agent GitHub releases first and identify the current stable release/tag. Compare it with the compatibility baseline, upgrade matrix, and latest audit snapshot.
-5. Review every `critical` source in `maintenance/source-manifest.json`. Review `high` sources when release notes, changed docs, or repository changes indicate relevance. Use `medium` sources when affected or when their capability is due/stale under the freshness policy.
-6. Before deciding the audit scope, run `python maintenance/health_engine.py --as-of YYYY-MM-DD` using the audit date. Use its stale/due-soon capability list to prioritize reverification.
-7. Detect factual changes to profiles/Bots, delegation/subagents, output schemas, Kanban, skills/context/SOUL, memory, tools/toolsets, execute_code, MCP, model/provider routing, Cron, security/sandboxing, checkpoints, plugins/hooks, observability, persistence, or deployment behavior.
-8. For each distinct material or ambiguous change, create a machine-readable event under `research/change-events/YYYY-MM-DD-<slug>.json` conforming to `maintenance/change-event.schema.json`.
-9. Run `python maintenance/impact_engine.py <event-file> --pretty` for every event before editing knowledge files.
-10. Save each impact-engine result as `research/change-events/YYYY-MM-DD-<slug>.impact.json`, then run `python maintenance/consumer_impact.py <impact-result.json> --pretty` and save it as `research/consumer-impact/YYYY-MM-DD-<slug>.json`.
-11. Use the impact result as the default knowledge blast radius and the consumer-impact result as the downstream blast radius. Edit only affected knowledge files unless verified evidence requires an additional file; do not automatically edit downstream consumers.
-12. Update a capability's `last_verified_on` only if the audit actually checked enough of its required primary sources to reverify the claim. Do not refresh dates merely because the weekly job ran.
-13. Aggregate event, consumer-impact, and dependency-drift results into `research/weekly-change-report-YYYY-MM-DD.md` containing sources checked, old/new versions, event IDs, severity, factual deltas, affected capabilities/files/routing rules, targeted regressions, affected consumer IDs/paths, recommended consumer actions, consumer compatibility blockers, dependency-drift findings/resolutions, confidence, unresolved questions, and review requirements.
-14. Create `research/audits/YYYY-MM-DD.json` conforming to `maintenance/audit-snapshot.schema.json`. Record the observed stable Hermes release/tag, all source IDs actually checked, event IDs, highest severity, per-capability verification result, deterministic-validation results, and notes.
-15. Append that snapshot to `research/audits/index.json` and move `latest_audit_date/latest_snapshot` to the new snapshot.
-16. If no material or ambiguous change exists, do not rewrite canonical knowledge and do not bump `VERSION`; still commit the audit snapshot/history update.
-17. If verified changes exist, update only the smallest affected canonical files. Update the research dossier only when the conceptual model changes.
-18. Keep `compatibility/hermes-compatibility.json` synchronized with verified capability state. Never clear `needs_revalidation` without primary-source verification.
-19. If a stable Hermes release changed, populate `compatibility/upgrade-matrix.json.next_upgrade`, use a branch/PR, and do not promote automatically. After approved promotion, append the verified transition to `history` and move it into `current_baseline`.
-20. Update `compatibility/primitive-routing.json` only when a verified change actually alters a canonical primitive-selection rule.
-21. Increment semantic version and update `CHANGELOG.md` only when canonical knowledge or maintenance/control logic changes. Routine audit/health telemetry alone does not require a version bump.
-22. Run all deterministic gates after edits/history updates:
-    - `python tests/validate_skill.py`
-    - `python tests/test_architecture_regressions.py`
-    - `python tests/test_release_impact.py`
-    - `python tests/test_health_drift.py`
-    - `python tests/test_consumer_impact.py`
-    - `python tests/test_consumer_drift.py`
-    - `python tests/test_end_to_end_hardening.py`
-23. Run `python maintenance/health_engine.py --as-of YYYY-MM-DD --output research/health/YYYY-MM-DD.json` after the final compatibility/audit state is written.
-24. Append the generated health report to `research/health/index.json` and move `latest_health_date/latest_report` to the new report.
-25. Compare the new health result with the previous health report and explicitly report:
-    - overall health score/state change
-    - newly stale capabilities
-    - newly due-soon capabilities
-    - recovered/reverified capabilities
-    - new/resolved drift signals
-26. Run `python tests/validate_skill.py` again after writing the audit and health indexes so history consistency is verified.
-27. Compose a final maintenance decision bundle containing the release-impact result(s), aggregated consumer impact, final health report, consumer-dependency-drift result, and all seven deterministic validation statuses. Run `python maintenance/promotion_gate.py <bundle.json> --pretty`.
-28. Treat `knowledge_promotion` and `ecosystem_compatibility` as separate outcomes. Do not declare the ecosystem compatibility-cleared while registered consumer blockers remain.
-29. Do not promote a semantic update if any gate fails.
-30. Branch/PR review is mandatory for stable-release transitions, ambiguous evidence, unknown source/capability mappings, breaking/architecture changes, and security changes.
-31. A small verified documentation-only correction may be committed directly only when repository maintenance policy explicitly permits it and all gates pass.
-32. Report a concise TL;DR containing: audit status, current stable Hermes version, semantic skill version, whether canonical knowledge changed, highest impact severity, health score/state and delta, stale/due/recovered capabilities, drift signals, compatibility/upgrade state, affected consumers and required review/migration actions, consumer compatibility blockers, dependency-drift findings and registry changes, final promotion-gate knowledge/ecosystem states and blockers, files changed, validation results, commit/PR details, and anything requiring human review.
+- `maintenance/weekly-refresh-spec.md`
+- `maintenance/autonomous-upgrade-runbook.md`
+- `maintenance/source-manifest.json`
+- `compatibility/hermes-compatibility.json`
+- `compatibility/upgrade-matrix.json`
+- `consumers/registry.json`
+- `research/audits/index.json`
+- `research/health/index.json`
+- `research/consumer-drift/index.json`
+- `docs/hermes-agent-architecture/manifest.json`
+- `.agents/skills/project-knowledge-handoff/SKILL.md`
 
-## Safety / quality gates
+## Scheduler objective
 
-- Official Hermes docs, GitHub releases/tags, and matching source code outrank secondary commentary.
-- Do not remove a previous caveat merely because a newer page omits it; verify the underlying behavior.
-- Preserve Git history, audit history, health history, and changelog traceability.
-- Do not update unrelated user agent designs merely because the knowledge-base skill changed.
-- Do not expose credentials or repository secrets in reports.
-- Do not broaden the blast radius merely for convenience.
-- Do not refresh capability verification dates without actual reverification evidence.
-- Do not infer active consumers from archived migrations, mirrors, or keyword matches; use the explicit consumer registry.
-- Do not modify downstream consumer artifacts as part of the knowledge refresh unless a separate reviewed migration is explicitly authorized.
-- Do not auto-register or auto-remove consumers based on string matching. Verify drift evidence before changing dependency control data.
+Run the complete weekly Hermes audit and keep the repository's knowledge, health, consumer map, and project handoff package coherent.
+
+### No-change / telemetry-only run
+
+If there is no material or ambiguous Hermes change:
+
+1. run consumer-dependency drift and knowledge-health checks;
+2. review official critical sources according to the freshness policy;
+3. append the audit/health/drift evidence;
+4. do **not** bump the skill semantic version;
+5. use a branch/PR for writes and verify CI before promotion;
+6. do not rewrite the master guide merely because an audit occurred.
+
+### New stable release or material semantic change
+
+Follow `maintenance/autonomous-upgrade-runbook.md` Stage A.
+
+The scheduler should prepare the complete upgrade candidate **before asking the user to approve**:
+
+- verify official sources;
+- classify release/change impact;
+- patch the smallest justified Hermes knowledge/control files;
+- assess/update affected registered consumers when migration is deterministic;
+- update semantic version and CHANGELOG when warranted;
+- update all audit/health/impact/drift evidence;
+- run every Hermes deterministic gate;
+- if the semantic skill version changed, run `project-knowledge-handoff` and update the stable master guide, manifest, and release snapshot;
+- run Project Knowledge Handoff CI;
+- rebase safely if `main` changed and rerun CI;
+- open/reuse the deterministic target-release PR;
+- leave the PR unmerged.
+
+If the candidate is blocked by ambiguity, unknown coverage, failed tests, stale critical knowledge, unresolved dependency drift, or an unresolved high/critical consumer migration, report the blocker. Do not ask for a generic "yes" as though approval could override it.
+
+If the candidate is otherwise fully ready and the promotion gate returns policy review only, mark the proposal `ready_for_approval` and notify the user with:
+
+- baseline → target Hermes release;
+- candidate skill version;
+- impact severity;
+- affected capabilities and consumers;
+- migrations performed or still required;
+- exact CI/validation status;
+- PR link;
+- pre-upgrade main SHA;
+- exact approval phrase: `Approve Hermes <target-release>`.
+
+An unambiguous "yes" in that same notification thread counts as approval for that proposal. In a different/new chat, require the explicit approval phrase or resolve which pending proposal is intended.
+
+## After approval
+
+When the user approves, follow `maintenance/autonomous-upgrade-runbook.md` Stage B in the current chat:
+
+1. refetch the pending proposal/PR and latest `main`;
+2. write the approval record;
+3. finish/verify any required consumer migrations;
+4. rerun all deterministic gates and both relevant GitHub Actions workflows;
+5. recompute the promotion gate with approval;
+6. merge only if knowledge promotion is `allow` and ecosystem compatibility is `cleared`;
+7. read back the canonical files from `main`;
+8. if read-back is inconsistent, stop and create a recovery change;
+9. report the final merge SHA and verified current state.
+
+## Safety rules
+
+- Never force-push or reset `main`.
+- Never merge a failed or ambiguous candidate.
+- Never reuse approval for a materially changed/superseded proposal without surfacing the changed scope.
+- Never let approval override validation/coverage/freshness/migration blockers.
+- Never create duplicate target-release branches/PRs; resume existing work.
+- Retry transient idempotent operations at most twice and refetch state before retrying a write.
+- Preserve unrelated concurrent repository changes.
+- Official Hermes sources outrank summaries and chat history.
+- Normal scheduled operation should use regular ChatGPT + GitHub/web tools; do not invoke Work mode or Codex unless explicitly requested.
