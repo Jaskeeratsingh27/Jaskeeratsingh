@@ -1,53 +1,50 @@
-# GitHub Jira Manager — V1.4
+# GitHub Jira Manager — V1.5 RC1
 
-Version: 1.4.0
+Version: 1.5.0-rc1
 
-## Purpose
+## What it is
 
-A policy-controlled AI engineering control plane with durable event state and a deployable authenticated side-effect worker.
+One system with two views:
 
-## Runtime path
+1. **Project Knowledge Dashboard** — a simple, non-technical view of each project: what it is, status, progress, current focus, blocker, next step, and links.
+2. **Engineering Control Plane** — policy-controlled automation that turns GitHub CI/QA events into durable, auditable Jira operations.
 
-GitHub/Jira webhook → signature verification → durable event store → reconciliation → durable outbox → authenticated worker → Jira/GitHub APIs.
+## Runtime
 
-## V1.4 additions
+GitHub Actions → short-lived GitHub OIDC → Supabase Edge Function → Postgres event/evidence/outbox → scheduled worker → Jira API.
 
-- Long-running durable outbox worker.
-- Jira OAuth 2.0 refresh-token authentication.
-- Durable persistence of Atlassian rotating refresh tokens through an encrypted/external secret-store contract.
-- GitHub App installation authentication for unattended GitHub-side operations.
-- Bounded exponential retry scheduling.
-- Permanent-failure dead-letter handling.
-- Provider-token invalidation/re-authentication on unauthorized responses.
-- Isolated fake GitHub/Jira provider integration tests.
-- Docker worker image and secret-safe environment template.
+The dashboard reads only curated project summaries and activity from the same runtime state.
 
-## Delivery semantics
+## V1.5 additions
 
-The outbox provides durable logical operation IDs and at-least-once provider delivery. Operations are designed to be idempotent where the destination permits it. V1.4 does not claim impossible network-level exactly-once delivery.
+- Supabase hosted runtime in ca-central-1.
+- Postgres event, evidence, outbox, audit, project-summary, activity, and runtime-config tables.
+- RLS/deny-by-default client access for control-plane tables.
+- Secretless GitHub Actions → Supabase authentication using GitHub OIDC.
+- Separate CI and QA jobs.
+- Idempotent GitHub event ingestion.
+- Durable Jira outbox with bounded exponential retry and dead-letter behavior.
+- pg_cron + pg_net scheduled worker.
+- Human-readable live project dashboard.
+- GitHub remains canonical for code/config/tests; Supabase is runtime only.
 
-## Security
+## Approval model
 
-- No access token, refresh token, private key, or client secret belongs in Git.
-- Jira rotating refresh tokens must be durably replaced after refresh.
-- The reference single-node deployment encrypts rotating secrets on disk with a key supplied separately by the hosting platform.
-- A production cloud deployment may replace the encrypted file with a managed secret-store adapter.
-- GitHub App permissions and Jira OAuth scopes must follow least privilege.
+- External events never self-approve a merge.
+- A Jira Done transition is queued only after successful CI + QA plus a human merge event.
+- Agents do not merge their own PRs.
+- Destructive/production-sensitive operations remain human-gated.
 
-## Current live boundary
+## Current live gate
 
-CI proves the full worker lifecycle against isolated provider APIs. A truly live 24/7 provider test still requires account-owner creation of a GitHub App, an Atlassian OAuth integration, and injection of those secrets into a hosting platform.
+GitHub/Supabase infrastructure is deployed. The worker intentionally refuses to claim work until these Supabase Edge Function secrets exist:
 
-## V1.4 completion gate
+- JIRA_BASE_URL
+- JIRA_EMAIL
+- JIRA_API_TOKEN
 
-V1.4 is ready for review when:
-- all V1.0-V1.3 regression tests remain green,
-- GitHub App JWT → installation-token exchange works against the fake provider,
-- Jira OAuth rotating refresh token is persisted before reuse,
-- encrypted secret persistence survives restart,
-- a durable outbox operation reaches fake Jira,
-- transient 5xx failure retries after backoff,
-- permanent unsupported work dead-letters,
-- completed logical operations do not replay after restart,
-- CI passes,
-- live credential/deployment work remains explicitly gated rather than simulated.
+That credential gate prevents queued work from being consumed or dead-lettered before Jira authentication is configured.
+
+## Cost model
+
+The deployed control plane is rules/code, not an AI model. Normal GitHub → Supabase → Jira execution does not consume ChatGPT usage. Platform free-tier quotas still apply.

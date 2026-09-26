@@ -1,0 +1,21 @@
+project_id = "github-jira-manager"
+
+[functions.health]
+verify_jwt = false
+
+# Read-only high-level project dashboard. It exposes only curated project summaries.
+[functions.dashboard]
+verify_jwt = false
+
+# GitHub Actions authenticates with short-lived GitHub OIDC and the function verifies
+# issuer, audience, repository, expiry, and RSA signature in code.
+[functions.github-webhook]
+verify_jwt = false
+
+# Reserved for future Jira-originated event ingestion.
+[functions.jira-webhook]
+verify_jwt = false
+
+# Invoked by pg_cron/pg_net with a generated Vault-backed token.
+[functions.reconcile-worker]
+verify_jwt = false
