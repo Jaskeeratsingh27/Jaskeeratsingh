@@ -1,0 +1,24 @@
+{
+  "original_zip_sha256": "edce29356f83cdcf3da0579a4b2eb687505730dbf01ec552fe188a05fd421f09",
+  "original_zip_size": 50794,
+  "recovery_date": "2026-09-25",
+  "files": [
+    {"path":"README.md","status":"modified","sha256_recovered":"a8446c9a7104b2d87abcfa32fd3ac3c4af1af263c225ac3546f545ebde7e6327","sha256_original":"00245696be6d739de375c65b6abaefd2a7d33fd953f366ffc4effcfa56e3379d"},
+    {"path":"SETUP.md","status":"modified","sha256_recovered":"b433483b497c5c0207d2a6d9d00d67f8aa12f09b607c8abb4ed6e1bfac91dc80","sha256_original":"7353bcabba0ffb3e237096cf9017e769b0dbaad6023e68968142ef803605d0b5"},
+    {"path":"do-not-upload/sthapati-tests.md","status":"unchanged","sha256_recovered":"c6f18305760448851a60702fc6b42a374137730731712c8d83d26fae50ebb7e7","sha256_original":"c6f18305760448851a60702fc6b42a374137730731712c8d83d26fae50ebb7e7"},
+    {"path":"instructions/STHAPATI-INSTRUCTIONS.md","status":"modified","sha256_recovered":"20ecc4b076fc10649f074ac414e69b44122d7d558b7fac37438af0166b3b808a","sha256_original":"3f3b9e4af2326ee0b45ba901ccc2ca40daab92f06c387cf27613a1f7336a1f5e"},
+    {"path":"knowledge/brief.md","status":"added","sha256_recovered":"2610846fc516898237a67c44b15a23734a03d022addb7b07d1ad184eefebe50b","sha256_original":null},
+    {"path":"knowledge/build-method.md","status":"unchanged","sha256_recovered":"5f7c13823d66d58e506e96e135094040b65c1034f5d47d145b1ea74f63c08189","sha256_original":"5f7c13823d66d58e506e96e135094040b65c1034f5d47d145b1ea74f63c08189"},
+    {"path":"knowledge/failure-modes.md","status":"unchanged","sha256_recovered":"6d3f2afb4664f54331f168d40c2d6b919cae7ba476cdb7adfaa0f414c1f27c48","sha256_original":"6d3f2afb4664f54331f168d40c2d6b919cae7ba476cdb7adfaa0f414c1f27c48"},
+    {"path":"knowledge/file-patterns.md","status":"unchanged","sha256_recovered":"3489f97aea13faac9f572c07f2b924d434dcc5b2816f2ee6342e0af767a54be9","sha256_original":"3489f97aea13faac9f572c07f2b924d434dcc5b2816f2ee6342e0af767a54be9"},
+    {"path":"knowledge/instruction-craft.md","status":"unchanged","sha256_recovered":"1cc0a0ee8bb464ab97315e2f0b353d88cbe54fc20cf200643fa58e0d41318106","sha256_original":"1cc0a0ee8bb464ab97315e2f0b353d88cbe54fc20cf200643fa58e0d41318106"},
+    {"path":"knowledge/project-anatomy.md","status":"modified","sha256_recovered":"74ce4f43dab2b71e574b50ae414b43deb4176ee5b1cb5d62567915715e34c35c","sha256_original":"34ec35e9dd7488f0a60c9945ad831e36f74e0b6e967cf677dcf92b646d8e18ff"},
+    {"path":"knowledge/quality-gates.md","status":"unchanged","sha256_recovered":"1caff1326f79a5d9c70205bdfbdea9a45cae41ff40722dd45fc8b436e3b3febe","sha256_original":"1caff1326f79a5d9c70205bdfbdea9a45cae41ff40722dd45fc8b436e3b3febe"},
+    {"path":"knowledge/research-discipline.md","status":"modified","sha256_recovered":"e1d3072039eed459f145280f8555296baace1ab4add6c38b9734b64847eb437d","sha256_original":"63c5ef79d8ffdadd367afddade1dfac0ff336bd6fb34576f3493f1def265f852"},
+    {"path":"knowledge/run-ledger.md","status":"modified","sha256_recovered":"2a6a846b0374a3fff981134b16f92736db65880fca092fcd5c52d03586b5825d","sha256_original":"2fed705d70d49919a98dd6b9c5cd55adac48fe07844804804bfa31e401131e2b"},
+    {"path":"knowledge/sources.md","status":"added","sha256_recovered":"e5c47e74232f9cbe3fc0d2a0e447d22975ebba3f1a9e5534698307fa767d9224","sha256_original":null},
+    {"path":"knowledge/test-pack.md","status":"unchanged","sha256_recovered":"2a87f1b7c807ce274b0a22ae291060d815ac911ab0d2c088b0828c11a6944280","sha256_original":"2a87f1b7c807ce274b0a22ae291060d815ac911ab0d2c088b0828c11a6944280"},
+    {"path":"knowledge/worked-build.md","status":"unchanged","sha256_recovered":"be8ee570b7d8e20ddbcf4c93e0677997f5097a378cd7b3257e8ecff214cb7092","sha256_original":"be8ee570b7d8e20ddbcf4c93e0677997f5097a378cd7b3257e8ecff214cb7092"}
+  ],
+  "withheld_test_pack":{"path":"do-not-upload/sthapati-tests.md","sha256":"c6f18305760448851a60702fc6b42a374137730731712c8d83d26fae50ebb7e7","committed_to_public_repo":false}
+}
