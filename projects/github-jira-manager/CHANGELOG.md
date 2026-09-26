@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.4.1 — 2026-09-26
+
+### Added
+- Combined Railway HTTP webhook receiver + durable outbox worker process.
+- `/health` and `/status` endpoints for deployment verification.
+- Safe degraded mode: webhook receipt/storage remains available when Jira OAuth credentials have not yet been injected.
+- Railway live-adapter regression tests for health, status, signed GitHub webhook persistence, and bad-signature rejection.
+
+### Deployment
+- Reuses the existing TokenTrack Railway service and persistent `/data` volume instead of consuming another account resource.
+- TokenTrack dashboard functionality is intentionally replaced; AI engineering sprint services remain untouched.
+- Jira side-effect execution remains disabled until real Jira OAuth credentials are present.
+
 ## 1.4.0 — 2026-09-26
 
 ### Added
@@ -39,12 +52,6 @@
 - Persistent retry state for failed outbound operations.
 - V1.3 webhook, durability, replay and restart regression suite.
 
-### Security
-- GitHub webhook validation uses X-Hub-Signature-256 and HMAC-SHA256.
-- Jira webhook validation uses X-Hub-Signature with a safe HMAC algorithm allowlist.
-- Secrets and raw credentials are runtime-only and never persisted in source control or event rows.
-- Reused delivery IDs with changed content are rejected.
-
 ## 1.2.0 — 2026-09-26
 
 ### Added
@@ -53,7 +60,6 @@
 - Deterministic GitHub-event to Jira-state reconciliation engine.
 - Reconciliation event idempotency.
 - Merge-to-Done rule requiring CI, independent QA, and human approval evidence.
-- Regression tests for the full failure → recovery → review → approval → Done sequence.
 
 ## 1.0.1 — 2026-09-25
 
