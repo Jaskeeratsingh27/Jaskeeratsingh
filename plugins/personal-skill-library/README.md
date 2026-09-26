@@ -1,36 +1,49 @@
 # Personal Skill Library Plugin
 
-Version: 1.0.0
+Version: 1.1.0
 
-This plugin is the ChatGPT/Codex discovery layer for the canonical skill library in `Jaskeeratsingh27/Jaskeeratsingh`.
+This plugin packages the user's complete canonical reusable skill library for native ChatGPT/Codex skill discovery.
 
-## v1 scope
+## Source of truth
 
-Packaged natively:
-- `skill-library-router`
-- `github-access-helper`
+Canonical skills live under:
 
-Indexed external canonical skills:
-- `github-project-sync`
-- `project-knowledge-handoff`
-- `kaizen-orchestrator`
-- `hermes-agent-creator`
-- `hermes-agent-architecture`
-- `secondbrain-curator`
-- `anveshak-research-cycle`
-- `youtube-insights-extractor`
-- `usage-efficient-orchestrator`
+`.agents/skills/<skill-name>/`
 
-The router reads a compact local index and retrieves only the selected canonical `SKILL.md` from GitHub.
+The plugin mirrors those directories under:
 
-## Why this design
+`plugins/personal-skill-library/skills/<skill-name>/`
 
-v1 avoids copying every large skill and its references into the plugin. GitHub remains authoritative while the plugin supplies native discovery and routing.
+GitHub remains canonical. The plugin mirror is the distributable snapshot consumed by the marketplace.
 
-## Validation targets
+## Runtime model
 
-1. GitHub access question -> `github-access-helper`
-2. Hermes agent build -> router -> `hermes-agent-creator`
-3. DMAIC/FMEA request -> router -> `kaizen-orchestrator`
-4. YouTube transcript/insights request -> router -> `youtube-insights-extractor`
-5. Unrelated simple question -> no forced personal skill
+ChatGPT/Codex sees each skill's metadata first and loads the full skill only when the request matches or the user invokes it directly.
+
+No runtime GitHub fetch is required merely to load skill instructions.
+
+## Packaged skills
+
+- skill-library-router
+- github-access-helper
+- github-project-sync
+- project-knowledge-handoff
+- kaizen-orchestrator
+- hermes-agent-creator
+- hermes-agent-architecture
+- secondbrain-curator
+- anveshak-research-cycle
+- youtube-insights-extractor
+- usage-efficient-orchestrator
+
+## Router scope
+
+`skill-library-router` is intentionally narrow. It handles skill discovery, selection, routing diagnostics, and library maintenance. Ordinary workflows should activate their dedicated skill directly.
+
+## Validation
+
+Run:
+
+`python scripts/validate-skill-library.py`
+
+The validator checks marketplace registration, manifest shape, skill metadata, canonical/plugin file parity, and unexpected extra/missing mirrored files.
