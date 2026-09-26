@@ -4,7 +4,7 @@ import urllib.parse
 import urllib.request
 from typing import Dict, Optional
 
-from provider_auth import GitHubAppTokenProvider, JiraOAuthTokenProvider
+from provider_auth import AuthError, GitHubAppTokenProvider, JiraOAuthTokenProvider
 
 
 class ProviderError(RuntimeError):
@@ -62,12 +62,16 @@ class JiraClient:
         retry_auth: bool = True,
     ) -> Dict[str, object]:
         try:
+            token = self.token_provider.get_token()
+        except AuthError as exc:
+            raise ProviderError(f"Jira authentication failed: {exc}", retryable=True) from exc
+        try:
             return _request_json(
                 method,
                 f"{self.base}{path}",
                 {
                     "Accept": "application/json",
-                    "Authorization": f"Bearer {self.token_provider.get_token()}",
+                    "Authorization": f"Bearer {token}",
                 },
                 body,
             )
@@ -129,12 +133,16 @@ class GitHubClient:
     def get_repository(self, owner: str, repo: str) -> Dict[str, object]:
         path = f"/repos/{urllib.parse.quote(owner)}/{urllib.parse.quote(repo)}"
         try:
+            token = self.token_provider.get_token()
+        except AuthError as exc:
+            raise ProviderError(f"GitHub authentication failed: {exc}", retryable=True) from exc
+        try:
             return _request_json(
                 "GET",
                 f"{self.api_base}{path}",
                 {
                     "Accept": "application/vnd.github+json",
-                    "Authorization": f"Bearer {self.token_provider.get_token()}",
+                    "Authorization": f"Bearer {token}",
                     "X-GitHub-Api-Version": "2026-03-10",
                 },
             )
