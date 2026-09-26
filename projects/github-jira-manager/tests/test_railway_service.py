@@ -106,7 +106,7 @@ class RailwayServiceTests(unittest.TestCase):
                 verify = RuntimeStore(db_path)
                 try:
                     self.assertEqual(verify.counts()["events"], 1)
-                    self.assertEqual(verify.counts()["outbox"], 1)
+                    self.assertEqual(verify.counts()["outbox"], 2)
                 finally:
                     verify.close()
             finally:
