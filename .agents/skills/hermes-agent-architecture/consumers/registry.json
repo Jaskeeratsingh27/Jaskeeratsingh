@@ -4,7 +4,8 @@
   "ignored_path_prefixes": [
     ".claude/",
     "migrations/",
-    ".agents/skills/hermes-agent-architecture/"
+    ".agents/skills/hermes-agent-architecture/",
+    ".agents/skills/skill-library-router/"
   ],
   "consumers": [
     {
