@@ -9,6 +9,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from tempfile import TemporaryDirectory
 
 import jwt
+from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
@@ -23,6 +24,7 @@ from control_plane import (  # noqa: E402
 from durable_runtime import DurableRuntime  # noqa: E402
 from outbox_worker import OutboxWorker  # noqa: E402
 from provider_auth import (  # noqa: E402
+    EncryptedFileSecretStore,
     GitHubAppTokenProvider,
     JiraOAuthTokenProvider,
     MemorySecretStore,
@@ -217,6 +219,27 @@ class ProviderServer:
         self.server.shutdown()
         self.thread.join(timeout=5)
         self.server.server_close()
+
+
+class SecretStoreTests(unittest.TestCase):
+    def test_rotating_secret_is_encrypted_and_survives_restart(self):
+        with TemporaryDirectory() as tmp:
+            path = str(pathlib.Path(tmp) / "rotating.enc")
+            key = Fernet.generate_key().decode("utf-8")
+            store = EncryptedFileSecretStore(
+                path,
+                key,
+                bootstrap={"JIRA_OAUTH_REFRESH_TOKEN": "refresh-one"},
+            )
+            self.assertNotIn(b"refresh-one", pathlib.Path(path).read_bytes())
+            store.set("JIRA_OAUTH_REFRESH_TOKEN", "refresh-two")
+            self.assertNotIn(b"refresh-two", pathlib.Path(path).read_bytes())
+
+            reopened = EncryptedFileSecretStore(path, key)
+            self.assertEqual(
+                reopened.get("JIRA_OAUTH_REFRESH_TOKEN"),
+                "refresh-two",
+            )
 
 
 class AuthIntegrationTests(unittest.TestCase):
