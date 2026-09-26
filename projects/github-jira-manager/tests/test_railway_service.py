@@ -32,11 +32,12 @@ class RailwayServiceTests(unittest.TestCase):
 
     def test_health_and_status_work_without_jira_credentials(self):
         with tempfile.TemporaryDirectory() as tmp:
-            store = RuntimeStore(str(pathlib.Path(tmp) / "runtime.db"))
+            db_path = str(pathlib.Path(tmp) / "runtime.db")
+            RuntimeStore(db_path).close()
             context = ServiceContext(
-                store,
+                db_path,
                 WebhookReceiver("gh-secret", "jira-secret"),
-                None,
+                False,
             )
             server = ThreadingHTTPServer(("127.0.0.1", 0), handler_factory(context))
             thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -56,15 +57,15 @@ class RailwayServiceTests(unittest.TestCase):
                 server.shutdown()
                 thread.join(timeout=5)
                 server.server_close()
-                store.close()
 
     def test_signed_github_webhook_is_persisted(self):
         with tempfile.TemporaryDirectory() as tmp:
-            store = RuntimeStore(str(pathlib.Path(tmp) / "runtime.db"))
+            db_path = str(pathlib.Path(tmp) / "runtime.db")
+            RuntimeStore(db_path).close()
             context = ServiceContext(
-                store,
+                db_path,
                 WebhookReceiver("gh-secret", "jira-secret"),
-                None,
+                False,
             )
             server = ThreadingHTTPServer(("127.0.0.1", 0), handler_factory(context))
             thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -102,21 +103,25 @@ class RailwayServiceTests(unittest.TestCase):
                     body = json.loads(response.read())
                 self.assertEqual(response.status, 202)
                 self.assertEqual(body["event_id"], "github:railway-test-1")
-                self.assertEqual(store.counts()["events"], 1)
-                self.assertEqual(store.counts()["outbox"], 1)
+                verify = RuntimeStore(db_path)
+                try:
+                    self.assertEqual(verify.counts()["events"], 1)
+                    self.assertEqual(verify.counts()["outbox"], 1)
+                finally:
+                    verify.close()
             finally:
                 server.shutdown()
                 thread.join(timeout=5)
                 server.server_close()
-                store.close()
 
     def test_bad_signature_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
-            store = RuntimeStore(str(pathlib.Path(tmp) / "runtime.db"))
+            db_path = str(pathlib.Path(tmp) / "runtime.db")
+            RuntimeStore(db_path).close()
             context = ServiceContext(
-                store,
+                db_path,
                 WebhookReceiver("gh-secret", "jira-secret"),
-                None,
+                False,
             )
             server = ThreadingHTTPServer(("127.0.0.1", 0), handler_factory(context))
             thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -136,12 +141,15 @@ class RailwayServiceTests(unittest.TestCase):
                 with self.assertRaises(urllib.error.HTTPError) as raised:
                     urllib.request.urlopen(request)
                 self.assertEqual(raised.exception.code, 401)
-                self.assertEqual(store.counts()["events"], 0)
+                verify = RuntimeStore(db_path)
+                try:
+                    self.assertEqual(verify.counts()["events"], 0)
+                finally:
+                    verify.close()
             finally:
                 server.shutdown()
                 thread.join(timeout=5)
                 server.server_close()
-                store.close()
 
 
 if __name__ == "__main__":
