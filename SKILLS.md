@@ -10,7 +10,7 @@ This repository is the source of truth for reusable AI skills.
 | OpenAI Codex | Plugin or `.agents/skills/` | `$skill-name` | Yes |
 | Claude Code | `.claude/skills/` | `/skill-name` | Yes |
 
-## v2 normal ChatGPT support
+## v2.1 normal ChatGPT support
 
 Every canonical skill has:
 
@@ -69,4 +69,13 @@ GitHub Actions also runs the validator on relevant changes.
 
 ## Version
 
-Personal Skill Library: **2.0.0**
+Personal Skill Library: **2.1.0**
+
+
+## One-command installation
+
+Windows: `scripts/install-personal-skill-library.ps1`
+
+macOS/Linux: `scripts/install-personal-skill-library.sh`
+
+Post-install normal-Chat verification: `docs/V2_1_ACTIVATION_TEST.md`

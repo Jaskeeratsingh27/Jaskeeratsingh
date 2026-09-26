@@ -1,0 +1,29 @@
+name: Package Personal Skill Library
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "plugins/personal-skill-library/**"
+      - ".github/workflows/package-personal-skill-library.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate plugin
+        run: python scripts/validate-skill-library.py
+      - name: Build ZIP
+        run: |
+          cd plugins
+          zip -r ../personal-skill-library-v2.1.0.zip personal-skill-library
+      - uses: actions/upload-artifact@v4
+        with:
+          name: personal-skill-library-v2.1.0
+          path: personal-skill-library-v2.1.0.zip
+          if-no-files-found: error
