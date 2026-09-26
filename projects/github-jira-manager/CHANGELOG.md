@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.0 — 2026-09-26
+
+### Added
+- Executable contracts for the four V1 agents.
+- Deny-by-default role/operation authorization.
+- Deterministic GitHub-event to Jira-state reconciliation engine.
+- Reconciliation event idempotency.
+- Explicit CI-failure blocking and recovery semantics.
+- Merge-to-Done rule requiring CI, independent QA, and human approval evidence.
+- Regression tests for the full failure → recovery → review → approval → Done sequence.
+
+### Validation plan
+- V1.2 deliberately ships its first branch revision with one reconciliation defect so CI must catch it.
+- After failure evidence is recorded, the defect is repaired and CI rerun.
+- The PR remains unmerged until human approval.
+
 ## 1.0.1 — 2026-09-25
 
 ### Fixed
@@ -20,9 +36,7 @@
 - CI workflow for V1 validation.
 
 ### Deferred
-- Live Jira integration.
-- Dedicated GitHub App authentication.
-- Database-backed job state.
-- Webhook/event processing.
+- Persistent database.
+- Webhook/event receiver service.
 - Deployment automation.
 - Hermes execution workers.
