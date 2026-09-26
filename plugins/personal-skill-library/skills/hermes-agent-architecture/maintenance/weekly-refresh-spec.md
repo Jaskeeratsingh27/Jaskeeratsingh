@@ -1,6 +1,6 @@
 # Weekly Hermes Knowledge Refresh Specification
 
-Status: ACTIVE MAINTENANCE CONTRACT. The canonical skill has an external ChatGPT scheduled audit every Tuesday at 02:00 America/Winnipeg.
+Status: ACTIVE MAINTENANCE CONTRACT. The canonical skill has an external ChatGPT scheduled audit every Tuesday at 02:00 America/Winnipeg. Semantic upgrades use a two-stage prepare-then-approve lifecycle defined by `maintenance/autonomous-upgrade-runbook.md`.
 
 ## Objective
 
@@ -14,7 +14,7 @@ Weekly. The external scheduler runs Tuesday at 02:00 America/Winnipeg using regu
 
 Use `maintenance/source-manifest.json` as the machine-readable source inventory and `references/13-source-index.md` as the human-readable index.
 
-## v1.6 control flow
+## v1.8 control flow
 
 ```text
 prior health + freshness state
@@ -41,8 +41,25 @@ health-history snapshot
         ↓
 7 deterministic CI gates
         ↓
-reviewed promotion when required
+fully staged candidate PR\n        ↓\nexplicit user approval when policy review remains\n        ↓\nfinal validation + merge + read-back
 ```
+
+## Autonomous upgrade lifecycle
+
+The weekly scheduler is allowed to prepare a complete semantic-upgrade candidate automatically on a deterministic release branch/PR, but it must not merge a stable-release/material semantic upgrade without explicit approval.
+
+Read `maintenance/autonomous-upgrade-runbook.md` for the authoritative lifecycle.
+
+Core invariants:
+
+- same target release => resume the same branch/PR; no duplicate proposals;
+- prepare first, ask for approval after the candidate is fully analyzed and CI-tested;
+- approval clears policy review only, never technical blockers;
+- high/critical consumer migrations must be verified before they can be cleared;
+- semantic skill releases must update the project knowledge handoff package;
+- before every write/merge, refetch current state and preserve unrelated concurrent changes;
+- after merge, read back the canonical version, Hermes baseline, guide manifest/snapshot, and affected consumer state;
+- rollback uses normal Git history/recovery commits, never force-reset.
 
 ## Consumer dependency drift policy
 
@@ -158,6 +175,12 @@ The combined `overall_state` is `allow`, `review_required`, or `blocked`.
 
 A valid knowledge patch does not automatically clear downstream consumers. Conversely, a consumer migration blocker does not make verified Hermes knowledge false; it blocks ecosystem clearance until the consumer review is resolved.
 
+## Approval and promotion policy
+
+A proposal that is technically ready but policy-reviewed remains unmerged until explicit approval is recorded against the exact proposal ID. A same-thread unambiguous affirmative response is acceptable; a fresh chat should resolve the pending proposal explicitly.
+
+Approval may satisfy `stable_release_transition`, `impact_review_required`, and ordinary consumer-review requirements. Approval cannot clear failed CI, ambiguous evidence, unknown source/capability coverage, stale critical knowledge, unresolved dependency drift, or an unverified blocking consumer migration.
+
 ## Promotion policy
 
 Branch/PR review is mandatory for:
@@ -181,9 +204,7 @@ A weekly refresh is complete only if:
 - a health report was appended;
 - health/drift delta was reported;
 - compatibility and upgrade state reflect verified knowledge;
-- all seven deterministic validation suites pass;
-- consumer dependency drift was scanned and recorded;
+- all seven deterministic validation suites pass;\n- any semantic skill release updated and validated the stable master guide/manifest/history snapshot;\n- consumer dependency drift was scanned and recorded;
 - affected downstream consumers were identified from the explicit registry;
 - consumer review/migration work was reported without silent unrelated edits;
-- all seven deterministic validation suites pass;
-- required GitHub review/promotion rules were followed.
+- required GitHub review/promotion rules were followed;\n- post-merge read-back verified canonical skill version, Hermes baseline, knowledge manifest, and affected consumer state.

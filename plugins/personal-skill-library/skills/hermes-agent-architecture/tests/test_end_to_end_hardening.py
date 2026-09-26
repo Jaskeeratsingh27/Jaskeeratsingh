@@ -111,11 +111,13 @@ def main() -> None:
         }
 
         bundle = {
+            "proposal_id": scenario.get("proposal_id"),
             "impact": impact,
             "consumer_impact": consumer,
             "health": health,
             "consumer_drift": drift,
             "validation": all_validation(scenario.get("validation_failures", [])),
+            "approval": scenario.get("approval"),
         }
         decision = promotion_gate.decide(bundle)
         expected = scenario["expected"]
@@ -141,7 +143,7 @@ def main() -> None:
                 )
 
     print(f"PASS: {len(scenarios)} end-to-end hardening simulations")
-    print("PASS: upgrade, security, ambiguity, unknown subsystem, staleness, registry drift, CI failure, and recovery")
+    print("PASS: upgrade, approval, consumer clearance, security, ambiguity, unknown subsystem, staleness, registry drift, CI failure, and recovery")
 
 
 if __name__ == "__main__":

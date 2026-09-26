@@ -1,0 +1,20 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://example.local/hermes/approval-record.schema.json",
+  "title":"Hermes Upgrade Approval Record",
+  "type":"object",
+  "properties":{
+    "schema_version":{"type":"string"},
+    "proposal_id":{"type":"string","minLength":1},
+    "approved":{"const":true},
+    "scope":{"const":"full_upgrade"},
+    "approved_by":{"type":"string","minLength":1},
+    "approved_at":{"type":"string","minLength":1},
+    "consumer_migrations_verified":{"type":"boolean"},
+    "cleared_consumer_ids":{"type":"array","items":{"type":"string"},"uniqueItems":true},
+    "approval_source":{"type":"string","enum":["same_chat_affirmation","explicit_approval_phrase","manual_record"]},
+    "notes":{"type":"array","items":{"type":"string"}}
+  },
+  "required":["schema_version","proposal_id","approved","scope","approved_by","approved_at","consumer_migrations_verified","cleared_consumer_ids","approval_source","notes"],
+  "additionalProperties":false
+}
