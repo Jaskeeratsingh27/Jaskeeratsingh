@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1 — 2026-09-25
+
+### Fixed
+- Enforced human approval before entering READY_TO_MERGE.
+- Added safe resume semantics for BLOCKED and INPUT_REQUIRED states.
+- Added deterministic operation-id idempotency checks.
+- Added regression coverage for duplicate operations and protected-branch writes.
+
 ## 1.0.0 — 2026-09-25
 
 ### Added
