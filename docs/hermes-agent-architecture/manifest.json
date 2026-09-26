@@ -4,18 +4,18 @@
   "project_slug": "hermes-agent-architecture",
   "repository": "Jaskeeratsingh27/Jaskeeratsingh",
   "project_root": ".agents/skills/hermes-agent-architecture",
-  "project_version": "1.6.0",
-  "guide_revision": 1,
+  "project_version": "1.8.0",
+  "guide_revision": 2,
   "canonical_guide": "docs/hermes-agent-architecture/MASTER_GUIDE.md",
-  "latest_snapshot": "docs/hermes-agent-architecture/history/MASTER_GUIDE_v1.6.0.md",
-  "source_commit": "0627a9e3966bd6d317057d0917b338b2168cb2db",
-  "last_updated_on": "2026-09-22",
+  "latest_snapshot": "docs/hermes-agent-architecture/history/MASTER_GUIDE_v1.8.0.md",
+  "source_commit": "92c3876d68333b59e22b2eae174ed2b23e5835c7",
+  "last_updated_on": "2026-09-25",
   "snapshot_policy": "semantic_release",
-  "exports": [
-    "docs/hermes-agent-architecture/exports/MASTER_GUIDE_v1.6.0.docx"
-  ],
+  "exports": [],
   "status": "current",
   "known_gaps": [
-    "Normal ChatGPT does not natively auto-discover arbitrary GitHub skills; explicit invocation or repository closeout routing may be required."
+    "Normal ChatGPT does not natively auto-discover arbitrary GitHub skills; explicit invocation or repository closeout routing may be required.",
+    "Push/email notification delivery is controlled by ChatGPT/platform settings; the scheduled task still runs when push notifications are disabled.",
+    "Binary DOCX/PDF mirrors are optional derived artifacts; the v1.8 canonical automation-safe source is Markdown."
   ]
 }
