@@ -1,0 +1,10 @@
+interface:
+  display_name: "Skill Library Router"
+  short_description: "Find and route personal skills"
+  default_prompt: "Show me which personal skill should handle this request."
+
+policy:
+  products:
+    - CHAT
+    - CODEX
+  allow_implicit_invocation: true
