@@ -1,68 +1,53 @@
-# GitHub Jira Manager — V1.3
+# GitHub Jira Manager — V1.4
 
-Version: 1.3.0
+Version: 1.4.0
 
 ## Purpose
 
-A policy-controlled AI engineering control plane where GitHub is canonical for technical artifacts, Jira is canonical for work state, and event processing can survive process/chat restarts.
+A policy-controlled AI engineering control plane with durable event state and a deployable authenticated side-effect worker.
 
-## Runtime topology
+## Runtime path
 
-Human → Orchestrator → Project Manager / Software Engineer / QA Validator → GitHub/Jira/CI.
+GitHub/Jira webhook → signature verification → durable event store → reconciliation → durable outbox → authenticated worker → Jira/GitHub APIs.
 
-External events enter through:
+## V1.4 additions
 
-GitHub/Jira webhook → signature verification → durable event store → reconciliation → durable outbox → authenticated side-effect worker.
+- Long-running durable outbox worker.
+- Jira OAuth 2.0 refresh-token authentication.
+- Durable persistence of Atlassian rotating refresh tokens through an encrypted/external secret-store contract.
+- GitHub App installation authentication for unattended GitHub-side operations.
+- Bounded exponential retry scheduling.
+- Permanent-failure dead-letter handling.
+- Provider-token invalidation/re-authentication on unauthorized responses.
+- Isolated fake GitHub/Jira provider integration tests.
+- Docker worker image and secret-safe environment template.
 
-## V1.3 additions
+## Delivery semantics
 
-- SQLite reference runtime store for jobs, inbound event identity, decisions and outbox intents.
-- Persist-before-reconcile semantics.
-- Atomic reconciliation-decision + outbox persistence.
-- Crash/restart recovery for events received but not yet decided.
-- Delivery replay protection using provider delivery IDs plus payload hashes.
-- GitHub HMAC-SHA256 webhook verification.
-- Jira HMAC webhook verification.
-- GitHub PR/workflow-run event normalization.
-- Jira webhook auditing without feedback-loop side effects.
-- Durable failed/pending outbox replay.
-- No raw webhook secrets or credentials stored in Git or runtime event records.
+The outbox provides durable logical operation IDs and at-least-once provider delivery. Operations are designed to be idempotent where the destination permits it. V1.4 does not claim impossible network-level exactly-once delivery.
 
-## Reliability model
+## Security
 
-1. Authenticate the webhook.
-2. Normalize only known event shapes.
-3. Persist delivery identity before reconciliation.
-4. Reject a reused delivery ID with different content.
-5. Compute a deterministic reconciliation decision.
-6. Atomically persist the decision and all side-effect intents.
-7. Let a worker execute outbox operations.
-8. Mark a side effect complete only after the destination API acknowledges it.
-9. Re-run pending/failed outbox rows after restart.
+- No access token, refresh token, private key, or client secret belongs in Git.
+- Jira rotating refresh tokens must be durably replaced after refresh.
+- The reference single-node deployment encrypts rotating secrets on disk with a key supplied separately by the hosting platform.
+- A production cloud deployment may replace the encrypted file with a managed secret-store adapter.
+- GitHub App permissions and Jira OAuth scopes must follow least privilege.
 
-## Storage
+## Current live boundary
 
-SQLite is the deterministic V1.3 reference because it is dependency-free and testable in CI. The production target remains Postgres.
+CI proves the full worker lifecycle against isolated provider APIs. A truly live 24/7 provider test still requires account-owner creation of a GitHub App, an Atlassian OAuth integration, and injection of those secrets into a hosting platform.
 
-## Important deployment boundary
+## V1.4 completion gate
 
-V1.3 makes receipt, persistence, reconciliation and replay deployment-ready. It does **not** embed ChatGPT connector credentials in a server. True unattended Jira/GitHub writes require a deployed worker authenticated with service credentials/OAuth.
-
-## Safety model
-
-All V1.2 role and approval gates remain. Webhook events are evidence, not authority: a merge event still cannot produce Jira Done without CI, QA and explicit human-approval evidence.
-
-## Completion gate
-
-V1.3 is ready for review when:
-- V1/V1.2 regressions pass,
-- official GitHub/Jira signature vectors pass,
-- tampered requests are rejected,
-- job state survives restart,
-- identical retries are idempotent,
-- conflicting retries are rejected,
-- a crash after event receipt resumes on redelivery,
-- outbox work survives restart,
-- failed outbox actions remain replayable,
-- CI is green,
-- merge remains human-gated.
+V1.4 is ready for review when:
+- all V1.0-V1.3 regression tests remain green,
+- GitHub App JWT → installation-token exchange works against the fake provider,
+- Jira OAuth rotating refresh token is persisted before reuse,
+- encrypted secret persistence survives restart,
+- a durable outbox operation reaches fake Jira,
+- transient 5xx failure retries after backoff,
+- permanent unsupported work dead-letters,
+- completed logical operations do not replay after restart,
+- CI passes,
+- live credential/deployment work remains explicitly gated rather than simulated.
