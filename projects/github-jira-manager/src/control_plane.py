@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 class ApprovalLevel(str, Enum):
@@ -56,8 +56,13 @@ HAPPY_PATH = [
     WorkflowState.DONE,
 ]
 
+RESUMABLE_EXCEPTION_STATES = {
+    WorkflowState.BLOCKED,
+    WorkflowState.INPUT_REQUIRED,
+}
 
-@dataclass
+
+@dataclass(frozen=True)
 class Approval:
     level: ApprovalLevel
     approved_by: str
@@ -70,8 +75,10 @@ class Job:
     work_item_id: str
     goal: str
     state: WorkflowState = WorkflowState.IDEA
+    previous_state: Optional[WorkflowState] = None
     qa_pass: bool = False
     ci_pass: bool = False
+    human_merge_approved: bool = False
     merged_or_closed: bool = False
     approvals: List[Approval] = field(default_factory=list)
     events: List[str] = field(default_factory=list)
@@ -110,12 +117,15 @@ class PolicyEngine:
 class WorkflowEngine:
     @staticmethod
     def transition(job: Job, target: WorkflowState) -> None:
-        if target in {
-            WorkflowState.BLOCKED,
-            WorkflowState.INPUT_REQUIRED,
-            WorkflowState.FAILED,
-            WorkflowState.CANCELED,
-        }:
+        if target in RESUMABLE_EXCEPTION_STATES:
+            if job.state not in RESUMABLE_EXCEPTION_STATES:
+                job.previous_state = job.state
+            job.state = target
+            job.events.append(f"transition:{target.value}")
+            return
+
+        if target in {WorkflowState.FAILED, WorkflowState.CANCELED}:
+            job.previous_state = None
             job.state = target
             job.events.append(f"transition:{target.value}")
             return
@@ -134,8 +144,11 @@ class WorkflowEngine:
         if target == WorkflowState.REVIEW and not job.qa_pass:
             raise WorkflowViolation("QA must pass before REVIEW")
 
-        if target == WorkflowState.READY_TO_MERGE and not job.ci_pass:
-            raise WorkflowViolation("Required CI must pass before READY_TO_MERGE")
+        if target == WorkflowState.READY_TO_MERGE:
+            if not job.ci_pass:
+                raise WorkflowViolation("Required CI must pass before READY_TO_MERGE")
+            if not job.human_merge_approved:
+                raise WorkflowViolation("Human approval is required before READY_TO_MERGE")
 
         if target == WorkflowState.DONE:
             if not job.qa_pass or not job.merged_or_closed:
@@ -143,6 +156,57 @@ class WorkflowEngine:
 
         job.state = target
         job.events.append(f"transition:{target.value}")
+
+    @staticmethod
+    def resume(job: Job) -> None:
+        if job.state not in RESUMABLE_EXCEPTION_STATES:
+            raise WorkflowViolation(f"{job.state.value} is not resumable")
+        if job.previous_state is None:
+            raise WorkflowViolation("No previous state recorded for resume")
+        restored = job.previous_state
+        job.previous_state = None
+        job.state = restored
+        job.events.append(f"resume:{restored.value}")
+
+
+class MockToolAdapter:
+    """Deterministic adapter used to validate policy and idempotency before live APIs."""
+
+    def __init__(self) -> None:
+        self.executed: Dict[str, Dict[str, Any]] = {}
+
+    def execute(
+        self,
+        operation_id: str,
+        operation: str,
+        payload: Optional[Dict[str, Any]] = None,
+        approval: Optional[Approval] = None,
+    ) -> Dict[str, Any]:
+        if not operation_id:
+            raise PolicyViolation("Mutating operations require an operation_id")
+
+        payload = payload or {}
+
+        if operation_id in self.executed:
+            prior = self.executed[operation_id]
+            if prior["operation"] != operation or prior["payload"] != payload:
+                raise PolicyViolation("operation_id reuse with different request is denied")
+            return prior
+
+        PolicyEngine.authorize(operation, approval)
+
+        if operation == "github.commit_feature_branch":
+            branch = str(payload.get("branch", ""))
+            PolicyEngine.guard_branch_write(branch)
+
+        result = {
+            "operation_id": operation_id,
+            "operation": operation,
+            "payload": payload,
+            "status": "executed",
+        }
+        self.executed[operation_id] = result
+        return result
 
 
 class Orchestrator:
