@@ -6,13 +6,23 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from control_plane import (  # noqa: E402
+    AGENT_CONTRACTS,
+    AgentContractEngine,
+    AgentContractViolation,
+    AgentRole,
     Approval,
     ApprovalLevel,
+    JiraStatus,
     Job,
     MockToolAdapter,
     Orchestrator,
     PolicyEngine,
     PolicyViolation,
+    ReconciliationEvidence,
+    ReconciliationEvent,
+    ReconciliationEventType,
+    ReconciliationLedger,
+    ReconciliationViolation,
     WorkflowEngine,
     WorkflowState,
     WorkflowViolation,
@@ -38,6 +48,53 @@ class PolicyTests(unittest.TestCase):
         with self.assertRaises(PolicyViolation):
             PolicyEngine.guard_branch_write("main")
         PolicyEngine.guard_branch_write("feature/test")
+
+
+class AgentContractTests(unittest.TestCase):
+    def test_exactly_four_roles_exist(self):
+        self.assertEqual(
+            set(AGENT_CONTRACTS),
+            {
+                AgentRole.ORCHESTRATOR,
+                AgentRole.PROJECT_MANAGER,
+                AgentRole.SOFTWARE_ENGINEER,
+                AgentRole.QA_VALIDATOR,
+            },
+        )
+
+    def test_engineer_can_commit_feature_branch_but_cannot_merge(self):
+        self.assertTrue(
+            AgentContractEngine.authorize(
+                AgentRole.SOFTWARE_ENGINEER,
+                "github.commit_feature_branch",
+            )
+        )
+        with self.assertRaises(AgentContractViolation):
+            AgentContractEngine.authorize(
+                AgentRole.SOFTWARE_ENGINEER,
+                "github.merge_pull_request",
+            )
+
+    def test_qa_cannot_implement(self):
+        with self.assertRaises(AgentContractViolation):
+            AgentContractEngine.authorize(
+                AgentRole.QA_VALIDATOR,
+                "github.commit_feature_branch",
+            )
+
+    def test_project_manager_cannot_write_code(self):
+        with self.assertRaises(AgentContractViolation):
+            AgentContractEngine.authorize(
+                AgentRole.PROJECT_MANAGER,
+                "github.commit_feature_branch",
+            )
+
+    def test_ungranted_operation_is_denied(self):
+        with self.assertRaises(AgentContractViolation):
+            AgentContractEngine.authorize(
+                AgentRole.ORCHESTRATOR,
+                "github.delete_repository",
+            )
 
 
 class IdempotencyTests(unittest.TestCase):
@@ -128,6 +185,112 @@ class WorkflowTests(unittest.TestCase):
         WorkflowEngine.resume(job)
         self.assertEqual(job.state, WorkflowState.IN_PROGRESS)
         self.assertIsNone(job.previous_state)
+
+
+class ReconciliationTests(unittest.TestCase):
+    def test_pr_opened_maps_to_in_progress(self):
+        decision = ReconciliationLedger().process(
+            ReconciliationEvent("evt-1", ReconciliationEventType.PR_OPENED),
+            ReconciliationEvidence(),
+        )
+        self.assertEqual(decision.desired_status, JiraStatus.IN_PROGRESS)
+
+    def test_ci_failure_blocks_work(self):
+        decision = ReconciliationLedger().process(
+            ReconciliationEvent("evt-2", ReconciliationEventType.CI_FAILED),
+            ReconciliationEvidence(ci_pass=False),
+        )
+        self.assertEqual(decision.desired_status, JiraStatus.BLOCKED)
+
+    def test_ci_pass_alone_does_not_advance_to_review(self):
+        decision = ReconciliationLedger().process(
+            ReconciliationEvent("evt-3", ReconciliationEventType.CI_PASSED),
+            ReconciliationEvidence(ci_pass=True),
+        )
+        self.assertEqual(decision.desired_status, JiraStatus.IN_PROGRESS)
+
+    def test_pr_ready_requires_ci_and_qa(self):
+        ledger = ReconciliationLedger()
+        held = ledger.process(
+            ReconciliationEvent("evt-4", ReconciliationEventType.PR_READY),
+            ReconciliationEvidence(ci_pass=True, qa_pass=False),
+        )
+        self.assertIsNone(held.desired_status)
+
+        ready = ledger.process(
+            ReconciliationEvent("evt-5", ReconciliationEventType.PR_READY),
+            ReconciliationEvidence(ci_pass=True, qa_pass=True),
+        )
+        self.assertEqual(ready.desired_status, JiraStatus.IN_REVIEW)
+
+    def test_merge_requires_ci_qa_and_human_approval(self):
+        ledger = ReconciliationLedger()
+        held = ledger.process(
+            ReconciliationEvent("evt-6", ReconciliationEventType.PR_MERGED),
+            ReconciliationEvidence(ci_pass=True, qa_pass=True, human_merge_approved=False),
+        )
+        self.assertIsNone(held.desired_status)
+        self.assertTrue(held.requires_human_approval)
+
+        done = ledger.process(
+            ReconciliationEvent("evt-7", ReconciliationEventType.PR_MERGED),
+            ReconciliationEvidence(ci_pass=True, qa_pass=True, human_merge_approved=True),
+        )
+        self.assertEqual(done.desired_status, JiraStatus.DONE)
+
+    def test_event_processing_is_idempotent(self):
+        ledger = ReconciliationLedger()
+        event = ReconciliationEvent("evt-8", ReconciliationEventType.CI_PASSED)
+        evidence = ReconciliationEvidence(ci_pass=True)
+        first = ledger.process(event, evidence)
+        second = ledger.process(event, evidence)
+        self.assertIs(first, second)
+
+    def test_event_id_cannot_be_reused_with_different_evidence(self):
+        ledger = ReconciliationLedger()
+        event = ReconciliationEvent("evt-9", ReconciliationEventType.PR_READY)
+        ledger.process(event, ReconciliationEvidence(ci_pass=True, qa_pass=False))
+        with self.assertRaises(ReconciliationViolation):
+            ledger.process(event, ReconciliationEvidence(ci_pass=True, qa_pass=True))
+
+    def test_failure_recovery_sequence(self):
+        ledger = ReconciliationLedger()
+
+        opened = ledger.process(
+            ReconciliationEvent("seq-1", ReconciliationEventType.PR_OPENED),
+            ReconciliationEvidence(),
+        )
+        self.assertEqual(opened.desired_status, JiraStatus.IN_PROGRESS)
+
+        failed = ledger.process(
+            ReconciliationEvent("seq-2", ReconciliationEventType.CI_FAILED),
+            ReconciliationEvidence(),
+        )
+        self.assertEqual(failed.desired_status, JiraStatus.BLOCKED)
+
+        recovered = ledger.process(
+            ReconciliationEvent("seq-3", ReconciliationEventType.CI_PASSED),
+            ReconciliationEvidence(ci_pass=True),
+        )
+        self.assertEqual(recovered.desired_status, JiraStatus.IN_PROGRESS)
+
+        review = ledger.process(
+            ReconciliationEvent("seq-4", ReconciliationEventType.PR_READY),
+            ReconciliationEvidence(ci_pass=True, qa_pass=True),
+        )
+        self.assertEqual(review.desired_status, JiraStatus.IN_REVIEW)
+
+        held = ledger.process(
+            ReconciliationEvent("seq-5", ReconciliationEventType.PR_MERGED),
+            ReconciliationEvidence(ci_pass=True, qa_pass=True, human_merge_approved=False),
+        )
+        self.assertIsNone(held.desired_status)
+
+        done = ledger.process(
+            ReconciliationEvent("seq-6", ReconciliationEventType.PR_MERGED),
+            ReconciliationEvidence(ci_pass=True, qa_pass=True, human_merge_approved=True),
+        )
+        self.assertEqual(done.desired_status, JiraStatus.DONE)
 
 
 class OrchestratorTests(unittest.TestCase):
