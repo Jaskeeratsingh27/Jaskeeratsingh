@@ -117,14 +117,13 @@ def evidence_for(inbound) -> ReconciliationEvidence:
 class ServiceContext:
     def __init__(
         self,
-        store: RuntimeStore,
+        db_path: str,
         receiver: WebhookReceiver,
-        worker: Optional[OutboxWorker],
+        jira_worker_ready: bool,
     ) -> None:
-        self.store = store
-        self.runtime = DurableRuntime(store)
+        self.db_path = db_path
         self.receiver = receiver
-        self.worker = worker
+        self.jira_worker_ready = jira_worker_ready
 
 
 def handler_factory(context: ServiceContext):
@@ -141,6 +140,13 @@ def handler_factory(context: ServiceContext):
             self.send_header("Content-Length", str(len(raw)))
             self.end_headers()
             self.wfile.write(raw)
+
+        def _store_counts(self) -> dict:
+            store = RuntimeStore(context.db_path)
+            try:
+                return store.counts()
+            finally:
+                store.close()
 
         def _body(self) -> bytes:
             length_raw = self.headers.get("Content-Length", "0")
@@ -169,8 +175,8 @@ def handler_factory(context: ServiceContext):
                     200,
                     {
                         "status": "ok",
-                        "jira_worker_ready": context.worker is not None,
-                        "store": context.store.counts(),
+                        "jira_worker_ready": context.jira_worker_ready,
+                        "store": self._store_counts(),
                     },
                 )
                 return
@@ -190,10 +196,14 @@ def handler_factory(context: ServiceContext):
                     self._json(404, {"error": "not found"})
                     return
 
-                result = context.runtime.ingest(
-                    inbound,
-                    evidence_for(inbound),
-                )
+                store = RuntimeStore(context.db_path)
+                try:
+                    result = DurableRuntime(store).ingest(
+                        inbound,
+                        evidence_for(inbound),
+                    )
+                finally:
+                    store.close()
                 self._json(
                     202,
                     {
@@ -216,32 +226,37 @@ def handler_factory(context: ServiceContext):
 
 
 def worker_loop(
-    worker: Optional[OutboxWorker],
+    db_path: str,
     stopping: threading.Event,
     interval: float,
 ) -> None:
-    if worker is None:
-        print(
-            "jira_worker_ready=false credential_gate=JIRA_OAUTH",
-            flush=True,
-        )
-        while not stopping.wait(interval):
-            pass
-        return
+    store = RuntimeStore(db_path)
+    worker = build_worker(store)
+    try:
+        if worker is None:
+            print(
+                "jira_worker_ready=false credential_gate=JIRA_OAUTH",
+                flush=True,
+            )
+            while not stopping.wait(interval):
+                pass
+            return
 
-    print("jira_worker_ready=true", flush=True)
-    while not stopping.is_set():
-        try:
-            summary = worker.drain_once()
-            if summary.completed or summary.retried or summary.dead_lettered:
-                print(
-                    f"completed={summary.completed} retried={summary.retried} "
-                    f"dead_lettered={summary.dead_lettered}",
-                    flush=True,
-                )
-        except Exception as exc:
-            print(f"worker_error={type(exc).__name__}: {exc}", flush=True)
-        stopping.wait(interval)
+        print("jira_worker_ready=true", flush=True)
+        while not stopping.is_set():
+            try:
+                summary = worker.drain_once()
+                if summary.completed or summary.retried or summary.dead_lettered:
+                    print(
+                        f"completed={summary.completed} retried={summary.retried} "
+                        f"dead_lettered={summary.dead_lettered}",
+                        flush=True,
+                    )
+            except Exception as exc:
+                print(f"worker_error={type(exc).__name__}: {exc}", flush=True)
+            stopping.wait(interval)
+    finally:
+        store.close()
 
 
 def main() -> int:
@@ -254,24 +269,27 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    store = build_store()
+    db_path = os.environ.get("CONTROL_PLANE_DB_PATH", "/data/control-plane.db")
     receiver = build_receiver()
-    worker = build_worker(store)
 
     if args.once:
-        if worker is None:
-            print("jira_worker_ready=false")
+        store = RuntimeStore(db_path)
+        try:
+            worker = build_worker(store)
+            if worker is None:
+                print("jira_worker_ready=false")
+                return 2
+            summary = worker.drain_once()
+            print(
+                f"completed={summary.completed} retried={summary.retried} "
+                f"dead_lettered={summary.dead_lettered}"
+            )
+            return 0
+        finally:
             store.close()
-            return 2
-        summary = worker.drain_once()
-        print(
-            f"completed={summary.completed} retried={summary.retried} "
-            f"dead_lettered={summary.dead_lettered}"
-        )
-        store.close()
-        return 0
 
-    context = ServiceContext(store, receiver, worker)
+    ready = jira_credentials_ready()
+    context = ServiceContext(db_path, receiver, ready)
     stopping = threading.Event()
     port = int(os.environ.get("PORT", "3000"))
     server = ThreadingHTTPServer(("0.0.0.0", port), handler_factory(context))
@@ -285,13 +303,13 @@ def main() -> int:
 
     thread = threading.Thread(
         target=worker_loop,
-        args=(worker, stopping, args.interval),
+        args=(db_path, stopping, args.interval),
         daemon=True,
     )
     thread.start()
 
     print(
-        f"http_ready=true port={port} jira_worker_ready={str(worker is not None).lower()}",
+        f"http_ready=true port={port} jira_worker_ready={str(ready).lower()}",
         flush=True,
     )
 
@@ -302,7 +320,6 @@ def main() -> int:
         stopping.set()
         thread.join(timeout=5)
         server.server_close()
-        store.close()
 
 
 if __name__ == "__main__":
