@@ -1,0 +1,15 @@
+project_id = "github-jira-manager"
+
+[functions.health]
+verify_jwt = false
+
+# External providers authenticate with their own HMAC signatures.
+[functions.github-webhook]
+verify_jwt = false
+
+[functions.jira-webhook]
+verify_jwt = false
+
+# The worker will use explicit service-to-service secret authentication in code.
+[functions.reconcile-worker]
+verify_jwt = false
