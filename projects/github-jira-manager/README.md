@@ -1,6 +1,6 @@
 # GitHub Jira Manager — V1
 
-Version: 1.0.0
+Version: 1.0.1
 
 ## Purpose
 
@@ -23,15 +23,18 @@ The user normally talks only to the Orchestrator.
 - GitHub is canonical for code, agent definitions, architecture, documentation, and released versions.
 - Jira is canonical for backlog, project status, issue workflow, dependencies, and milestones.
 - Runtime job state belongs to the control plane, not chat history.
-- V1 uses mocked adapters until policy/orchestration tests pass.
+- Unknown operations are denied by default.
+- Mutating mock operations require an idempotency key.
+- BLOCKED and INPUT_REQUIRED jobs retain their previous state and can resume safely.
 
 ## V1 scope
 
 Included:
 - Four-agent contracts.
-- Workflow/state machine.
+- Workflow/state machine with QA, CI, and human approval gates.
 - Approval policy.
 - Deterministic Python reference implementation.
+- Deterministic mock tool adapter with idempotency protection.
 - Unit tests and structural validation.
 - GitHub Actions CI.
 
@@ -67,7 +70,8 @@ V1 is structurally complete when:
 - all required files exist,
 - unit tests pass,
 - policy tests prove unsafe actions are blocked without approval,
-- workflow tests prove work cannot skip QA to reach DONE,
+- workflow tests prove work cannot skip QA/CI/human merge approval gates,
+- idempotency tests prevent duplicate side effects,
 - CI executes those checks on pull requests.
 
 Live Jira/GitHub mutation is deliberately not part of this gate.
