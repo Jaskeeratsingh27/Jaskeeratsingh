@@ -1,6 +1,7 @@
 import hashlib
 import json
 import sqlite3
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
@@ -18,12 +19,7 @@ class RuntimeStoreViolation(RuntimeError):
 
 
 class RuntimeStore:
-    """Durable V1.3 state store.
-
-    Raw webhook bodies and secrets are deliberately not persisted. Inbound delivery
-    identity is stored as metadata plus SHA-256 hash. Decision + outbox writes are
-    atomic so a crash cannot leave a decided event without its side-effect intents.
-    """
+    """Durable control-plane state and side-effect outbox."""
 
     def __init__(self, path: str) -> None:
         self.path = path
@@ -77,12 +73,19 @@ class RuntimeStore:
                 status TEXT NOT NULL DEFAULT 'PENDING',
                 attempts INTEGER NOT NULL DEFAULT 0,
                 last_error TEXT,
+                next_attempt_at REAL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(event_id) REFERENCES inbound_events(event_id)
             );
             """
         )
+        columns = {
+            row["name"]
+            for row in self.conn.execute("PRAGMA table_info(outbox)").fetchall()
+        }
+        if "next_attempt_at" not in columns:
+            self.conn.execute("ALTER TABLE outbox ADD COLUMN next_attempt_at REAL")
         self.conn.commit()
 
     @staticmethod
@@ -286,16 +289,21 @@ class RuntimeStore:
                 "atomic decision/outbox write collided with an existing operation"
             ) from exc
 
-    def pending_outbox(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def pending_outbox(
+        self, limit: int = 100, now: Optional[float] = None
+    ) -> List[Dict[str, Any]]:
+        now = time.time() if now is None else now
         rows = self.conn.execute(
             """
-            SELECT operation_id, event_id, operation, payload_json, attempts, last_error
+            SELECT operation_id, event_id, operation, payload_json,
+                   attempts, last_error, next_attempt_at, status
             FROM outbox
             WHERE status IN ('PENDING', 'FAILED')
+              AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
             ORDER BY created_at, operation_id
             LIMIT ?
             """,
-            (limit,),
+            (now, limit),
         ).fetchall()
         return [
             {
@@ -305,6 +313,8 @@ class RuntimeStore:
                 "payload": json.loads(row["payload_json"]),
                 "attempts": row["attempts"],
                 "last_error": row["last_error"],
+                "next_attempt_at": row["next_attempt_at"],
+                "status": row["status"],
             }
             for row in rows
         ]
@@ -315,7 +325,8 @@ class RuntimeStore:
                 """
                 UPDATE outbox
                 SET status='COMPLETE', attempts=attempts+1,
-                    last_error=NULL, updated_at=CURRENT_TIMESTAMP
+                    last_error=NULL, next_attempt_at=NULL,
+                    updated_at=CURRENT_TIMESTAMP
                 WHERE operation_id=?
                 """,
                 (operation_id,),
@@ -323,19 +334,59 @@ class RuntimeStore:
             if updated.rowcount != 1:
                 raise RuntimeStoreViolation(f"unknown operation_id: {operation_id}")
 
-    def mark_outbox_failed(self, operation_id: str, error: str) -> None:
+    def mark_outbox_retry(
+        self, operation_id: str, error: str, next_attempt_at: float
+    ) -> None:
         with self.conn:
             updated = self.conn.execute(
                 """
                 UPDATE outbox
                 SET status='FAILED', attempts=attempts+1,
-                    last_error=?, updated_at=CURRENT_TIMESTAMP
+                    last_error=?, next_attempt_at=?,
+                    updated_at=CURRENT_TIMESTAMP
+                WHERE operation_id=?
+                """,
+                (error, next_attempt_at, operation_id),
+            )
+            if updated.rowcount != 1:
+                raise RuntimeStoreViolation(f"unknown operation_id: {operation_id}")
+
+    def mark_outbox_dead_letter(self, operation_id: str, error: str) -> None:
+        with self.conn:
+            updated = self.conn.execute(
+                """
+                UPDATE outbox
+                SET status='DEAD_LETTER', attempts=attempts+1,
+                    last_error=?, next_attempt_at=NULL,
+                    updated_at=CURRENT_TIMESTAMP
                 WHERE operation_id=?
                 """,
                 (error, operation_id),
             )
             if updated.rowcount != 1:
                 raise RuntimeStoreViolation(f"unknown operation_id: {operation_id}")
+
+    def outbox_record(self, operation_id: str) -> Optional[Dict[str, Any]]:
+        row = self.conn.execute(
+            """
+            SELECT operation_id, event_id, operation, payload_json,
+                   status, attempts, last_error, next_attempt_at
+            FROM outbox WHERE operation_id=?
+            """,
+            (operation_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        return {
+            "operation_id": row["operation_id"],
+            "event_id": row["event_id"],
+            "operation": row["operation"],
+            "payload": json.loads(row["payload_json"]),
+            "status": row["status"],
+            "attempts": row["attempts"],
+            "last_error": row["last_error"],
+            "next_attempt_at": row["next_attempt_at"],
+        }
 
     def counts(self) -> Dict[str, int]:
         return {
@@ -345,6 +396,12 @@ class RuntimeStore:
             ).fetchone()[0],
             "outbox": self.conn.execute("SELECT COUNT(*) FROM outbox").fetchone()[0],
             "pending_outbox": self.conn.execute(
-                "SELECT COUNT(*) FROM outbox WHERE status IN ('PENDING', 'FAILED')"
+                """
+                SELECT COUNT(*) FROM outbox
+                WHERE status IN ('PENDING', 'FAILED')
+                """
+            ).fetchone()[0],
+            "dead_letter_outbox": self.conn.execute(
+                "SELECT COUNT(*) FROM outbox WHERE status='DEAD_LETTER'"
             ).fetchone()[0],
         }
