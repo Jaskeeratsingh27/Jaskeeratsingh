@@ -46,7 +46,8 @@ for required in ["human_approval", "resume_to: previous_state"]:
 
 reconciliation = (ROOT / "config/reconciliation.yaml").read_text(encoding="utf-8")
 for required in [
-    "ci_failed: Blocked",
+    "ci_failed: In Progress",
+    "blocked_label: ci-blocked",
     "ci_passed: In Progress",
     "pr_ready: In Review",
     "pr_merged: Done",
@@ -60,6 +61,8 @@ for required in [
     "AGENT_CONTRACTS",
     "class ReconciliationEngine",
     "class ReconciliationLedger",
+    "blocked: bool",
+    "ci-blocked",
     "human_merge_approved",
     "operation_id reuse with different request is denied",
 ]:
