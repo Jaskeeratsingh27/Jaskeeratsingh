@@ -11,6 +11,17 @@ This repository is the source of truth for reusable AI skills.
 
 ## Available skills
 
+### skill-library-router
+
+Use as the discovery layer for the personal GitHub-backed skill library. It reads a compact index, chooses the smallest relevant skill set, then retrieves the canonical `SKILL.md` only for matched workflows.
+
+- Codex: `$skill-library-router`
+- Claude Code: `/skill-library-router`
+- Normal ChatGPT with the plugin installed: eligible for automatic routing by description
+- Canonical source: `.agents/skills/skill-library-router/SKILL.md`
+- Plugin package: `plugins/personal-skill-library/`
+
+
 ### github-access-helper
 
 Use for GitHub connection, repository authorization, access verification, connector troubleshooting, and GitHub read/write setup.
@@ -92,6 +103,29 @@ Use to extract YouTube transcripts and transform them into traceable summaries, 
 - Claude Code: `/youtube-insights-extractor`
 - Canonical source: `.agents/skills/youtube-insights-extractor/SKILL.md`
 - Claude mirror: `.claude/skills/youtube-insights-extractor/SKILL.md`
+
+
+### usage-efficient-orchestrator
+
+Use for nontrivial technical work where weekly Work/Codex allowance should be conserved through measured planning, capability-aware routing, quality/risk floors, single-writer execution, checkpoints, and failure-aware escalation.
+
+- Codex: `$usage-efficient-orchestrator`
+- Claude Code: `/usage-efficient-orchestrator`
+- Canonical source: `.agents/skills/usage-efficient-orchestrator/SKILL.md`
+- Claude mirror: `.claude/skills/usage-efficient-orchestrator/SKILL.md`
+
+
+## ChatGPT plugin marketplace
+
+v1 of the native discovery layer is packaged at:
+
+`plugins/personal-skill-library/`
+
+and registered in:
+
+`.agents/plugins/marketplace.json`
+
+The plugin currently packages `skill-library-router` and `github-access-helper` natively. The router indexes all canonical skills and retrieves other matched `.agents/skills/<name>/SKILL.md` files from GitHub on demand.
 
 ## Architecture
 
