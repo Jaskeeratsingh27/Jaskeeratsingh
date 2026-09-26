@@ -2,6 +2,7 @@ name: GitHub Jira Manager CI
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, closed]
     paths:
       - 'projects/github-jira-manager/**'
       - '.github/workflows/github-jira-manager-v1-ci.yml'
@@ -12,6 +13,11 @@ on:
       - 'projects/github-jira-manager/**'
       - '.github/workflows/github-jira-manager-v1-ci.yml'
 
+permissions:
+  contents: read
+  pull-requests: read
+  id-token: write
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -20,9 +26,63 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install V1.4 dependencies
+      - name: Install dependencies
         run: pip install -r projects/github-jira-manager/requirements-v14.txt
       - name: Structural validation
         run: python projects/github-jira-manager/tests/validate_v1.py
       - name: Unit and integration tests
         run: python -m unittest discover -s projects/github-jira-manager/tests -p 'test_*.py' -v
+
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r projects/github-jira-manager/requirements-v14.txt
+      - name: Policy and control-plane QA
+        run: python -m unittest discover -s projects/github-jira-manager/tests -p 'test_*.py' -v
+
+  relay:
+    if: always()
+    needs: [validate, qa]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Request short-lived GitHub OIDC token
+        id: oidc
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl -fsSL             -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}"             "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=gjm-supabase")"
+          token="$(jq -r '.value' <<<"$response")"
+          test -n "$token"
+          echo "token=$token" >> "$GITHUB_OUTPUT"
+
+      - name: Relay validation result to Supabase
+        shell: bash
+        env:
+          OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
+          CI_RESULT: ${{ needs.validate.result }}
+          QA_RESULT: ${{ needs.qa.result }}
+        run: |
+          set -euo pipefail
+          payload="$(jq             --arg event_name "$GITHUB_EVENT_NAME"             --arg ref "$GITHUB_REF"             --arg sha "$GITHUB_SHA"             --arg run_id "$GITHUB_RUN_ID"             --arg run_attempt "$GITHUB_RUN_ATTEMPT"             --arg ci_result "$CI_RESULT"             --arg qa_result "$QA_RESULT"             '{
+              event_name: $event_name,
+              action: (.action // "none"),
+              repository: .repository.full_name,
+              ref: $ref,
+              sha: $sha,
+              run_id: $run_id,
+              run_attempt: $run_attempt,
+              ci_result: $ci_result,
+              qa_result: $qa_result,
+              pr_number: (.pull_request.number // null),
+              pr_title: (.pull_request.title // null),
+              head_ref: (.pull_request.head.ref // null),
+              merged: (.pull_request.merged // false),
+              merged_by: (.pull_request.merged_by.login // null)
+            }' "$GITHUB_EVENT_PATH")"
+
+          curl -fsS -X POST             -H "Authorization: Bearer $OIDC_TOKEN"             -H "Content-Type: application/json"             --data "$payload"             "https://ayihitekwwrwgkbzontm.supabase.co/functions/v1/github-webhook"
