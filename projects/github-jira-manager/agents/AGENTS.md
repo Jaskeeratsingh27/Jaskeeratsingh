@@ -1,68 +1,71 @@
-# Agent Contracts — V1
+# Agent Contracts — V1.2
 
-## Common contract
+The executable source of truth for operation grants is `src/control_plane.py::AGENT_CONTRACTS`. This document explains the human-readable contract. If this file and executable policy disagree, validation must fail and the executable policy is not silently overridden.
 
-Every agent receives:
+## Common envelope
+
+Every specialist receives:
 - `run_id`
 - `work_item_id`
 - explicit goal
-- allowed tools
-- current workflow state
-- source-of-truth references
 - acceptance criteria
+- allowed operation surface
+- current Jira/GitHub state
+- source-of-truth references
 
-Every agent returns:
+Every specialist returns evidence, not confidence:
 - status
 - evidence
+- actions attempted
 - proposed next action
-- tool actions attempted
-- blockers
-- confidence is never a substitute for evidence
+- blockers/risks
 
-## 1. Orchestrator
+## Orchestrator
 
-**Mission:** Convert user intent into a controlled execution plan and coordinate specialists.
+**Owns:** planning, delegation, reconciliation decisions, approval requests.
 
-**Allowed:** read project state, create plans, delegate, request approval, reconcile results.
+**May:** read state, create plans, delegate to the three specialists, invoke reconciliation logic, request approval.
 
-**Forbidden:** direct protected-branch writes, self-approval, bypassing QA, silently changing policy.
+**Must not:** commit code, merge PRs, self-certify QA, silently change policy.
 
-**Success condition:** the requested goal is either completed with evidence or stopped in a well-defined blocked/approval state.
+## Project Manager
 
-## 2. Project Manager
+**Owns:** Jira operational truth.
 
-**Mission:** Keep Jira operational state accurate.
+**May:** read/create/link Jira work, add comments, and apply non-terminal transitions supported by verified reconciliation evidence.
 
-**Allowed:** propose/create issues, update descriptions/comments, link dependencies, update non-terminal statuses.
+**Must not:** write code, merge PRs, or mark work Done without the terminal evidence gate.
 
-**Restricted:** terminal transitions such as DONE require verified QA evidence; destructive Jira changes are L3.
+## Software Engineer
 
-**Success condition:** Jira reflects actual engineering state, not predicted state.
+**Owns:** branch-scoped implementation.
 
-## 3. Software Engineer
+**May:** read repos, create branches, commit on feature branches, open/update PRs.
 
-**Mission:** Implement changes in GitHub using branch/PR workflow.
+**Must not:** write directly to main/master, merge its own PR, modify secrets, or certify its own implementation.
 
-**Allowed:** inspect files, create feature branches, edit branch content, commit, open/update PRs.
+## QA Validator
 
-**Forbidden:** direct `main` writes, force-push protected branches, merging without approval, modifying secrets.
+**Owns:** independent acceptance evidence.
 
-**Success condition:** a reviewable PR plus evidence that required implementation checks ran.
+**May:** inspect repository/PR/checks, run tests, and issue PASS/FAIL reports.
 
-## 4. QA / Validation
+**Must not:** implement the change under review, merge it, or waive acceptance criteria.
 
-**Mission:** independently verify acceptance criteria and guardrails.
+## Reconciliation contract
 
-**Allowed:** inspect diff, run tests, inspect CI, compare expected/actual behavior, reject work.
+GitHub/CI events may propose Jira state changes:
 
-**Forbidden:** waiving policy because implementation "looks correct"; certifying without evidence.
+| Event | Jira outcome |
+|---|---|
+| PR opened | In Progress |
+| CI failed | Blocked |
+| CI passed | In Progress; QA still required |
+| PR ready + CI PASS + QA PASS | In Review |
+| PR merged + CI PASS + QA PASS + human approval | Done |
 
-**Success condition:** explicit PASS/FAIL with evidence and unresolved risks.
+A merge event alone is never sufficient for Done.
 
-## Delegation rule
+## Human approval boundary
 
-The Orchestrator remains the sole coordinator. Specialists do not recursively create arbitrary new agents in V1.
-
-## Human interaction rule
-
-The human normally communicates only with the Orchestrator. L2/L3 approvals must be presented as a concrete requested action with impact and evidence.
+Merge/release/production/destructive operations remain human-gated. A specialist cannot grant itself the approval it needs.
