@@ -1,0 +1,135 @@
+{
+  "schema_version": "1.0",
+  "library_version": "1.0.0",
+  "canonical_repository": "Jaskeeratsingh27/Jaskeeratsingh",
+  "canonical_path_pattern": ".agents/skills/<skill-name>/SKILL.md",
+  "routing": {
+    "exact_name_first": true,
+    "max_primary_skills": 1,
+    "max_secondary_skills": 1,
+    "no_match_behavior": "continue_normally",
+    "canonical_skill_is_authoritative": true
+  },
+  "skills": [
+    {
+      "name": "github-access-helper",
+      "description": "Connect or reconnect ChatGPT/Codex to GitHub, authorize repository access, verify app visibility and write permissions, troubleshoot missing repo access, and provide the correct setup or management link.",
+      "path": ".agents/skills/github-access-helper/SKILL.md",
+      "domains": [
+        "github",
+        "authorization",
+        "repository-access",
+        "connector"
+      ],
+      "packaged_in_v1_plugin": true
+    },
+    {
+      "name": "github-project-sync",
+      "description": "Make GitHub the verified canonical record for a durable project, agent, app, dashboard, workflow, or reusable skill; sync controlled artifacts and milestones and route closeout to durable handoff.",
+      "path": ".agents/skills/github-project-sync/SKILL.md",
+      "domains": [
+        "github",
+        "project-management",
+        "version-control",
+        "project-sync"
+      ],
+      "packaged_in_v1_plugin": false
+    },
+    {
+      "name": "project-knowledge-handoff",
+      "description": "Create and maintain a self-contained, version-controlled master reference guide for durable projects, releases, handoffs, migrations, NotebookLM sources, onboarding, and future-chat reconstruction.",
+      "path": ".agents/skills/project-knowledge-handoff/SKILL.md",
+      "domains": [
+        "documentation",
+        "handoff",
+        "knowledge-base",
+        "versioning"
+      ],
+      "packaged_in_v1_plugin": false
+    },
+    {
+      "name": "kaizen-orchestrator",
+      "description": "Run a rigorous Lean Six Sigma DMAIC pipeline with data-gated root-cause analysis, FMEA, traceability, blueprint hardening, and control planning.",
+      "path": ".agents/skills/kaizen-orchestrator/SKILL.md",
+      "domains": [
+        "continuous-improvement",
+        "lean-six-sigma",
+        "dmaic",
+        "fmea"
+      ],
+      "packaged_in_v1_plugin": false
+    },
+    {
+      "name": "hermes-agent-creator",
+      "description": "Design, review, and improve autonomous AI agents and orchestration workflows for Hermes and related stacks with explicit contracts, validation, failure paths, evaluation, FMEA, and control plans.",
+      "path": ".agents/skills/hermes-agent-creator/SKILL.md",
+      "domains": [
+        "hermes",
+        "agents",
+        "agent-design",
+        "orchestration"
+      ],
+      "packaged_in_v1_plugin": false
+    },
+    {
+      "name": "hermes-agent-architecture",
+      "description": "Provide current Hermes Agent platform and architecture knowledge for agents, subagents, memory, tools/MCP, model routing, Cron, security, observability, persistence, and deployment behavior.",
+      "path": ".agents/skills/hermes-agent-architecture/SKILL.md",
+      "domains": [
+        "hermes",
+        "architecture",
+        "multi-agent",
+        "runtime"
+      ],
+      "packaged_in_v1_plugin": false
+    },
+    {
+      "name": "secondbrain-curator",
+      "description": "Turn rough notes, transcripts, links, and ideas into high-quality atomic Obsidian notes using PARA routing, existing-tag reuse, real wikilinks, source verification, staging, and reversible integration.",
+      "path": ".agents/skills/secondbrain-curator/SKILL.md",
+      "domains": [
+        "obsidian",
+        "second-brain",
+        "para",
+        "knowledge-management"
+      ],
+      "packaged_in_v1_plugin": false
+    },
+    {
+      "name": "anveshak-research-cycle",
+      "description": "Operate a gated research-to-Obsidian cycle for recent AI engineering and agent-architecture research, staged review, approval, integration, validation, and rollback.",
+      "path": ".agents/skills/anveshak-research-cycle/SKILL.md",
+      "domains": [
+        "research",
+        "obsidian",
+        "ai-engineering",
+        "review-gate"
+      ],
+      "packaged_in_v1_plugin": false
+    },
+    {
+      "name": "youtube-insights-extractor",
+      "description": "Extract public YouTube transcripts and transform them into structured summaries, troubleshooting steps, action items, coverage-audited walkthroughs, research notes, or Obsidian-ready notes.",
+      "path": ".agents/skills/youtube-insights-extractor/SKILL.md",
+      "domains": [
+        "youtube",
+        "transcripts",
+        "summarization",
+        "knowledge-ingestion"
+      ],
+      "packaged_in_v1_plugin": false
+    },
+    {
+      "name": "usage-efficient-orchestrator",
+      "description": "Conserve Work/Codex weekly allowance on nontrivial technical work by planning once, routing bounded work to cheaper proven-capable roles, enforcing quality/risk floors, usage checkpoints, and failure-aware escalation.",
+      "path": ".agents/skills/usage-efficient-orchestrator/SKILL.md",
+      "domains": [
+        "usage",
+        "orchestration",
+        "cost-control",
+        "technical-work"
+      ],
+      "packaged_in_v1_plugin": false
+    }
+  ]
+}
