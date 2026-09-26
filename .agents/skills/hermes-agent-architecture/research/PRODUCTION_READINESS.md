@@ -1,6 +1,6 @@
 # Hermes Architecture Knowledge System — Production Readiness
 
-Version: 1.6.0  
+Version: 1.8.0  
 Baseline Hermes release: v0.21.3 / v2026.9.14  
 Readiness phase: final planned hardening
 
@@ -57,3 +57,12 @@ Create a later semantic version only when one of these occurs:
 - a deterministic scenario fails to model an observed real-world incident.
 
 Routine weekly audit, health, and drift snapshots remain operational history and do not require semantic version increments.
+
+
+## Autonomous maintenance
+
+Version 1.8 adds a two-stage scheduled upgrade lifecycle. The weekly job can prepare and validate a complete stable-release candidate PR without relying on the originating chat. The only human gate for an otherwise-safe candidate is explicit approval of the exact proposal. Approval is durable and cannot override deterministic blockers.
+
+Every semantic skill release must also update the project-knowledge-handoff package so the stable `MASTER_GUIDE.md`, manifest, and release snapshot remain synchronized with the skill.
+
+The system is designed to fail closed rather than claim zero-error operation: upstream/tool/permission failures stop promotion and preserve the last verified canonical state.

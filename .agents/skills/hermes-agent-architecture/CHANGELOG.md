@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.8.0 — 2026-09-25
+
+- Added a canonical two-stage autonomous Hermes upgrade lifecycle: scheduled preparation followed by explicit approval-gated promotion.
+- Added machine-readable upgrade-proposal and approval-record schemas so pending upgrades can be resumed safely from any chat using GitHub alone.
+- Extended the promotion gate so explicit approval can satisfy policy-review requirements but can never override failed validation, ambiguity, unknown coverage, stale/critical health, registry drift, or unresolved consumer migrations.
+- Added verified consumer-clearance semantics for high/critical downstream migrations.
+- Expanded end-to-end hardening scenarios to cover approved stable upgrades and security upgrades with/without verified consumer clearance.
+- Made project-knowledge-handoff mandatory for every semantic Hermes architecture skill release.
+- Added idempotent branch/PR conventions, retry limits, concurrency/rebase rules, superseded-release handling, post-merge read-back verification, and non-destructive rollback guidance.
+- Established that scheduled maintenance should prepare a fully validated candidate PR before asking for approval, minimizing the user action to one approval decision when no blockers remain.
+- Corrected the previously observed continuity defect where v1.7.0 advanced the skill while the canonical master guide remained at v1.6.0.
+
+
 ## 1.7.0 — 2026-09-22
 
 - Promoted the verified stable Hermes baseline from v0.21.3 (`v2026.9.14`) to v0.21.4 (`v2026.9.21`).

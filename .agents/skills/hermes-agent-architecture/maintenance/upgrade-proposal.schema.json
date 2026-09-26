@@ -1,0 +1,30 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://example.local/hermes/upgrade-proposal.schema.json",
+  "title":"Hermes Upgrade Proposal",
+  "type":"object",
+  "properties":{
+    "schema_version":{"type":"string"},
+    "proposal_id":{"type":"string","minLength":1},
+    "status":{"type":"string","enum":["detected","preparing","validating","ready_for_approval","approved","blocked","superseded"]},
+    "baseline_release":{"type":"string"},
+    "target_release":{"type":"string"},
+    "baseline_main_sha":{"type":"string","minLength":7},
+    "branch":{"type":"string"},
+    "pr_number":{"type":["integer","null"]},
+    "candidate_skill_version":{"type":["string","null"]},
+    "severity":{"type":"string","enum":["info","patch","minor","major","critical"]},
+    "affected_capabilities":{"type":"array","items":{"type":"string"},"uniqueItems":true},
+    "affected_consumer_ids":{"type":"array","items":{"type":"string"},"uniqueItems":true},
+    "blocking_consumer_ids":{"type":"array","items":{"type":"string"},"uniqueItems":true},
+    "validation":{"type":"object"},
+    "promotion_state":{"type":["string","null"],"enum":["allow","review_required","blocked",null]},
+    "approval_required":{"type":"boolean"},
+    "approval_phrase":{"type":"string"},
+    "created_at":{"type":"string"},
+    "updated_at":{"type":"string"},
+    "notes":{"type":"array","items":{"type":"string"}}
+  },
+  "required":["schema_version","proposal_id","status","baseline_release","target_release","baseline_main_sha","branch","pr_number","candidate_skill_version","severity","affected_capabilities","affected_consumer_ids","blocking_consumer_ids","validation","promotion_state","approval_required","approval_phrase","created_at","updated_at","notes"],
+  "additionalProperties":false
+}
