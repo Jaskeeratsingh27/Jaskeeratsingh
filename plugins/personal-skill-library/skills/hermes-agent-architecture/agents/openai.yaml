@@ -1,0 +1,10 @@
+interface:
+  display_name: "Hermes Architecture"
+  short_description: "Guide Hermes system architecture"
+  default_prompt: "Review this Hermes architecture and identify production risks."
+
+policy:
+  products:
+    - CHAT
+    - CODEX
+  allow_implicit_invocation: true

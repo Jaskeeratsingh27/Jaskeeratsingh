@@ -1,0 +1,10 @@
+interface:
+  display_name: "YouTube Insights"
+  short_description: "Extract actionable video insights"
+  default_prompt: "Extract this YouTube video's transcript and actionable insights."
+
+policy:
+  products:
+    - CHAT
+    - CODEX
+  allow_implicit_invocation: true

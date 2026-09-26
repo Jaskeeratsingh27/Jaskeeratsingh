@@ -1,0 +1,10 @@
+interface:
+  display_name: "GitHub Project Sync"
+  short_description: "Keep projects synced to GitHub"
+  default_prompt: "Make GitHub the canonical record for this project."
+
+policy:
+  products:
+    - CHAT
+    - CODEX
+  allow_implicit_invocation: true

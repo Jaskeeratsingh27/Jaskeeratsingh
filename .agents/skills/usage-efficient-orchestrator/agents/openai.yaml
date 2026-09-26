@@ -1,0 +1,10 @@
+interface:
+  display_name: "Usage Efficient Orchestrator"
+  short_description: "Reduce model usage safely"
+  default_prompt: "Handle this technical task while minimizing weekly model usage."
+
+policy:
+  products:
+    - CHAT
+    - CODEX
+  allow_implicit_invocation: true

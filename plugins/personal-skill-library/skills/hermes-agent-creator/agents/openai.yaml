@@ -1,0 +1,10 @@
+interface:
+  display_name: "Hermes Agent Creator"
+  short_description: "Design production Hermes agents"
+  default_prompt: "Design a production-ready Hermes agent for this workflow."
+
+policy:
+  products:
+    - CHAT
+    - CODEX
+  allow_implicit_invocation: true

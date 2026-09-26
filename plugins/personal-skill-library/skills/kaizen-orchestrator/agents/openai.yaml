@@ -1,0 +1,10 @@
+interface:
+  display_name: "Kaizen Orchestrator"
+  short_description: "Run DMAIC and FMEA workflows"
+  default_prompt: "Analyze this process using DMAIC and FMEA."
+
+policy:
+  products:
+    - CHAT
+    - CODEX
+  allow_implicit_invocation: true

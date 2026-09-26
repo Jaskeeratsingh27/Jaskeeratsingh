@@ -1,0 +1,10 @@
+interface:
+  display_name: "Anveshak Research Cycle"
+  short_description: "Stage research for approval"
+  default_prompt: "Research this topic and stage a reviewable batch before integration."
+
+policy:
+  products:
+    - CHAT
+    - CODEX
+  allow_implicit_invocation: true

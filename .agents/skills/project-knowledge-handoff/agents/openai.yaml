@@ -1,0 +1,10 @@
+interface:
+  display_name: "Project Knowledge Handoff"
+  short_description: "Create durable project handoffs"
+  default_prompt: "Create a complete versioned handoff for this project."
+
+policy:
+  products:
+    - CHAT
+    - CODEX
+  allow_implicit_invocation: true

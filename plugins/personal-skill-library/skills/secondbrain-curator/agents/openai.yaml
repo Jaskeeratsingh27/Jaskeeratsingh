@@ -1,0 +1,10 @@
+interface:
+  display_name: "Second Brain Curator"
+  short_description: "Curate Obsidian knowledge"
+  default_prompt: "Turn these notes into atomic Obsidian knowledge."
+
+policy:
+  products:
+    - CHAT
+    - CODEX
+  allow_implicit_invocation: true
