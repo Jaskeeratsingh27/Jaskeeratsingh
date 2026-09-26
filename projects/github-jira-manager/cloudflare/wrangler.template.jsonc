@@ -1,0 +1,51 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "github-jira-manager",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-26",
+  "workers_dev": true,
+  "vars": {
+    "JIRA_CLOUD_ID": "REPLACE_WITH_JIRA_CLOUD_ID"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "github-jira-manager",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "SIDE_EFFECTS",
+        "queue": "github-jira-manager-side-effects"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "github-jira-manager-side-effects",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 5,
+        "dead_letter_queue": "github-jira-manager-dlq"
+      }
+    ]
+  },
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+  "secrets": {
+    "required": [
+      "GITHUB_WEBHOOK_SECRET",
+      "JIRA_WEBHOOK_SECRET",
+      "JIRA_OAUTH_CLIENT_ID",
+      "JIRA_OAUTH_CLIENT_SECRET",
+      "JIRA_OAUTH_REFRESH_TOKEN",
+      "CONTROL_PLANE_SECRET_KEY"
+    ]
+  },
+  "observability": {
+    "enabled": true
+  }
+}
