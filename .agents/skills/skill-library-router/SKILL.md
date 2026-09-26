@@ -1,7 +1,7 @@
 ---
 name: skill-library-router
 description: Inspect, explain, list, troubleshoot, or manage the user's personal reusable skill library. Use when the user asks which personal skills exist, which skill should handle a task, why a skill did or did not activate, or to add/update/remove/version a skill. Do not activate for ordinary GitHub, Hermes, DMAIC, YouTube, Obsidian, project-handoff, or usage-management requests when a dedicated skill already matches.
-version: 2.0.0
+version: 2.1.0
 ---
 
 # Skill Library Router

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.0
+
+- Added one-command marketplace installers for Windows PowerShell and macOS/Linux.
+- Added a repeatable normal-Chat activation smoke test.
+- Added an automated ZIP packaging workflow for workspace/upload scenarios.
+- Kept GitHub as the canonical source while reducing manual setup steps.
+- Added release validation for v2.1 installation assets.
+
 ## 2.0.0
 
 - Made regular ChatGPT a first-class target for every packaged skill.

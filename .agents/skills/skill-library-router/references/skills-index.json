@@ -1,6 +1,6 @@
 {
-  "schema_version": "2.0",
-  "library_version": "2.0.0",
+  "schema_version": "2.1",
+  "library_version": "2.1.0",
   "canonical_repository": "Jaskeeratsingh27/Jaskeeratsingh",
   "canonical_path_pattern": ".agents/skills/<skill-name>/SKILL.md",
   "plugin_path_pattern": "plugins/personal-skill-library/skills/<skill-name>/SKILL.md",

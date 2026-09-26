@@ -78,8 +78,8 @@ for key in ("$schema", "name", "version", "description"):
 plugin_name = manifest.get("name", "")
 if plugin_name != "personal-skill-library":
     fail(f"unexpected plugin name: {plugin_name!r}")
-if manifest.get("version") != "2.0.0":
-    fail(f"expected plugin version 2.0.0, got {manifest.get('version')!r}")
+if manifest.get("version") != "2.1.0":
+    fail(f"expected plugin version 2.1.0, got {manifest.get('version')!r}")
 
 interface = manifest.get("extensions", {}).get("com.openai", {}).get("interface", {})
 for key in ("displayName", "shortDescription", "longDescription", "developerName", "category"):
@@ -152,6 +152,9 @@ print(f"  canonical skills: {len(names)}")
 print(f"  canonical files: {len(canonical_files)}")
 print(f"  mirrored files: {len(mirror_files)}")
 print("  required products: CHAT, CODEX")
+for required in ("scripts/install-personal-skill-library.ps1", "scripts/install-personal-skill-library.sh", "docs/V2_1_ACTIVATION_TEST.md"):
+    if not (ROOT / required).exists():
+        fail(f"missing v2.1 installation asset: {required}")
 
 for warning in warnings:
     print(f"WARNING: {warning}")
@@ -162,4 +165,4 @@ if errors:
         print(f"  - {error}")
     sys.exit(1)
 
-print("PASS: v2 Chat/Codex metadata, canonical mirror, registry, and marketplace are consistent")
+print("PASS: v2.1 Chat/Codex metadata, canonical mirror, registry, marketplace, and install assets are consistent")

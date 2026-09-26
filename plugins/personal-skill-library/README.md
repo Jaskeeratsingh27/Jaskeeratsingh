@@ -1,6 +1,6 @@
 # Personal Skill Library Plugin
 
-Version: 2.0.0
+Version: 2.1.0
 
 This plugin packages the complete reusable skill library for **normal ChatGPT chats and Codex**.
 
@@ -65,3 +65,24 @@ For cross-device normal ChatGPT availability on a personal account, use the univ
 Run `python scripts/validate-skill-library.py`.
 
 The validator checks marketplace registration, plugin metadata, Chat + Codex product targeting, implicit invocation, skill metadata, and canonical/plugin parity.
+
+
+## One-command personal install
+
+Windows PowerShell:
+
+```powershell
+./scripts/install-personal-skill-library.ps1
+```
+
+macOS/Linux:
+
+```bash
+bash scripts/install-personal-skill-library.sh
+```
+
+Both installers register or refresh the GitHub marketplace, verify it is visible to Codex, and print the final ChatGPT desktop restart/install steps.
+
+## Activation test
+
+After installation, use `docs/V2_1_ACTIVATION_TEST.md` in a new regular ChatGPT conversation.
