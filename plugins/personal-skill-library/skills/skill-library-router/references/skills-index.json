@@ -1,12 +1,17 @@
 {
-  "schema_version": "1.1",
-  "library_version": "1.1.0",
+  "schema_version": "2.0",
+  "library_version": "2.0.0",
   "canonical_repository": "Jaskeeratsingh27/Jaskeeratsingh",
   "canonical_path_pattern": ".agents/skills/<skill-name>/SKILL.md",
   "plugin_path_pattern": "plugins/personal-skill-library/skills/<skill-name>/SKILL.md",
   "routing_mode": "native_skill_metadata",
+  "products": [
+    "CHAT",
+    "CODEX"
+  ],
+  "allow_implicit_invocation": true,
   "runtime_github_fetch_required": false,
-  "sync_model": "GitHub marketplace source sync",
+  "sync_model": "GitHub canonical library -> plugin mirror -> ChatGPT/Codex install surface",
   "routing": {
     "exact_name_first": true,
     "prefer_dedicated_skill": true,
@@ -17,144 +22,134 @@
   "skills": [
     {
       "name": "skill-library-router",
-      "description": "Inspect, explain, list, troubleshoot, or manage the personal reusable skill library. Use for skill inventory, skill selection, routing diagnostics, and library maintenance.",
-      "domains": [
-        "skills",
-        "routing",
-        "library-management"
-      ],
       "canonical_path": ".agents/skills/skill-library-router/SKILL.md",
       "plugin_path": "plugins/personal-skill-library/skills/skill-library-router/SKILL.md",
+      "openai_metadata_path": "plugins/personal-skill-library/skills/skill-library-router/agents/openai.yaml",
+      "products": [
+        "CHAT",
+        "CODEX"
+      ],
+      "allow_implicit_invocation": true,
       "packaged_in_plugin": true
     },
     {
       "name": "github-access-helper",
-      "description": "Connect or reconnect ChatGPT/Codex to GitHub, authorize repository access, verify app visibility and write permissions, troubleshoot missing repo access, and provide the correct setup or management link.",
-      "domains": [
-        "github",
-        "authorization",
-        "repository-access",
-        "connector"
-      ],
       "canonical_path": ".agents/skills/github-access-helper/SKILL.md",
       "plugin_path": "plugins/personal-skill-library/skills/github-access-helper/SKILL.md",
+      "openai_metadata_path": "plugins/personal-skill-library/skills/github-access-helper/agents/openai.yaml",
+      "products": [
+        "CHAT",
+        "CODEX"
+      ],
+      "allow_implicit_invocation": true,
       "packaged_in_plugin": true
     },
     {
       "name": "github-project-sync",
-      "description": "Make GitHub the verified canonical record for a durable project, agent, app, dashboard, workflow, or reusable skill; sync controlled artifacts and milestones and route closeout to durable handoff.",
-      "domains": [
-        "github",
-        "project-management",
-        "version-control",
-        "project-sync"
-      ],
       "canonical_path": ".agents/skills/github-project-sync/SKILL.md",
       "plugin_path": "plugins/personal-skill-library/skills/github-project-sync/SKILL.md",
+      "openai_metadata_path": "plugins/personal-skill-library/skills/github-project-sync/agents/openai.yaml",
+      "products": [
+        "CHAT",
+        "CODEX"
+      ],
+      "allow_implicit_invocation": true,
       "packaged_in_plugin": true
     },
     {
       "name": "project-knowledge-handoff",
-      "description": "Create and maintain a self-contained, version-controlled master reference guide for durable projects, releases, handoffs, migrations, NotebookLM sources, onboarding, and future-chat reconstruction.",
-      "domains": [
-        "documentation",
-        "handoff",
-        "knowledge-base",
-        "versioning"
-      ],
       "canonical_path": ".agents/skills/project-knowledge-handoff/SKILL.md",
       "plugin_path": "plugins/personal-skill-library/skills/project-knowledge-handoff/SKILL.md",
+      "openai_metadata_path": "plugins/personal-skill-library/skills/project-knowledge-handoff/agents/openai.yaml",
+      "products": [
+        "CHAT",
+        "CODEX"
+      ],
+      "allow_implicit_invocation": true,
       "packaged_in_plugin": true
     },
     {
       "name": "kaizen-orchestrator",
-      "description": "Run a rigorous Lean Six Sigma DMAIC pipeline with data-gated root-cause analysis, FMEA, traceability, blueprint hardening, and control planning.",
-      "domains": [
-        "continuous-improvement",
-        "lean-six-sigma",
-        "dmaic",
-        "fmea"
-      ],
       "canonical_path": ".agents/skills/kaizen-orchestrator/SKILL.md",
       "plugin_path": "plugins/personal-skill-library/skills/kaizen-orchestrator/SKILL.md",
+      "openai_metadata_path": "plugins/personal-skill-library/skills/kaizen-orchestrator/agents/openai.yaml",
+      "products": [
+        "CHAT",
+        "CODEX"
+      ],
+      "allow_implicit_invocation": true,
       "packaged_in_plugin": true
     },
     {
       "name": "hermes-agent-creator",
-      "description": "Design, review, and improve autonomous AI agents and orchestration workflows for Hermes and related stacks with explicit contracts, validation, failure paths, evaluation, FMEA, and control plans.",
-      "domains": [
-        "hermes",
-        "agents",
-        "agent-design",
-        "orchestration"
-      ],
       "canonical_path": ".agents/skills/hermes-agent-creator/SKILL.md",
       "plugin_path": "plugins/personal-skill-library/skills/hermes-agent-creator/SKILL.md",
+      "openai_metadata_path": "plugins/personal-skill-library/skills/hermes-agent-creator/agents/openai.yaml",
+      "products": [
+        "CHAT",
+        "CODEX"
+      ],
+      "allow_implicit_invocation": true,
       "packaged_in_plugin": true
     },
     {
       "name": "hermes-agent-architecture",
-      "description": "Provide current Hermes Agent platform and architecture knowledge for agents, subagents, memory, tools/MCP, model routing, Cron, security, observability, persistence, and deployment behavior.",
-      "domains": [
-        "hermes",
-        "architecture",
-        "multi-agent",
-        "runtime"
-      ],
       "canonical_path": ".agents/skills/hermes-agent-architecture/SKILL.md",
       "plugin_path": "plugins/personal-skill-library/skills/hermes-agent-architecture/SKILL.md",
+      "openai_metadata_path": "plugins/personal-skill-library/skills/hermes-agent-architecture/agents/openai.yaml",
+      "products": [
+        "CHAT",
+        "CODEX"
+      ],
+      "allow_implicit_invocation": true,
       "packaged_in_plugin": true
     },
     {
       "name": "secondbrain-curator",
-      "description": "Turn rough notes, transcripts, links, and ideas into high-quality atomic Obsidian notes using PARA routing, existing-tag reuse, real wikilinks, source verification, staging, and reversible integration.",
-      "domains": [
-        "obsidian",
-        "second-brain",
-        "para",
-        "knowledge-management"
-      ],
       "canonical_path": ".agents/skills/secondbrain-curator/SKILL.md",
       "plugin_path": "plugins/personal-skill-library/skills/secondbrain-curator/SKILL.md",
+      "openai_metadata_path": "plugins/personal-skill-library/skills/secondbrain-curator/agents/openai.yaml",
+      "products": [
+        "CHAT",
+        "CODEX"
+      ],
+      "allow_implicit_invocation": true,
       "packaged_in_plugin": true
     },
     {
       "name": "anveshak-research-cycle",
-      "description": "Operate a gated research-to-Obsidian cycle for recent AI engineering and agent-architecture research, staged review, approval, integration, validation, and rollback.",
-      "domains": [
-        "research",
-        "obsidian",
-        "ai-engineering",
-        "review-gate"
-      ],
       "canonical_path": ".agents/skills/anveshak-research-cycle/SKILL.md",
       "plugin_path": "plugins/personal-skill-library/skills/anveshak-research-cycle/SKILL.md",
+      "openai_metadata_path": "plugins/personal-skill-library/skills/anveshak-research-cycle/agents/openai.yaml",
+      "products": [
+        "CHAT",
+        "CODEX"
+      ],
+      "allow_implicit_invocation": true,
       "packaged_in_plugin": true
     },
     {
       "name": "youtube-insights-extractor",
-      "description": "Extract public YouTube transcripts and transform them into structured summaries, troubleshooting steps, action items, coverage-audited walkthroughs, research notes, or Obsidian-ready notes.",
-      "domains": [
-        "youtube",
-        "transcripts",
-        "summarization",
-        "knowledge-ingestion"
-      ],
       "canonical_path": ".agents/skills/youtube-insights-extractor/SKILL.md",
       "plugin_path": "plugins/personal-skill-library/skills/youtube-insights-extractor/SKILL.md",
+      "openai_metadata_path": "plugins/personal-skill-library/skills/youtube-insights-extractor/agents/openai.yaml",
+      "products": [
+        "CHAT",
+        "CODEX"
+      ],
+      "allow_implicit_invocation": true,
       "packaged_in_plugin": true
     },
     {
       "name": "usage-efficient-orchestrator",
-      "description": "Conserve Work/Codex weekly allowance on nontrivial technical work by planning once, routing bounded work to cheaper proven-capable roles, enforcing quality/risk floors, usage checkpoints, and failure-aware escalation.",
-      "domains": [
-        "usage",
-        "orchestration",
-        "cost-control",
-        "technical-work"
-      ],
       "canonical_path": ".agents/skills/usage-efficient-orchestrator/SKILL.md",
       "plugin_path": "plugins/personal-skill-library/skills/usage-efficient-orchestrator/SKILL.md",
+      "openai_metadata_path": "plugins/personal-skill-library/skills/usage-efficient-orchestrator/agents/openai.yaml",
+      "products": [
+        "CHAT",
+        "CODEX"
+      ],
+      "allow_implicit_invocation": true,
       "packaged_in_plugin": true
     }
   ]
